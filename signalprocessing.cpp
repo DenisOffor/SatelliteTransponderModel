@@ -22,17 +22,28 @@ SignalProcessing::~SignalProcessing() {
 
 void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 {
-    GeneratePacksOfSymbols();
-    if(MySource->SigType == "OFDM") {        
-        OfdmParams ofdm_parms = GetOfdmParams();
-        CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
-        MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentOfdmResults.tx, MySymbols[0].tr_sym_clean, ofdm_parms);
-    }
-    else if(MySource->SigType == "FDMA") {
+    if(CurrentRecalcNeeds.RecalcSymbols || CurrentRecalcNeeds.FullRecalc)
+        GeneratePacksOfSymbols();
+    if(CurrentRecalcNeeds.RecalcOfdmSig || CurrentRecalcNeeds.FullRecalc || CurrentRecalcNeeds.RecalcNoiseSig ||
+        CurrentRecalcNeeds.RecalcOfdmFc) {
+        if(MySource->SigType == "OFDM") {
+            OfdmParams ofdm_parms = GetOfdmParams();
+            if(CurrentRecalcNeeds.RecalcOfdmFc)
+                {}//myOfdm.changeFc(CurrentOfdmResults, ofdm_parms);
+            else if(CurrentRecalcNeeds.RecalcNoiseSig)
+                myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
+            else {
+                CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
+                CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
+            }
+            MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentOfdmResults.tx, MySymbols[0].tr_sym_clean, ofdm_parms);
+        }
+        else if(MySource->SigType == "FDMA") {
 
+        }
+        else if(MySource->SigType == "SC")
+        return;
     }
-    else if(MySource->SigType == "SC")
-    return;
 }
 
 void SignalProcessing::GeneratePacksOfSymbols()

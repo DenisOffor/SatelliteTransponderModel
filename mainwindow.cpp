@@ -44,7 +44,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::MakeMainCalcAndPlot()
 {
-    QObject *senderObj = sender();
     MySigProc.MainLogicWork(CurrentRecalcNeeds);
     Graphs.PlotConstellationsPlots(MySigProc.getSymbols());
     Graphs.PlotTimeDomainPlots(MySigProc.getTimeSignal());

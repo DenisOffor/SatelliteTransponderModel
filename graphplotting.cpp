@@ -88,8 +88,8 @@ void GraphPlotting::PlotConstellationsPlots(const Symbols& MySymbols)
         x.append(symbol.real());  // X = действительная часть
         y.append(symbol.imag());  // Y = мнимая часть
     }
-    plotsOfConstellations[3]->graph(0)->setData(x, y);
-    plotsOfConstellations[3]->replot();
+    plotsOfConstellations[4]->graph(0)->setData(x, y);
+    plotsOfConstellations[4]->replot();
 }
 
 void GraphPlotting::PlotTimeDomainPlots(const OfdmResult &CurrentOfdm)
