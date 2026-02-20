@@ -67,12 +67,10 @@ void MetricsEval::computePSDWelch(
     psd = QVector<double>(nfft, 0.0);
 
     FFT myfft(nfft);
-
+    QVector<std::complex<double>> buffer(nfft);
     for (int k = 0; k < segments; ++k)
     {
         int start = k * step;
-
-        QVector<std::complex<double>> buffer(nfft, 0.0);
 
         for (int i = 0; i < winSize; ++i)
             buffer[i] = tx[start + i] * window[i];
