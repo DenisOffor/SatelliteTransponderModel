@@ -3,6 +3,7 @@
 #include <QVector>
 #include "HelpfullStructs.h"
 #include "ofdm.h"
+#include "pamodels.h"
 
 class SignalProcessing
 {
@@ -10,8 +11,10 @@ private:
     PaCurve* PACurve;
     QVector<Symbols> MySymbols;
     Source* MySource;
+    PAModels MyPAModels;
     OFDM myOfdm;
     OfdmResult CurrentOfdmResults;
+    GlobalResults CurrentRes;
 
     //functions
     Symbols GenerateNSymbols();

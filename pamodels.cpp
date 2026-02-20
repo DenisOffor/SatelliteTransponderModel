@@ -13,7 +13,17 @@ void PAModels::SalehModel(QVector<std::complex<double>>& sig,
 
     double gain_linear = qPow(10, linear_gain_dB / 10.0);
 
-    apply_IBO(sig, IBO_dB)
+    apply_IBO(sig, IBO_dB);
+    double sum = 0.0;
+
+    for (const auto& sample : sig)
+    {
+        sum += std::norm(sample);   // |x|^2 = real^2 + imag^2
+    }
+
+    double A_rms = std::sqrt(sum / sig.size());
+
+    qDebug() << "A_rms =" << A_rms;
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);
@@ -40,6 +50,7 @@ void PAModels::RappModel(QVector<std::complex<double>>& sig, QVector<double>& Co
 
     double gain_linear = qPow(10, linear_gain_dB / 10.0);
 
+    apply_IBO(sig, IBO_dB);
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);
@@ -62,6 +73,18 @@ void PAModels::GhorbaniModel(QVector<std::complex<double>>& sig, QVector<double>
 
     double gain_linear = qPow(10, linear_gain_dB / 10.0);
 
+    apply_IBO(sig, IBO_dB);
+    double sum = 0.0;
+
+    for (const auto& sample : sig)
+    {
+        sum += std::norm(sample);   // |x|^2 = real^2 + imag^2
+    }
+
+    double A_rms = std::sqrt(sum / sig.size());
+
+    qDebug() << "A_rms =" << A_rms;
+
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);
@@ -80,7 +103,7 @@ void PAModels::GhorbaniModel(QVector<std::complex<double>>& sig, QVector<double>
 void PAModels::apply_IBO(QVector<std::complex<double>>& tx, double IBO_dB)
 {
     if (tx.isEmpty()) {
-        return QVector<std::complex<double>>();
+        return;
     }
 
     // Вычисляем RMS
@@ -92,19 +115,16 @@ void PAModels::apply_IBO(QVector<std::complex<double>>& tx, double IBO_dB)
 
     // Защита от деления на ноль
     if (tx_rms == 0.0) {
-        return QVector<std::complex<double>>(tx.size(), 0.0);
+        return;
     }
 
     // Вычисляем целевое значение RMS с учетом IBO
     double A_rms_target = std::pow(10.0, -IBO_dB / 20.0);
 
     // Применяем нормировку и IBO за один проход
-    QVector<std::complex<double>> tx_IBO(tx.size());
     double scale = A_rms_target / tx_rms;  // объединенный коэффициент масштабирования
 
     for (int i = 0; i < tx.size(); ++i) {
-        tx_IBO[i] = tx[i] * scale;
+        tx[i] = tx[i] * scale;
     }
-
-    return tx_IBO;
 }

@@ -22,12 +22,13 @@ SignalProcessing::~SignalProcessing() {
 
 void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 {
+    OfdmParams ofdm_parms = GetOfdmParams();
     if(CurrentRecalcNeeds.RecalcSymbols || CurrentRecalcNeeds.FullRecalc)
         GeneratePacksOfSymbols();
+
     if(CurrentRecalcNeeds.RecalcOfdmSig || CurrentRecalcNeeds.FullRecalc || CurrentRecalcNeeds.RecalcNoiseSig ||
         CurrentRecalcNeeds.RecalcOfdmFc) {
         if(MySource->SigType == "OFDM") {
-            OfdmParams ofdm_parms = GetOfdmParams();
             if(CurrentRecalcNeeds.RecalcOfdmFc)
                 {}//myOfdm.changeFc(CurrentOfdmResults, ofdm_parms);
             else if(CurrentRecalcNeeds.RecalcNoiseSig)
@@ -36,12 +37,25 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
                 CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
                 CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
             }
+            CurrentRes.resize(CurrentOfdmResults.tx.size());
+            CurrentRes.tx_sig = CurrentOfdmResults.tx;
+            CurrentRes.pa_sig = CurrentOfdmResults.tx;
             MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentOfdmResults.tx, MySymbols[0].tr_sym_clean, ofdm_parms);
         }
         else if(MySource->SigType == "FDMA") {
 
         }
-        else if(MySource->SigType == "SC")
+        else if(MySource->SigType == "SC") {}
+
+        if(!CurrentRes.pa_sig.isEmpty()) {
+            if(MySource->PAModel == "Saleh")
+                MyPAModels.SalehModel(CurrentRes.pa_sig, MySource->PACoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+            else if (MySource->PAModel == "Rapp")
+                MyPAModels.RappModel(CurrentRes.pa_sig, MySource->PACoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+            else if (MySource->PAModel == "Ghorbani")
+                MyPAModels.GhorbaniModel(CurrentRes.pa_sig, MySource->PACoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+            MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentRes.pa_sig, MySymbols[0].tr_sym_clean, ofdm_parms);
+        }
         return;
     }
 }
@@ -210,8 +224,8 @@ PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const QVector<d
     PACurve->Working_point_dB_norm.x[0] = 20 * std::log10(r_work / r_sat);
     PACurve->Working_point_dB_norm.y[0] = 10 * std::log10(qPow(A_work, 2) / qPow(Asat, 2));
 
-    PACurve->Working_point_linear_norm.x[0] = r_work / r_sat;
-    PACurve->Working_point_linear_norm.y[0] = qPow(A_work, 2) / qPow(Asat, 2);
+    PACurve->Working_point_linear_norm.x[0] = qPow(10.0, PACurve->Working_point_dB_norm.x[0] / 10.0);
+    PACurve->Working_point_linear_norm.y[0] = qPow(10.0, PACurve->Working_point_dB_norm.y[0] / 10.0);
 
     return *PACurve;
 }
@@ -223,11 +237,13 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource->NumSym = UISource.NumSym;
     MySource->M = UISource.M;
     MySource->SigType = UISource.SigType;
+
     MySource->SC_f_carrier = UISource.SC_f_carrier;
     MySource->SC_symrate = UISource.SC_symrate;
     MySource->SC_rolloff = UISource.SC_rolloff;
     MySource->SC_filter_length = UISource.SC_filter_length;
     MySource->SC_FilterType = UISource.SC_FilterType;
+
     MySource->OFDM_f_carrier = UISource.OFDM_f_carrier;
     MySource->OFDM_Nfft = UISource.OFDM_Nfft;
     MySource->OFDM_f_carrier = UISource.OFDM_f_carrier;
@@ -235,13 +251,20 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource->OFDM_GB_DC = UISource.OFDM_GB_DC;
     MySource->OFDM_GB_Nyq = UISource.OFDM_GB_Nyq;
     MySource->OFDM_cycle_prefix = UISource.OFDM_cycle_prefix;
+
     MySource->FDMA_f_carrier = UISource.FDMA_f_carrier;
     MySource->FDMA_symrate = UISource.FDMA_symrate;
     MySource->FDMA_num_subcarriers = UISource.FDMA_num_subcarriers;
     MySource->FDMA_step_carrier = UISource.FDMA_step_carrier;
+
     MySource->oversampling = UISource.oversampling;
     MySource->fs = UISource.fs;
     MySource->SNRSig = UISource.SNRSig;
+
+    MySource->PAModel = UISource.PAModel;
+    MySource->IBO_dB = UISource.IBO_dB;
+    MySource->linear_gain_dB = UISource.linear_gain_dB;
+    MySource->PACoeffs = UISource.PACoeffs;
 }
 
 Symbols &SignalProcessing::getSymbols()

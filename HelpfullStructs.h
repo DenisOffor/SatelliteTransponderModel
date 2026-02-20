@@ -8,7 +8,8 @@
 #include <complex>
 #include <cmath>
 #include <random>
-
+#include "QDebug"
+#include "fft.h"
 
 struct Curve2D {
     QVector<double> dB;
@@ -114,6 +115,11 @@ struct Source {
     int oversampling;
     int fs;
     int SNRSig;
+
+    QString PAModel;
+    int linear_gain_dB;
+    int IBO_dB;
+    QVector<double> PACoeffs;
 };
 
 struct NeedToRecalc{
@@ -140,6 +146,20 @@ struct NeedToRecalc{
         RecalcOfdmFc = false;
         RecalcOfdmSig = false;
         FullRecalc = false;
+    }
+};
+
+struct GlobalResults {
+    QVector<std::complex<double>> tx_sig;
+    QVector<std::complex<double>> pa_sig;
+    QVector<std::complex<double>> pa_plus_dpd_sig;
+    QVector<std::complex<double>> rec_sig;
+
+    void resize(int size) {
+        tx_sig.resize(size);
+        pa_sig.resize(size);
+        pa_plus_dpd_sig.resize(size);
+        rec_sig.resize(size);
     }
 };
 

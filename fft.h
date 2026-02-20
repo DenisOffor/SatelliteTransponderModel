@@ -13,7 +13,6 @@ public:
 
     QVector<std::complex<double>> fft(const QVector<std::complex<double>>& x);
     QVector<std::complex<double>> ifft(const QVector<std::complex<double>>& X);
-
 private:
     int m_n;
     fftw_plan m_planForward;
