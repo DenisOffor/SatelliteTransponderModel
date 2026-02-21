@@ -13,17 +13,9 @@ void PAModels::SalehModel(QVector<std::complex<double>>& sig,
 
     double gain_linear = qPow(10, linear_gain_dB / 10.0);
 
-    apply_IBO(sig, IBO_dB);
-    double sum = 0.0;
+    double A_sat = 1.0 / std::sqrt(Coeffs[1]);
+    apply_IBO(sig, IBO_dB, A_sat);
 
-    for (const auto& sample : sig)
-    {
-        sum += std::norm(sample);   // |x|^2 = real^2 + imag^2
-    }
-
-    double A_rms = std::sqrt(sum / sig.size());
-
-    qDebug() << "A_rms =" << A_rms;
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);
@@ -50,7 +42,8 @@ void PAModels::RappModel(QVector<std::complex<double>>& sig, QVector<double>& Co
 
     double gain_linear = qPow(10, linear_gain_dB / 10.0);
 
-    apply_IBO(sig, IBO_dB);
+    double A_sat = Coeffs[0];
+    apply_IBO(sig, IBO_dB, A_sat);
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);
@@ -72,59 +65,86 @@ void PAModels::GhorbaniModel(QVector<std::complex<double>>& sig, QVector<double>
     QVector<double> phase_out(sig.size());
 
     double gain_linear = qPow(10, linear_gain_dB / 10.0);
+    double A_sat = find_Asat_Ghorbani(Coeffs, gain_linear);
+    apply_IBO(sig, IBO_dB, A_sat);
+    double A_rms = 0.0;
 
-    apply_IBO(sig, IBO_dB);
-    double sum = 0.0;
-
-    for (const auto& sample : sig)
+    if (!sig.isEmpty())
     {
-        sum += std::norm(sample);   // |x|^2 = real^2 + imag^2
+        double sum = 0.0;
+
+        for (const auto& sample : sig)
+            sum += std::norm(sample);
+
+        A_rms = std::sqrt(sum / sig.size());
     }
 
-    double A_rms = std::sqrt(sum / sig.size());
-
     qDebug() << "A_rms =" << A_rms;
-
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);
 
         amplitude_out[i] = gain_linear * Coeffs[0] * amplitude_in[i]
                            / (1 + Coeffs[1] * qPow(amplitude_in[i], 2) + Coeffs[2] *
-                            qPow(amplitude_in[i], 4));;
+                                                                             qPow(amplitude_in[i], 4));;
         phase_out[i] = Coeffs[3] * qPow(amplitude_in[i], 2) / (1 + Coeffs[4]
-                            * qPow(amplitude_in[i], 2) + Coeffs[5]
-                            * qPow(amplitude_in[i], 4)) * 180 / 3.14;
+                                                                       * qPow(amplitude_in[i], 2) + Coeffs[5]
+                                                                     * qPow(amplitude_in[i], 4));
 
+        // Применяем искажения
         sig[i] = std::polar(amplitude_out[i], phase_in[i] + phase_out[i]);
     }
 }
 
-void PAModels::apply_IBO(QVector<std::complex<double>>& tx, double IBO_dB)
+void PAModels::apply_IBO(QVector<std::complex<double>>& tx,
+                         double IBO_dB,
+                         double A_sat)
 {
-    if (tx.isEmpty()) {
+    if (tx.isEmpty())
         return;
-    }
 
-    // Вычисляем RMS
-    double sum_squares = 0.0;
-    for (const auto& sample : tx) {
-        sum_squares += std::norm(sample);
-    }
-    double tx_rms = std::sqrt(sum_squares / tx.size());
+    double sum = 0.0;
+    for (const auto& s : tx)
+        sum += std::norm(s);
 
-    // Защита от деления на ноль
-    if (tx_rms == 0.0) {
+    double rms = std::sqrt(sum / tx.size());
+
+    if (rms == 0.0)
         return;
+
+    // Входная мощность относительно насыщения
+    double P_sat = A_sat * A_sat;
+
+    double P_in_target = P_sat / std::pow(10.0, IBO_dB / 10.0);
+
+    double A_rms_target = std::sqrt(P_in_target);
+
+    double scale = A_rms_target / rms;
+
+    for (auto& s : tx)
+        s *= scale;
+}
+
+double PAModels::find_Asat_Ghorbani(const QVector<double>& c,
+                                    double gain_linear)
+{
+    double Amax = 10.0;      // верхняя граница поиска
+    double step = 0.0005;    // шаг
+
+    double A_sat = 0.0;
+    double max_out = 0.0;
+
+    for (double Ain = 0.0; Ain < Amax; Ain += step)
+    {
+        double Aout = c[0] * Ain /
+                      (1.0 + c[1]*Ain*Ain + c[2]*pow(Ain,4));
+
+        if (Aout > max_out)
+        {
+            max_out = Aout;
+            A_sat = Ain;
+        }
     }
 
-    // Вычисляем целевое значение RMS с учетом IBO
-    double A_rms_target = std::pow(10.0, -IBO_dB / 20.0);
-
-    // Применяем нормировку и IBO за один проход
-    double scale = A_rms_target / tx_rms;  // объединенный коэффициент масштабирования
-
-    for (int i = 0; i < tx.size(); ++i) {
-        tx[i] = tx[i] * scale;
-    }
+    return A_sat;
 }

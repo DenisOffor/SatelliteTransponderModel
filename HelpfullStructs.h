@@ -119,33 +119,35 @@ struct Source {
     QString PAModel;
     int linear_gain_dB;
     int IBO_dB;
-    QVector<double> PACoeffs;
+    QVector<double> SalehCoeffs;
+    QVector<double> RappCoeffs;
+    QVector<double> GhorbaniCoeffs;
 };
 
 struct NeedToRecalc{
     bool RecalcSymbols;
     bool RecalcNoiseSym;
     bool RecalcNoiseSig;
-    bool RecalcOfdmFc;
-    bool RecalcOfdmSig;
+    bool RecalcSig;
     bool FullRecalc;
+    bool PARecalc;
 
     void init() {
         RecalcSymbols = true;
         RecalcNoiseSym = true;
         RecalcNoiseSig = true;
-        RecalcOfdmFc = true;
-        RecalcOfdmSig = true;
+        RecalcSig = true;
         FullRecalc = true;
+        PARecalc = true;
     }
 
     void clear() {
         RecalcSymbols = false;
         RecalcNoiseSym = false;
         RecalcNoiseSig = false;
-        RecalcOfdmFc = false;
-        RecalcOfdmSig = false;
+        RecalcSig = false;
         FullRecalc = false;
+        PARecalc = false;
     }
 };
 
@@ -160,6 +162,21 @@ struct GlobalResults {
         pa_sig.resize(size);
         pa_plus_dpd_sig.resize(size);
         rec_sig.resize(size);
+    }
+};
+
+struct PSDdata {
+    QVector<QVector<double>> f;
+    QVector<QVector<double>> PSD;
+
+    void resize(int n) {
+        f.resize(n);
+        PSD.resize(n);
+    }
+
+    void clear() {
+        f.clear();
+        PSD.clear();
     }
 };
 

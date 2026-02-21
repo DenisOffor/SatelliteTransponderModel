@@ -10,7 +10,8 @@ public:
     void RappModel(QVector<std::complex<double>>& sig, QVector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB);
     void GhorbaniModel(QVector<std::complex<double>>& sig, QVector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB);
     void MemoryPolinomalModel(QVector<std::complex<double>>& sig, QVector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB);
-    void apply_IBO(QVector<std::complex<double>>& tx, double IBO_dB);
+    void apply_IBO(QVector<std::complex<double>>& tx, double IBO_dB, double A_sat);
+    double find_Asat_Ghorbani(const QVector<double>& c, double gain_linear);
 };
 
 #endif // PAMODELS_H

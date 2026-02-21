@@ -9,15 +9,17 @@ GraphPlotting::~GraphPlotting() {
     for(int i = 0; i < 6; i++) {
         delete plotsOfConstellations[i];
         delete plotsOfTimeDomain[i];
+        delete plotsOfPSD[i];
     }
 }
 
 void GraphPlotting::init(QVector<QWidget*> SetupGraphWidgets, QVector<QWidget*> ConstellationsGraphWidgets,
-                         QVector<QWidget*> TimeDomainGraphWidgets) {
+                         QVector<QWidget*> TimeDomainGraphWidgets, QVector<QWidget*> PSDGraphWidgets) {
     InitializeIdealSymConstPlot(SetupGraphWidgets[0]);
     InitializePaCurvePlot(SetupGraphWidgets[1]);
     InitializeConstellationsPlotting(ConstellationsGraphWidgets);
     InitializeTimeDomainPlotting(TimeDomainGraphWidgets);
+    InitializePSDPlotting(PSDGraphWidgets);
 }
 
 void GraphPlotting::PlotIdealSymConstellation(const QString ModType) {
@@ -113,6 +115,23 @@ void GraphPlotting::PlotTimeDomainPlots(const OfdmResult &CurrentOfdm)
         }
         else plotsOfTimeDomain[0]->xAxis->setRange(xRange);
         plotsOfTimeDomain[0]->replot();
+    }
+}
+
+void GraphPlotting::PlotPSDPlots(const QVector<QVector<double>>& PSDs, const QVector<QVector<double>>& freqs)
+{
+    if(!PSDs.isEmpty() && !freqs.isEmpty()) {
+        plotsOfPSD[0]->graph(0)->setData(freqs[0], PSDs[0]);
+        plotsOfPSD[1]->graph(0)->setData(freqs[0], PSDs[1]);
+        plotsOfPSD[0]->graph(0)->rescaleAxes();
+        plotsOfPSD[1]->graph(0)->rescaleAxes();
+        plotsOfPSD[0]->replot();
+        plotsOfPSD[1]->replot();
+
+        plotsOfPSD[3]->graph(0)->setData(freqs[0], PSDs[0]);
+        plotsOfPSD[3]->graph(1)->setData(freqs[0], PSDs[1]);
+        plotsOfPSD[3]->graph(0)->rescaleAxes();
+        plotsOfPSD[3]->replot();
     }
 }
 
@@ -239,6 +258,39 @@ void GraphPlotting::InitializeTimeDomainPlotting(QVector<QWidget*> TimeDomainGra
         plotsOfTimeDomain[i]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
         plotsOfTimeDomain[i]->axisRect()->setRangeZoom(Qt::Horizontal);
         plotsOfTimeDomain[i]->axisRect()->setRangeDrag(Qt::Horizontal);
+    }
+}
+
+void GraphPlotting::InitializePSDPlotting(QVector<QWidget*> PSDGraphWidgets)
+{
+    for(int i = 0; i < 6; i++) {
+        plotsOfPSD[i] = new QCustomPlot(PSDGraphWidgets[i]);
+        QVBoxLayout* layout = new QVBoxLayout(PSDGraphWidgets[i]);
+        layout->setContentsMargins(3, 3, 3, 3);
+        plotsOfPSD[i]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        PSDGraphWidgets[i]->layout()->addWidget(plotsOfPSD[i]);
+        plotsOfPSD[i]->addGraph();
+        plotsOfPSD[i]->graph(0)->setAdaptiveSampling(true);
+        plotsOfPSD[i]->graph(0)->setPen(QPen(Qt::black));
+        plotsOfPSD[i]->graph(0)->setLineStyle(QCPGraph::lsLine);
+        plotsOfPSD[i]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
+        if(i >= 3) {
+            plotsOfPSD[i]->addGraph();
+            plotsOfPSD[i]->graph(0)->setName("Перед PA");
+            plotsOfPSD[i]->graph(1)->setName("После PA");
+            plotsOfPSD[i]->legend->setVisible(true);
+            plotsOfPSD[i]->graph(1)->setPen(QPen(Qt::red));
+            plotsOfPSD[i]->graph(1)->setLineStyle(QCPGraph::lsLine);
+            plotsOfPSD[i]->graph(1)->setScatterStyle(QCPScatterStyle::ssNone);
+        }
+        plotsOfPSD[i]->xAxis->setLabel("f, МГц");
+        plotsOfPSD[i]->xAxis->setNumberFormat("f");
+        plotsOfPSD[i]->xAxis->setNumberPrecision(1);
+        plotsOfPSD[i]->yAxis->setLabel("Amplitude");
+        plotsOfPSD[i]->replot();
+        plotsOfPSD[i]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+        plotsOfPSD[i]->axisRect()->setRangeZoom(Qt::Horizontal);
+        plotsOfPSD[i]->axisRect()->setRangeDrag(Qt::Horizontal);
     }
 }
 

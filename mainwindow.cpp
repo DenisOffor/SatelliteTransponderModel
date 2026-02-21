@@ -16,7 +16,11 @@ MainWindow::MainWindow(QWidget *parent)
     QVector<QWidget*> TimeDomainGraphWidgets;
     TimeDomainGraphWidgets << ui->TimeDomainGraph1_Widget << ui->TimeDomainGraph2_Widget << ui->TimeDomainGraph3_Widget
                                << ui->TimeDomainGraph4_Widget << ui->TimeDomainGraph5_Widget << ui->TimeDomainGraph6_Widget;
-    Graphs.init(SetupGraphWidgets, ConstellationsGraphWidgets, TimeDomainGraphWidgets);
+    QVector<QWidget*> PSDGraphWidgets;
+    PSDGraphWidgets << ui->PSDPageGraph1_Widget << ui->PSDPageGraph2_Widget << ui->PSDPageGraph3_Widget
+                           << ui->PSDPageGraph4_Widget << ui->PSDPageGraph5_Widget << ui->PSDPageGraph6_Widget;
+
+    Graphs.init(SetupGraphWidgets, ConstellationsGraphWidgets, TimeDomainGraphWidgets, PSDGraphWidgets);
 
     //Connecting chosen signal type with settings of this signal and setting starting page
     connect(ui->SignalTypeComboBox, &QComboBox::currentTextChanged, this, &MainWindow::SignalTypeComboBoxTextChanged);
@@ -47,6 +51,7 @@ void MainWindow::MakeMainCalcAndPlot()
     MySigProc.MainLogicWork(CurrentRecalcNeeds);
     Graphs.PlotConstellationsPlots(MySigProc.getSymbols());
     Graphs.PlotTimeDomainPlots(MySigProc.getTimeSignal());
+    Graphs.PlotPSDPlots(MySigProc.getPSDs(), MySigProc.getFreq());
 }
 
 void MainWindow::PaCurvePlot() {
@@ -84,7 +89,7 @@ void MainWindow::DataUpdate()
     CurrentRecalcNeeds.clear();
     if(senderObj == ui->ModTypeComboBox) { UISource.ModType = ui->ModTypeComboBox->currentText(); CurrentRecalcNeeds.FullRecalc = true; }
     else if(senderObj == ui->SNRSymSpinBox) { UISource.SNRSymdB = ui->SNRSymSpinBox->value(); CurrentRecalcNeeds.RecalcNoiseSym = true;
-                                         CurrentRecalcNeeds.RecalcOfdmSig = true; CurrentRecalcNeeds.RecalcNoiseSig = true; }
+                                         CurrentRecalcNeeds.RecalcSig = true; CurrentRecalcNeeds.RecalcNoiseSig = true; }
     else if(senderObj == ui->NumSymSpinBox) { UISource.NumSym = ui->NumSymSpinBox->value(); CurrentRecalcNeeds.FullRecalc = true; }
     else if(senderObj == ui->SignalTypeComboBox) { UISource.SigType = ui->SignalTypeComboBox->currentText(); CurrentRecalcNeeds.FullRecalc = true; }
 
@@ -94,36 +99,42 @@ void MainWindow::DataUpdate()
     else if(senderObj == ui->SC_FilterLength_SpinBox) { UISource.SC_filter_length = ui->SC_FilterLength_SpinBox->value(); }
     else if(senderObj == ui->SC_FilterType_ComboBox) { UISource.SC_FilterType = ui->SC_FilterType_ComboBox->currentText(); }
 
-    if(senderObj == ui->OFDM_fc_SpinBox) { UISource.OFDM_f_carrier = ui->OFDM_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcOfdmFc = true; }
-    else if(senderObj == ui->OFDM_Nfft_SpinBox) { UISource.OFDM_Nfft = ui->OFDM_Nfft_SpinBox->value(); CurrentRecalcNeeds.RecalcOfdmSig = true; }
-    else if(senderObj == ui->OFDM_GB_DC_SpinBox) { UISource.OFDM_GB_DC = ui->OFDM_GB_DC_SpinBox->value(); CurrentRecalcNeeds.RecalcOfdmFc = true;}
-    else if(senderObj == ui->OFDM_GBNyq_SpinBox) { UISource.OFDM_GB_Nyq = ui->OFDM_GBNyq_SpinBox->value(); CurrentRecalcNeeds.RecalcOfdmFc = true; }
-    else if(senderObj == ui->OFDM_CyclePref_SpinBox) { UISource.OFDM_cycle_prefix = ui->OFDM_CyclePref_SpinBox->value(); CurrentRecalcNeeds.RecalcOfdmFc = true; }
+    if(senderObj == ui->OFDM_fc_SpinBox) { UISource.OFDM_f_carrier = ui->OFDM_fc_SpinBox->value(); }
+    else if(senderObj == ui->OFDM_Nfft_SpinBox) { UISource.OFDM_Nfft = ui->OFDM_Nfft_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
+    else if(senderObj == ui->OFDM_GB_DC_SpinBox) { UISource.OFDM_GB_DC = ui->OFDM_GB_DC_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true;}
+    else if(senderObj == ui->OFDM_GBNyq_SpinBox) { UISource.OFDM_GB_Nyq = ui->OFDM_GBNyq_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
+    else if(senderObj == ui->OFDM_CyclePref_SpinBox) { UISource.OFDM_cycle_prefix = ui->OFDM_CyclePref_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
 
     if(senderObj == ui->FDMA_fc_SpinBox) { UISource.FDMA_f_carrier = ui->FDMA_fc_SpinBox->value(); }
     else if(senderObj == ui->FDMA_SymRate_SpinBox) { UISource.FDMA_symrate = ui->FDMA_SymRate_SpinBox->value(); }
     else if(senderObj == ui->FDMA_NumCarriers_SpinBox) { UISource.FDMA_num_subcarriers = ui->FDMA_NumCarriers_SpinBox->value(); }
     else if(senderObj == ui->FDMA_StepCarrier_SpinBox) { UISource.FDMA_step_carrier = ui->FDMA_StepCarrier_SpinBox->value(); }
 
-    if(senderObj == ui->Oversapmling_SpinBox) { UISource.oversampling = ui->Oversapmling_SpinBox->value(); CurrentRecalcNeeds.RecalcOfdmFc = true; }
-    else if(senderObj == ui->Fs_SpinBox) { UISource.fs = ui->Fs_SpinBox->value(); CurrentRecalcNeeds.RecalcOfdmFc = true; }
+    if(senderObj == ui->Oversapmling_SpinBox) { UISource.oversampling = ui->Oversapmling_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
+    else if(senderObj == ui->Fs_SpinBox) { UISource.fs = ui->Fs_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     else if(senderObj == ui->SNRSig_SpinBox) { UISource.SNRSig = ui->SNRSig_SpinBox->value(); CurrentRecalcNeeds.RecalcNoiseSig = true;}
 
     if(senderObj == ui->SalehCoef1_doubleSpinBox || senderObj == ui->SalehCoef2_doubleSpinBox ||
-        senderObj == ui->SalehCoef3_doubleSpinBox || senderObj == ui->SalehCoef4_doubleSpinBox)
-        UISource.PACoeffs << ui->SalehCoef1_doubleSpinBox->value() << ui->SalehCoef2_doubleSpinBox->value()
+        senderObj == ui->SalehCoef3_doubleSpinBox || senderObj == ui->SalehCoef4_doubleSpinBox) {
+        UISource.SalehCoeffs << ui->SalehCoef1_doubleSpinBox->value() << ui->SalehCoef2_doubleSpinBox->value()
             << ui->SalehCoef3_doubleSpinBox->value() << ui->SalehCoef4_doubleSpinBox->value();
-    else if(senderObj == ui->RappAsatCoef_doubleSpinBox || senderObj == ui->RappPCoef_doubleSpinBox)
-        UISource.PACoeffs << ui->RappAsatCoef_doubleSpinBox->value() << ui->RappPCoef_doubleSpinBox->value();
+        if(ui->PAModel_ComboBox->currentText() == "Saleh") CurrentRecalcNeeds.PARecalc = true;
+    }
+    else if(senderObj == ui->RappAsatCoef_doubleSpinBox || senderObj == ui->RappPCoef_doubleSpinBox) {
+        UISource.RappCoeffs << ui->RappAsatCoef_doubleSpinBox->value() << ui->RappPCoef_doubleSpinBox->value();
+        if(ui->PAModel_ComboBox->currentText() == "Rapp") CurrentRecalcNeeds.PARecalc = true;
+    }
     else if(senderObj == ui->GhorbaniCoef1_doubleSpinBox || senderObj == ui->GhorbaniCoef2_doubleSpinBox
         || senderObj == ui->GhorbaniCoef3_doubleSpinBox || senderObj == ui->GhorbaniCoef4_doubleSpinBox
-        || senderObj == ui->GhorbaniCoef5_doubleSpinBox || senderObj == ui->GhorbaniCoef6_doubleSpinBox)
-        UISource.PACoeffs << ui->GhorbaniCoef1_doubleSpinBox->value() << ui->GhorbaniCoef2_doubleSpinBox->value()
+               || senderObj == ui->GhorbaniCoef5_doubleSpinBox || senderObj == ui->GhorbaniCoef6_doubleSpinBox) {
+        UISource.GhorbaniCoeffs << ui->GhorbaniCoef1_doubleSpinBox->value() << ui->GhorbaniCoef2_doubleSpinBox->value()
             << ui->GhorbaniCoef3_doubleSpinBox->value() << ui->GhorbaniCoef4_doubleSpinBox->value()
             << ui->GhorbaniCoef5_doubleSpinBox->value() << ui->GhorbaniCoef6_doubleSpinBox->value();
-    else if(senderObj == ui->LinearGain_SpinBox) { UISource.linear_gain_dB = ui->LinearGain_SpinBox->value(); CurrentRecalcNeeds.RecalcOfdmSig = true;}
-    else if(senderObj == ui->IBO_SpinBox) { UISource.IBO_dB = ui->IBO_SpinBox->value(); CurrentRecalcNeeds.RecalcOfdmSig = true;}
-    else if(senderObj == ui->PAModel_ComboBox) { UISource.PAModel = ui->PAModel_ComboBox->currentText(); CurrentRecalcNeeds.RecalcOfdmSig = true;}
+        if(ui->PAModel_ComboBox->currentText() == "Ghorbani") CurrentRecalcNeeds.PARecalc = true;
+    }
+    else if(senderObj == ui->LinearGain_SpinBox) { UISource.linear_gain_dB = ui->LinearGain_SpinBox->value(); CurrentRecalcNeeds.PARecalc = true;}
+    else if(senderObj == ui->IBO_SpinBox) { UISource.IBO_dB = ui->IBO_SpinBox->value(); CurrentRecalcNeeds.PARecalc = true;}
+    else if(senderObj == ui->PAModel_ComboBox) { UISource.PAModel = ui->PAModel_ComboBox->currentText(); CurrentRecalcNeeds.PARecalc = true;}
 
 
     MySigProc.DataUpdate(UISource);
@@ -158,8 +169,12 @@ void MainWindow::FirstDataUpdate()
     UISource.oversampling = ui->Oversapmling_SpinBox->value();
     UISource.fs = ui->Fs_SpinBox->value();
     UISource.SNRSig = ui->SNRSig_SpinBox->value();
-    UISource.PACoeffs << ui->SalehCoef1_doubleSpinBox->value() << ui->SalehCoef2_doubleSpinBox->value()
+    UISource.SalehCoeffs << ui->SalehCoef1_doubleSpinBox->value() << ui->SalehCoef2_doubleSpinBox->value()
                       << ui->SalehCoef3_doubleSpinBox->value() << ui->SalehCoef4_doubleSpinBox->value();
+    UISource.RappCoeffs << ui->RappAsatCoef_doubleSpinBox->value() << ui->RappPCoef_doubleSpinBox->value();
+    UISource.GhorbaniCoeffs << ui->GhorbaniCoef1_doubleSpinBox->value() << ui->GhorbaniCoef2_doubleSpinBox->value()
+                         << ui->GhorbaniCoef3_doubleSpinBox->value() << ui->GhorbaniCoef4_doubleSpinBox->value()
+                         << ui->GhorbaniCoef5_doubleSpinBox->value() << ui->GhorbaniCoef6_doubleSpinBox->value();
     UISource.linear_gain_dB = ui->LinearGain_SpinBox->value();
     UISource.IBO_dB = ui->IBO_SpinBox->value();
     UISource.PAModel = ui->PAModel_ComboBox->currentText();

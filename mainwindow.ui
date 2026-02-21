@@ -3226,7 +3226,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>139</height>
+                 <height>804</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -3368,7 +3368,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>GroupBox</string>
+                     <string>Спектр до УМ без DPD и после</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_61">
                      <property name="spacing">
@@ -3407,7 +3407,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>GroupBox</string>
+                     <string>Спектр до УМ с DPD и после</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_62">
                      <property name="spacing">

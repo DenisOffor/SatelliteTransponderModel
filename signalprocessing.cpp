@@ -12,6 +12,8 @@ SignalProcessing::SignalProcessing() {
         PACurve->r_in[i] = qSqrt(PACurve->P_in_abs.linear[i]);
     }
     MySource = new Source;
+    freq.resize(6);
+    PSDs.resize(6);
 }
 
 
@@ -22,42 +24,20 @@ SignalProcessing::~SignalProcessing() {
 
 void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 {
-    OfdmParams ofdm_parms = GetOfdmParams();
     if(CurrentRecalcNeeds.RecalcSymbols || CurrentRecalcNeeds.FullRecalc)
         GeneratePacksOfSymbols();
 
-    if(CurrentRecalcNeeds.RecalcOfdmSig || CurrentRecalcNeeds.FullRecalc || CurrentRecalcNeeds.RecalcNoiseSig ||
-        CurrentRecalcNeeds.RecalcOfdmFc) {
-        if(MySource->SigType == "OFDM") {
-            if(CurrentRecalcNeeds.RecalcOfdmFc)
-                {}//myOfdm.changeFc(CurrentOfdmResults, ofdm_parms);
-            else if(CurrentRecalcNeeds.RecalcNoiseSig)
-                myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
-            else {
-                CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
-                CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
-            }
-            CurrentRes.resize(CurrentOfdmResults.tx.size());
-            CurrentRes.tx_sig = CurrentOfdmResults.tx;
-            CurrentRes.pa_sig = CurrentOfdmResults.tx;
-            MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentOfdmResults.tx, MySymbols[0].tr_sym_clean, ofdm_parms);
-        }
-        else if(MySource->SigType == "FDMA") {
+    if(CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc || CurrentRecalcNeeds.RecalcNoiseSig)
+        TransmitSignalProcessing(CurrentRecalcNeeds);
 
-        }
-        else if(MySource->SigType == "SC") {}
+    if(CurrentRecalcNeeds.PARecalc)
+        if(!CurrentRes.pa_sig.isEmpty())
+            PAProcessing(CurrentRecalcNeeds);
 
-        if(!CurrentRes.pa_sig.isEmpty()) {
-            if(MySource->PAModel == "Saleh")
-                MyPAModels.SalehModel(CurrentRes.pa_sig, MySource->PACoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
-            else if (MySource->PAModel == "Rapp")
-                MyPAModels.RappModel(CurrentRes.pa_sig, MySource->PACoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
-            else if (MySource->PAModel == "Ghorbani")
-                MyPAModels.GhorbaniModel(CurrentRes.pa_sig, MySource->PACoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
-            MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentRes.pa_sig, MySymbols[0].tr_sym_clean, ofdm_parms);
-        }
-        return;
-    }
+    if(!CurrentRes.pa_sig.isEmpty())
+        ReceiveSignalProcessing(CurrentRecalcNeeds);
+
+    MyMetricsEval.comparePSD(CurrentRes.tx_sig, CurrentRes.pa_sig, MySource->fs, freq[0], PSDs[0], PSDs[1]);
 }
 
 void SignalProcessing::GeneratePacksOfSymbols()
@@ -133,6 +113,45 @@ OfdmParams SignalProcessing::GetOfdmParams()
     ofdm_parms.fs = MySource->fs;
     ofdm_parms.oversampling = MySource->oversampling;
     return ofdm_parms;
+}
+
+void SignalProcessing::TransmitSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
+{
+    OfdmParams ofdm_parms = GetOfdmParams();
+    if(MySource->SigType == "OFDM") {
+        if(CurrentRecalcNeeds.RecalcNoiseSig)
+            myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
+        else {
+            CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
+            CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
+        }
+        CurrentRes.resize(CurrentOfdmResults.tx.size());
+        CurrentRes.tx_sig = CurrentOfdmResults.tx;
+        CurrentRes.pa_sig = CurrentOfdmResults.tx;
+        MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentOfdmResults.tx, MySymbols[0].tr_sym_clean, ofdm_parms);
+    }
+    else if(MySource->SigType == "FDMA") {
+
+    }
+    else if(MySource->SigType == "SC") {}
+}
+
+void SignalProcessing::PAProcessing(NeedToRecalc CurrentRecalcNeeds)
+{
+    if(!CurrentRes.pa_sig.isEmpty()) {
+        if(MySource->PAModel == "Saleh")
+            MyPAModels.SalehModel(CurrentRes.pa_sig, MySource->SalehCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+        else if (MySource->PAModel == "Rapp")
+            MyPAModels.RappModel(CurrentRes.pa_sig, MySource->RappCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+        else if (MySource->PAModel == "Ghorbani")
+            MyPAModels.GhorbaniModel(CurrentRes.pa_sig, MySource->GhorbaniCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+    }
+}
+
+void SignalProcessing::ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
+{
+    OfdmParams ofdm_parms = GetOfdmParams();
+    MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentRes.pa_sig, MySymbols[0].tr_sym_clean, ofdm_parms);
 }
 
 PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const QVector<double> Coefs, const int IBO_dB, const int LinearGaindB)
@@ -264,7 +283,9 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource->PAModel = UISource.PAModel;
     MySource->IBO_dB = UISource.IBO_dB;
     MySource->linear_gain_dB = UISource.linear_gain_dB;
-    MySource->PACoeffs = UISource.PACoeffs;
+    MySource->SalehCoeffs = UISource.SalehCoeffs;
+    MySource->RappCoeffs = UISource.RappCoeffs;
+    MySource->GhorbaniCoeffs = UISource.GhorbaniCoeffs;
 }
 
 Symbols &SignalProcessing::getSymbols()
@@ -278,7 +299,15 @@ OfdmResult &SignalProcessing::getTimeSignal()
         return CurrentOfdmResults;
 }
 
+QVector<QVector<double> > SignalProcessing::getFreq()
+{
+    return freq;
+}
 
+QVector<QVector<double> > SignalProcessing::getPSDs()
+{
+    return PSDs;
+}
 
 
 

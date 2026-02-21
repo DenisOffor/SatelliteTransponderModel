@@ -62,15 +62,20 @@ void MetricsEval::computePSDWelch(
         return;
 
     auto window = hamming(winSize);
-    int segments = (tx.size() - overlap) / step;
+
+    // MATLAB-совместимое число сегментов
+    int segments = 1 + (tx.size() - winSize) / step;
 
     psd = QVector<double>(nfft, 0.0);
 
     FFT myfft(nfft);
     QVector<std::complex<double>> buffer(nfft);
+
     for (int k = 0; k < segments; ++k)
     {
         int start = k * step;
+
+        std::fill(buffer.begin(), buffer.end(), 0.0);
 
         for (int i = 0; i < winSize; ++i)
             buffer[i] = tx[start + i] * window[i];
@@ -81,25 +86,35 @@ void MetricsEval::computePSDWelch(
             psd[i] += std::norm(spectrum[i]);
     }
 
-    // усреднение
+    // усреднение по сегментам
     for (int i = 0; i < nfft; ++i)
         psd[i] /= segments;
 
-    // нормировка окна
-    double windowPower = 0.0;
+    // мощность окна
+    double U = 0.0;
     for (double w : window)
-        windowPower += w * w;
+        U += w * w;
 
-    double scale = windowPower * Fs;
+    U /= winSize;   // MATLAB именно так делает
+
+    // НОРМИРОВКА (ключевой момент!)
+    double scale = Fs * winSize * U;
 
     for (int i = 0; i < nfft; ++i)
         psd[i] /= scale;
 
-    // fftshift (centered)
+    // fftshift
     std::rotate(psd.begin(), psd.begin() + nfft/2, psd.end());
 
     // Частотная ось
     freq.resize(nfft);
     for (int i = 0; i < nfft; ++i)
         freq[i] = (i - nfft/2) * Fs / nfft;
+
+    // перевод в dB
+    const double eps = 1e-20;
+    for (int i = 0; i < nfft; ++i) {
+        freq[i] = freq[i] / 1e6;
+        psd[i] = 10.0 * std::log10(psd[i] + eps);
+    }
 }
