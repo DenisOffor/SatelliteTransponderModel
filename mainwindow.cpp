@@ -24,12 +24,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     //Connecting chosen signal type with settings of this signal and setting starting page
     connect(ui->SignalTypeComboBox, &QComboBox::currentTextChanged, this, &MainWindow::SignalTypeComboBoxTextChanged);
-    ui->PagesOfSigParametersStack->setCurrentWidget(ui->OFDM_page);
+    ui->PagesOfSigParametersStack->setCurrentWidget(ui->SC_page);
 
     //Connecting type of modulation and his signal constellation
     connect(ui->ModTypeComboBox, &QComboBox::currentTextChanged, &Graphs, &GraphPlotting::PlotIdealSymConstellation);
 
-    FirstDataUpdate();
     setupMainPipelineTree();
     setupLabels();
     setupAdaptiveWindow();
@@ -39,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     SetupSelectedGraphsListWidget();
     SetupMainLogicWork();
     CurrentRecalcNeeds.init();
+    FirstDataUpdate();
 }
 
 MainWindow::~MainWindow()
@@ -49,9 +49,11 @@ MainWindow::~MainWindow()
 void MainWindow::MakeMainCalcAndPlot()
 {
     MySigProc.MainLogicWork(CurrentRecalcNeeds);
-    Graphs.PlotConstellationsPlots(MySigProc.getSymbols());
-    Graphs.PlotTimeDomainPlots(MySigProc.getTimeSignal());
-    Graphs.PlotPSDPlots(MySigProc.getPSDs(), MySigProc.getFreq());
+    QElapsedTimer timer;
+    timer.start();
+    DoPlotting();
+    qDebug() << "Graphs time:" << timer.elapsed() << "ms";
+    qDebug() << "\n";
 }
 
 void MainWindow::PaCurvePlot() {
@@ -91,7 +93,8 @@ void MainWindow::DataUpdate()
     else if(senderObj == ui->SNRSymSpinBox) { UISource.SNRSymdB = ui->SNRSymSpinBox->value(); CurrentRecalcNeeds.RecalcNoiseSym = true;
                                          CurrentRecalcNeeds.RecalcSig = true; CurrentRecalcNeeds.RecalcNoiseSig = true; }
     else if(senderObj == ui->NumSymSpinBox) { UISource.NumSym = ui->NumSymSpinBox->value(); CurrentRecalcNeeds.FullRecalc = true; }
-    else if(senderObj == ui->SignalTypeComboBox) { UISource.SigType = ui->SignalTypeComboBox->currentText(); CurrentRecalcNeeds.FullRecalc = true; }
+    else if(senderObj == ui->SignalTypeComboBox) { UISource.SigType = ui->SignalTypeComboBox->currentText();
+        CurrentRecalcNeeds.FullRecalc = true; CurrentRecalcNeeds.TimePlotsRescale = true;}
 
     if(senderObj == ui->SC_fc_SpinBox) { UISource.SC_f_carrier = ui->SC_fc_SpinBox->value();}
     else if(senderObj == ui->SC_SymRate_SpinBox) { UISource.SC_symrate = ui->SC_SymRate_SpinBox->value(); }
@@ -100,10 +103,10 @@ void MainWindow::DataUpdate()
     else if(senderObj == ui->SC_FilterType_ComboBox) { UISource.SC_FilterType = ui->SC_FilterType_ComboBox->currentText(); }
 
     if(senderObj == ui->OFDM_fc_SpinBox) { UISource.OFDM_f_carrier = ui->OFDM_fc_SpinBox->value(); }
-    else if(senderObj == ui->OFDM_Nfft_SpinBox) { UISource.OFDM_Nfft = ui->OFDM_Nfft_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
-    else if(senderObj == ui->OFDM_GB_DC_SpinBox) { UISource.OFDM_GB_DC = ui->OFDM_GB_DC_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true;}
-    else if(senderObj == ui->OFDM_GBNyq_SpinBox) { UISource.OFDM_GB_Nyq = ui->OFDM_GBNyq_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
-    else if(senderObj == ui->OFDM_CyclePref_SpinBox) { UISource.OFDM_cycle_prefix = ui->OFDM_CyclePref_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
+    else if(senderObj == ui->OFDM_Nfft_SpinBox) { UISource.OFDM_Nfft = ui->OFDM_Nfft_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; CurrentRecalcNeeds.PARecalc = true;}
+    else if(senderObj == ui->OFDM_GB_DC_SpinBox) { UISource.OFDM_GB_DC = ui->OFDM_GB_DC_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; CurrentRecalcNeeds.PARecalc = true;}
+    else if(senderObj == ui->OFDM_GBNyq_SpinBox) { UISource.OFDM_GB_Nyq = ui->OFDM_GBNyq_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; CurrentRecalcNeeds.PARecalc = true;}
+    else if(senderObj == ui->OFDM_CyclePref_SpinBox) { UISource.OFDM_cycle_prefix = ui->OFDM_CyclePref_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; CurrentRecalcNeeds.PARecalc = true;}
 
     if(senderObj == ui->FDMA_fc_SpinBox) { UISource.FDMA_f_carrier = ui->FDMA_fc_SpinBox->value(); }
     else if(senderObj == ui->FDMA_SymRate_SpinBox) { UISource.FDMA_symrate = ui->FDMA_SymRate_SpinBox->value(); }
@@ -112,7 +115,7 @@ void MainWindow::DataUpdate()
 
     if(senderObj == ui->Oversapmling_SpinBox) { UISource.oversampling = ui->Oversapmling_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     else if(senderObj == ui->Fs_SpinBox) { UISource.fs = ui->Fs_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
-    else if(senderObj == ui->SNRSig_SpinBox) { UISource.SNRSig = ui->SNRSig_SpinBox->value(); CurrentRecalcNeeds.RecalcNoiseSig = true;}
+    else if(senderObj == ui->SNRSig_SpinBox) { UISource.SNRSig = ui->SNRSig_SpinBox->value(); CurrentRecalcNeeds.RecalcNoiseSig = true; CurrentRecalcNeeds.PARecalc = true;}
 
     if(senderObj == ui->SalehCoef1_doubleSpinBox || senderObj == ui->SalehCoef2_doubleSpinBox ||
         senderObj == ui->SalehCoef3_doubleSpinBox || senderObj == ui->SalehCoef4_doubleSpinBox) {
@@ -181,6 +184,23 @@ void MainWindow::FirstDataUpdate()
     CurrentRecalcNeeds.init();
     MySigProc.DataUpdate(UISource);
     MakeMainCalcAndPlot();
+}
+
+void MainWindow::DoPlotting()
+{
+    auto item = ui->SelectedGraphs_ListWidget->currentItem();
+    QString text;
+    if (item)
+        text = item->text();
+
+    if(text == "    Constellation    ")
+        Graphs.PlotConstellationsPlots(MySigProc.getSymbols());
+
+    if(text == "    TimeDomain    ")
+        Graphs.PlotTimeDomainPlots(MySigProc.getTimeSignal(), CurrentRecalcNeeds.TimePlotsRescale);
+
+    if(text == "    PSD    ")
+        Graphs.PlotPSDPlots(MySigProc.getPSDs(), MySigProc.getFreq());
 }
 
 void MainWindow::onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem*)
@@ -330,7 +350,9 @@ void MainWindow::SetupSelectedGraphsListWidget()
 {
     ui->SelectedGraphs_ListWidget->item(0)->setSelected(true);
     connect(ui->SelectedGraphs_ListWidget, &QListWidget::currentItemChanged, this, &MainWindow::onGraphsListItemChanged);
+    ui->SelectedGraphs_ListWidget->setCurrentRow(0);
     ui->GraphsListstackedWidget->setCurrentWidget(ui->ConstellationGraphsPage);
+    connect(ui->SelectedGraphs_ListWidget, &QListWidget::currentItemChanged, this, &MainWindow::DoPlotting);
 }
 
 void MainWindow::SetupMainLogicWork()

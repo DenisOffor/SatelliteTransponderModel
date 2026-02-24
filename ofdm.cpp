@@ -54,12 +54,12 @@ OfdmResult OFDM::makeOfdm(const QVector<std::complex<double> > &symbols, const O
         res.t[n] = double(n) / (p.fs * p.oversampling);
 
         std::complex<double> s = yBB[n];
-    //    if(p.fc > 0) {
-    //        s *= std::exp(std::complex<double>(0, 2 * M_PI * p.fc * res.t[n]));
-    //        res.tx[n] = std::real(s);
-    //    } else {
-            res.tx[n] = s;
-    //    }
+        //    if(p.fc > 0) {
+        //        s *= std::exp(std::complex<double>(0, 2 * M_PI * p.fc * res.t[n]));
+        //        res.tx[n] = std::real(s);
+        //    } else {
+        res.tx[n] = s;
+        //    }
     }
 
     if(p.SNR_dB > 0)
@@ -79,16 +79,16 @@ QVector<std::complex<double>> OFDM::ofdm_demodulate(const QVector<std::complex<d
     rx_bb = rx;
 
     if (p.fc > 0) {
-    //    rx_bb.resize(rx.size());
-    //    double invFs = 1.0 / (p.fs * p.oversampling);
+        //    rx_bb.resize(rx.size());
+        //    double invFs = 1.0 / (p.fs * p.oversampling);
 
-    //    for (int n = 0; n < rx.size(); ++n) {
-    //        double t = n * invFs;
-    //        std::complex<double> carrier =
-    //            std::exp(std::complex<double>(0, -2 * M_PI * p.fc * t));
+        //    for (int n = 0; n < rx.size(); ++n) {
+        //        double t = n * invFs;
+        //        std::complex<double> carrier =
+        //            std::exp(std::complex<double>(0, -2 * M_PI * p.fc * t));
 
-    //       rx_bb[n] = rx[n] * carrier;
-    //    }
+        //       rx_bb[n] = rx[n] * carrier;
+        //    }
     }
     //else {
     //    rx_bb = rx;   // shallow copy (Qt implicit sharing)

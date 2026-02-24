@@ -1,6 +1,6 @@
 #include "signalprocessing.h"
 
-SignalProcessing::SignalProcessing() {
+SignalProcessing::SignalProcessing() : myFdma(mySC) {
     PACurve = new PaCurve(200);
     // Input power in dB and linear
     double dB_start = -20;
@@ -24,20 +24,31 @@ SignalProcessing::~SignalProcessing() {
 
 void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 {
+    QElapsedTimer timer;
+    timer.start();
     if(CurrentRecalcNeeds.RecalcSymbols || CurrentRecalcNeeds.FullRecalc)
         GeneratePacksOfSymbols();
+    qDebug() << "Sym time:" << timer.elapsed() << "ms";
 
+    timer.restart();
     if(CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc || CurrentRecalcNeeds.RecalcNoiseSig)
         TransmitSignalProcessing(CurrentRecalcNeeds);
+    qDebug() << "Sig time:" << timer.elapsed() << "ms";
 
-    if(CurrentRecalcNeeds.PARecalc)
+    timer.restart();
+    if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.FullRecalc)
         if(!CurrentRes.pa_sig.isEmpty())
             PAProcessing(CurrentRecalcNeeds);
+    qDebug() << "PA time:" << timer.elapsed() << "ms";
 
+    timer.restart();
     if(!CurrentRes.pa_sig.isEmpty())
         ReceiveSignalProcessing(CurrentRecalcNeeds);
+    qDebug() << "Rec time:" << timer.elapsed() << "ms";
 
+    timer.restart();
     MyMetricsEval.comparePSD(CurrentRes.tx_sig, CurrentRes.pa_sig, MySource->fs, freq[0], PSDs[0], PSDs[1]);
+    qDebug() << "PSD time:" << timer.elapsed() << "ms";
 }
 
 void SignalProcessing::GeneratePacksOfSymbols()
@@ -52,7 +63,9 @@ void SignalProcessing::GeneratePacksOfSymbols()
 Symbols SignalProcessing::GenerateNSymbols()
 {
     Symbols temp;
-    temp.resize(MySource->NumSym);
+    temp.tr_sym_clean.resize(MySource->NumSym);
+    temp.tr_sym_noisy.resize(MySource->NumSym);
+    temp.data.resize(MySource->NumSym);
     for (int i = 0; i < MySource->NumSym; i++)
         temp.data[i] = QRandomGenerator::global()->bounded(MySource->M);
 
@@ -115,30 +128,80 @@ OfdmParams SignalProcessing::GetOfdmParams()
     return ofdm_parms;
 }
 
+ScParams SignalProcessing::GetSCParams()
+{
+    ScParams sc_params;
+    sc_params.SC_FilterType = MySource->SC_FilterType;
+    sc_params.SC_filter_length = MySource->SC_filter_length;
+    sc_params.SC_f_carrier = MySource->SC_f_carrier;
+    sc_params.SC_rolloff = MySource->SC_rolloff;
+    sc_params.SC_symrate = MySource->SC_symrate;
+    sc_params.SNR_dB = MySource->SNRSig;
+    sc_params.fs = MySource->fs;
+    sc_params.oversampling = MySource->oversampling;
+    return sc_params;
+}
+
+FdmaParams SignalProcessing::GetFDMAParams()
+{
+    FdmaParams fdma_params;
+    fdma_params.FDMA_f_carrier = MySource->FDMA_f_carrier;
+    fdma_params.FDMA_symrate = MySource->FDMA_symrate;
+    fdma_params.FDMA_num_subcarriers = MySource->FDMA_num_subcarriers;
+    fdma_params.FDMA_step_carrier = MySource->FDMA_step_carrier;
+    fdma_params.SNRSig = MySource->SNRSig;
+    fdma_params.fs = MySource->fs;
+    fdma_params.oversampling = MySource->oversampling;
+
+    return fdma_params;
+}
+
+
 void SignalProcessing::TransmitSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
 {
-    OfdmParams ofdm_parms = GetOfdmParams();
     if(MySource->SigType == "OFDM") {
+        OfdmParams ofdm_parms = GetOfdmParams();
         if(CurrentRecalcNeeds.RecalcNoiseSig)
             myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
         else {
             CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
-            CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
         }
+        CurrentRes.clear();
         CurrentRes.resize(CurrentOfdmResults.tx.size());
         CurrentRes.tx_sig = CurrentOfdmResults.tx;
-        CurrentRes.pa_sig = CurrentOfdmResults.tx;
-        MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentOfdmResults.tx, MySymbols[0].tr_sym_clean, ofdm_parms);
+        CurrentRes.time = CurrentOfdmResults.t;
     }
     else if(MySource->SigType == "FDMA") {
-
+        FdmaParams fdma_parms = GetFDMAParams();
+        if(CurrentRecalcNeeds.RecalcNoiseSig) {}
+            //myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
+        else {
+            for(int i = 0; i < MySymbols.size(); ++i)
+                CurrentFdmaResults = myFdma.generate(MySymbols, fdma_parms);
+        }
+        CurrentRes.clear();
+        CurrentRes.resize(CurrentFdmaResults.tx.size());
+        CurrentRes.tx_sig = CurrentFdmaResults.tx;
+        CurrentRes.time = CurrentFdmaResults.t;
     }
-    else if(MySource->SigType == "SC") {}
+    else if(MySource->SigType == "SC") {
+        ScParams sc_params = GetSCParams();
+        if(CurrentRecalcNeeds.RecalcNoiseSig && !CurrentRecalcNeeds.FullRecalc)
+            mySC.changeAwgn(CurrentSCResults, sc_params);
+        else {
+            CurrentSCResults = mySC.makeSc(MySymbols[0].tr_sym_noisy, sc_params);
+        }
+        CurrentRes.clear();
+        CurrentRes.resize(CurrentSCResults.tx.size());
+        CurrentRes.tx_sig = CurrentSCResults.tx;
+        CurrentRes.time = CurrentSCResults.t;
+    }
 }
 
 void SignalProcessing::PAProcessing(NeedToRecalc CurrentRecalcNeeds)
 {
     if(!CurrentRes.pa_sig.isEmpty()) {
+        CurrentRes.pa_sig = CurrentRes.tx_sig;
         if(MySource->PAModel == "Saleh")
             MyPAModels.SalehModel(CurrentRes.pa_sig, MySource->SalehCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
         else if (MySource->PAModel == "Rapp")
@@ -151,7 +214,11 @@ void SignalProcessing::PAProcessing(NeedToRecalc CurrentRecalcNeeds)
 void SignalProcessing::ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
 {
     OfdmParams ofdm_parms = GetOfdmParams();
-    MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentRes.pa_sig, MySymbols[0].tr_sym_clean, ofdm_parms);
+    ScParams sc_params = GetSCParams();
+    if(MySource->SigType == "OFDM")
+        MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentRes.pa_sig, MySymbols[0].tr_sym_clean, ofdm_parms);
+    else if(MySource->SigType == "SC")
+        MySymbols[0].rec_sym_noisy = mySC.demodulateSignal(CurrentRes.pa_sig, sc_params, sc_params);
 }
 
 PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const QVector<double> Coefs, const int IBO_dB, const int LinearGaindB)
@@ -290,13 +357,12 @@ void SignalProcessing::DataUpdate(Source &UISource)
 
 Symbols &SignalProcessing::getSymbols()
 {
-    if(!MySymbols.empty())
         return MySymbols[0];
 }
 
-OfdmResult &SignalProcessing::getTimeSignal()
+GlobalResults &SignalProcessing::getTimeSignal()
 {
-        return CurrentOfdmResults;
+        return CurrentRes;
 }
 
 QVector<QVector<double> > SignalProcessing::getFreq()

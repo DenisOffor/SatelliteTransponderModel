@@ -33,7 +33,7 @@ public:
     ~GraphPlotting();
     void PlotPaCurve(PaCurve& PaCurveData, const QList<QAction*> actions);
     void PlotConstellationsPlots(const Symbols& MySymbols);
-    void PlotTimeDomainPlots(const OfdmResult& CurrentOfdm);
+    void PlotTimeDomainPlots(const GlobalResults& CurrentOfdm, bool rescale);
     void PlotPSDPlots(const QVector<QVector<double>>& PSDs, const QVector<QVector<double>>& freqs);
 
 public slots:

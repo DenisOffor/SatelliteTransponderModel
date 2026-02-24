@@ -48,5 +48,8 @@ private:
     void setupMainPipelineTree();
     void SetupSelectedGraphsListWidget();
     void SetupMainLogicWork();
+
+private slots:
+    void DoPlotting();
 };
 #endif // MAINWINDOW_H

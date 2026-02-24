@@ -1,6 +1,8 @@
 #include "metricseval.h"
 
-MetricsEval::MetricsEval() {}
+MetricsEval::MetricsEval(): fftw8192(FFT_SIZE) {
+    window = hamming(WINDOW_SISE);
+}
 
 QVector<std::complex<double>> MetricsEval::normalizeSignal(
     const QVector<std::complex<double>>& tx)
@@ -61,14 +63,12 @@ void MetricsEval::computePSDWelch(
     if (tx.size() < winSize)
         return;
 
-    auto window = hamming(winSize);
 
     // MATLAB-совместимое число сегментов
     int segments = 1 + (tx.size() - winSize) / step;
 
     psd = QVector<double>(nfft, 0.0);
 
-    FFT myfft(nfft);
     QVector<std::complex<double>> buffer(nfft);
 
     for (int k = 0; k < segments; ++k)
@@ -80,7 +80,7 @@ void MetricsEval::computePSDWelch(
         for (int i = 0; i < winSize; ++i)
             buffer[i] = tx[start + i] * window[i];
 
-        auto spectrum = myfft.fft(buffer);
+        auto spectrum = fftw8192.fft(buffer);
 
         for (int i = 0; i < nfft; ++i)
             psd[i] += std::norm(spectrum[i]);

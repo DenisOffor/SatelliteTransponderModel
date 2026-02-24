@@ -34,6 +34,7 @@ struct Point {
 struct Symbols{
     QVector<std::complex<double>> tr_sym_clean;
     QVector<std::complex<double>> tr_sym_noisy;
+    QVector<std::complex<double>> sym_after_pa;
     QVector<std::complex<double>> rec_sym_noisy;
     QVector<int> data;
 
@@ -131,6 +132,7 @@ struct NeedToRecalc{
     bool RecalcSig;
     bool FullRecalc;
     bool PARecalc;
+    bool TimePlotsRescale;
 
     void init() {
         RecalcSymbols = true;
@@ -139,6 +141,7 @@ struct NeedToRecalc{
         RecalcSig = true;
         FullRecalc = true;
         PARecalc = true;
+        TimePlotsRescale = true;
     }
 
     void clear() {
@@ -148,6 +151,7 @@ struct NeedToRecalc{
         RecalcSig = false;
         FullRecalc = false;
         PARecalc = false;
+        TimePlotsRescale = false;
     }
 };
 
@@ -156,12 +160,20 @@ struct GlobalResults {
     QVector<std::complex<double>> pa_sig;
     QVector<std::complex<double>> pa_plus_dpd_sig;
     QVector<std::complex<double>> rec_sig;
+    QVector<double> time;
 
     void resize(int size) {
         tx_sig.resize(size);
         pa_sig.resize(size);
         pa_plus_dpd_sig.resize(size);
         rec_sig.resize(size);
+    }
+
+    void clear() {
+        tx_sig.clear();
+        pa_sig.clear();
+        pa_plus_dpd_sig.clear();
+        rec_sig.clear();
     }
 };
 

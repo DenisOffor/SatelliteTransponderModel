@@ -69,52 +69,58 @@ void GraphPlotting::PlotIdealSymConstellation(const QString ModType) {
 
 void GraphPlotting::PlotConstellationsPlots(const Symbols& MySymbols)
 {
-    QVector<double> x, y;
-    for (const auto& symbol : MySymbols.tr_sym_clean) {
-        x.append(symbol.real());  // X = действительная часть
-        y.append(symbol.imag());  // Y = мнимая часть
+    if(!MySymbols.tr_sym_clean.isEmpty()) {
+        QVector<double> x, y;
+        for (const auto& symbol : MySymbols.tr_sym_clean) {
+            x.append(symbol.real());  // X = действительная часть
+            y.append(symbol.imag());  // Y = мнимая часть
+        }
+        plotsOfConstellations[0]->graph(0)->setData(x, y);
+        plotsOfConstellations[0]->replot();
     }
-    plotsOfConstellations[0]->graph(0)->setData(x, y);
-    plotsOfConstellations[0]->replot();
 
-    x.clear(); y.clear();
-    for (const auto& symbol : MySymbols.tr_sym_noisy) {
-        x.append(symbol.real());  // X = действительная часть
-        y.append(symbol.imag());  // Y = мнимая часть
+    if(!MySymbols.tr_sym_noisy.isEmpty()) {
+        x.clear(); y.clear();
+        for (const auto& symbol : MySymbols.tr_sym_noisy) {
+            x.append(symbol.real());  // X = действительная часть
+            y.append(symbol.imag());  // Y = мнимая часть
+        }
+        plotsOfConstellations[1]->graph(0)->setData(x, y);
+        plotsOfConstellations[1]->replot();
     }
-    plotsOfConstellations[1]->graph(0)->setData(x, y);
-    plotsOfConstellations[1]->replot();
 
-    x.clear(); y.clear();
-    for (const auto& symbol : MySymbols.rec_sym_noisy) {
-        x.append(symbol.real());  // X = действительная часть
-        y.append(symbol.imag());  // Y = мнимая часть
+    if(!MySymbols.rec_sym_noisy.isEmpty()) {
+        x.clear(); y.clear();
+        for (const auto& symbol : MySymbols.rec_sym_noisy) {
+            x.append(symbol.real());  // X = действительная часть
+            y.append(symbol.imag());  // Y = мнимая часть
+        }
+        plotsOfConstellations[4]->graph(0)->setData(x, y);
+        plotsOfConstellations[4]->replot();
     }
-    plotsOfConstellations[4]->graph(0)->setData(x, y);
-    plotsOfConstellations[4]->replot();
 }
 
-void GraphPlotting::PlotTimeDomainPlots(const OfdmResult &CurrentOfdm)
+void GraphPlotting::PlotTimeDomainPlots(const GlobalResults &CurrentRes, bool rescale)
 {
-    static bool first_in = true;
-    if(!CurrentOfdm.tx.isEmpty()) {
-        QVector<double> y;
-        for (const auto& symbol : CurrentOfdm.tx) y.append(symbol.real());
+    if(!CurrentRes.tx_sig.isEmpty()) {
+        QVector<double> y_tx, y_pa;
+        for (const auto& symbol : CurrentRes.tx_sig) y_tx.append(symbol.real());
+        for (const auto& symbol : CurrentRes.pa_sig) y_pa.append(symbol.real());
+
         QVector<double> scaledX;
         double scaleFactor = 1e6;  // 10^6
-
-        scaledX.reserve(CurrentOfdm.t.size());
-        for (double x : CurrentOfdm.t) {
+        scaledX.reserve(CurrentRes.time.size());
+        for (double x : CurrentRes.time) {
             scaledX.append(x * scaleFactor);
         }
+
         auto xRange = plotsOfTimeDomain[0]->xAxis->range();
-        plotsOfTimeDomain[0]->graph(0)->setData(scaledX, y);
-        if(first_in) {
-            plotsOfTimeDomain[0]->graph(0)->rescaleAxes();
-            first_in = false;
-        }
-        else plotsOfTimeDomain[0]->xAxis->setRange(xRange);
-        plotsOfTimeDomain[0]->replot();
+        plotsOfTimeDomain[0]->graph(0)->setData(scaledX, y_tx);
+        plotsOfTimeDomain[1]->graph(0)->setData(scaledX, y_pa);
+        if(rescale) for(int i = 0; i < 6; ++i) plotsOfTimeDomain[i]->graph(0)->rescaleAxes();
+        else for(int i = 0; i < 6; ++i) plotsOfTimeDomain[i]->xAxis->setRange(xRange);
+
+        for(int i = 0; i < 6; ++i) plotsOfTimeDomain[i]->replot();
     }
 }
 
@@ -254,10 +260,10 @@ void GraphPlotting::InitializeTimeDomainPlotting(QVector<QWidget*> TimeDomainGra
         plotsOfTimeDomain[i]->xAxis->setNumberFormat("f");
         plotsOfTimeDomain[i]->xAxis->setNumberPrecision(1);
         plotsOfTimeDomain[i]->yAxis->setLabel("Amplitude");
-        plotsOfTimeDomain[i]->replot();
         plotsOfTimeDomain[i]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
         plotsOfTimeDomain[i]->axisRect()->setRangeZoom(Qt::Horizontal);
         plotsOfTimeDomain[i]->axisRect()->setRangeDrag(Qt::Horizontal);
+        plotsOfTimeDomain[i]->replot();
     }
 }
 
@@ -287,10 +293,10 @@ void GraphPlotting::InitializePSDPlotting(QVector<QWidget*> PSDGraphWidgets)
         plotsOfPSD[i]->xAxis->setNumberFormat("f");
         plotsOfPSD[i]->xAxis->setNumberPrecision(1);
         plotsOfPSD[i]->yAxis->setLabel("Amplitude");
-        plotsOfPSD[i]->replot();
         plotsOfPSD[i]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
         plotsOfPSD[i]->axisRect()->setRangeZoom(Qt::Horizontal);
         plotsOfPSD[i]->axisRect()->setRangeDrag(Qt::Horizontal);
+        plotsOfPSD[i]->replot();
     }
 }
 

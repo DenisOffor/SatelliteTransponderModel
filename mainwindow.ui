@@ -308,7 +308,7 @@
                <number>10000000</number>
               </property>
               <property name="value">
-               <number>2000</number>
+               <number>1000</number>
               </property>
              </widget>
             </item>
@@ -1646,7 +1646,7 @@
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>2</number>
               </property>
               <widget class="QWidget" name="OFDM_page">
                <property name="sizePolicy">
@@ -1933,7 +1933,7 @@
                       <number>500000</number>
                      </property>
                      <property name="value">
-                      <number>3000000</number>
+                      <number>0</number>
                      </property>
                     </widget>
                    </item>
@@ -2063,7 +2063,11 @@
                     <number>3</number>
                    </property>
                    <item>
-                    <widget class="QSpinBox" name="SC_FilterLength_SpinBox"/>
+                    <widget class="QSpinBox" name="SC_FilterLength_SpinBox">
+                     <property name="value">
+                      <number>6</number>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -2173,7 +2177,7 @@
                       <number>50000000</number>
                      </property>
                      <property name="value">
-                      <number>3000000</number>
+                      <number>10000000</number>
                      </property>
                     </widget>
                    </item>
@@ -2262,7 +2266,7 @@
                       <number>1</number>
                      </property>
                      <property name="value">
-                      <number>16</number>
+                      <number>4</number>
                      </property>
                     </widget>
                    </item>
@@ -2308,7 +2312,7 @@
                       <number>250000</number>
                      </property>
                      <property name="value">
-                      <number>3000000</number>
+                      <number>2500000</number>
                      </property>
                     </widget>
                    </item>
@@ -3226,7 +3230,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>804</height>
+                 <height>139</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
