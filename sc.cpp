@@ -16,13 +16,13 @@ ScResult SC::makeSc(const QVector<std::complex<double>>& inputSymbols,
     // ----- Паддинг символов -----
     QVector<std::complex<double>> symbols;
 
-    symbols.append(std::complex<double>(0,0));
-    symbols.append(std::complex<double>(0,0));
-    symbols.append(std::complex<double>(0,0));
+    int span = p.SC_filter_length;
+
+    // padding в начале
+    for(int i = 0; i < span; ++i)
+        symbols.append(std::complex<double>(0,0));
 
     symbols += inputSymbols;
-
-    int span = p.SC_filter_length;
 
     // ----- Полоса -----
     res.bandwidth = (p.SC_FilterType.toLower() == "rrc") ?
@@ -35,11 +35,6 @@ ScResult SC::makeSc(const QVector<std::complex<double>>& inputSymbols,
     // ----- Polyphase filtering -----
     QVector<std::complex<double>> baseband =
         polyphaseFilter(symbols, pulse, sps);
-
-    // ----- Удаление group delay -----
-    int group_delay = (span * sps) / 2;
-    if(baseband.size() > group_delay)
-        baseband = baseband.mid(group_delay);
 
     // ----- Несущая -----
     res.tx.resize(baseband.size());
@@ -266,7 +261,7 @@ QVector<std::complex<double>> SC::demodulateSignal(
     }
 
     // -------------------------------------------------
-    // 2️⃣ Matched filter (тот же RRC)
+    // Matched filter (тот же RRC)
     // -------------------------------------------------
 
     int span = p.SC_filter_length;
@@ -286,15 +281,15 @@ QVector<std::complex<double>> SC::demodulateSignal(
 
     auto received = matchedFilterDecimate(baseband, rx_filter, sps);
 
-    // -------------------------------------------------
-    // 5️⃣ Удаляем 3 добавленных символа
-    // -------------------------------------------------
+    // удалить суммарную задержку (span символов)
+    int total_delay = span;
 
-    if(received.size() > 3)
-        received = received.mid(3);
+    if(received.size() > total_delay)
+        received = received.mid(total_delay);
+
 
     // -------------------------------------------------
-    // 6️⃣ Нормализация мощности
+    // Нормализация мощности
     // -------------------------------------------------
 
     double power = 0;

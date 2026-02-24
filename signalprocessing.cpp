@@ -26,8 +26,8 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 {
     QElapsedTimer timer;
     timer.start();
-    if(CurrentRecalcNeeds.RecalcSymbols || CurrentRecalcNeeds.FullRecalc)
-        GeneratePacksOfSymbols();
+    if(CurrentRecalcNeeds.RecalcSymbols || CurrentRecalcNeeds.RecalcNoiseSym || CurrentRecalcNeeds.FullRecalc)
+        GeneratePacksOfSymbols(CurrentRecalcNeeds);
     qDebug() << "Sym time:" << timer.elapsed() << "ms";
 
     timer.restart();
@@ -51,13 +51,24 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
     qDebug() << "PSD time:" << timer.elapsed() << "ms";
 }
 
-void SignalProcessing::GeneratePacksOfSymbols()
+void SignalProcessing::GeneratePacksOfSymbols(NeedToRecalc& CurrentRecalcNeeds)
 {
-    MySymbols.clear();
-    if(MySource->SigType == "FDMA")
-        for(int i = 0; i < MySource->FDMA_num_subcarriers; i++)
-            MySymbols.append(GenerateNSymbols());
-    else MySymbols.append(GenerateNSymbols());
+    if(CurrentRecalcNeeds.RecalcSymbols || CurrentRecalcNeeds.FullRecalc) {
+        MySymbols.clear();
+        if(MySource->SigType == "FDMA")
+            for(int i = 0; i < MySource->FDMA_num_subcarriers; i++) {
+                MySymbols.append(GenerateNSymbols());
+                SymsAddNoise(MySymbols[i].tr_sym_clean, MySymbols[i].tr_sym_noisy);
+            }
+        else { MySymbols.append(GenerateNSymbols()); SymsAddNoise(MySymbols[0].tr_sym_clean, MySymbols[0].tr_sym_noisy); }
+    }
+    else {
+        if(MySource->SigType == "FDMA")
+            for(int i = 0; i < MySource->FDMA_num_subcarriers; i++)
+                SymsAddNoise(MySymbols[i].tr_sym_clean, MySymbols[i].tr_sym_noisy);
+        else { SymsAddNoise(MySymbols[0].tr_sym_clean, MySymbols[0].tr_sym_noisy); }
+    }
+    CurrentRecalcNeeds.RecalcSig = true;
 }
 
 Symbols SignalProcessing::GenerateNSymbols()
@@ -114,6 +125,25 @@ Symbols SignalProcessing::GenerateNSymbols()
     return temp;
 }
 
+void SignalProcessing::SymsAddNoise(QVector<std::complex<double>>& symbols_clean, QVector<std::complex<double>>& symbols_noisy) {
+    double P_signal = 0;
+    for (auto& s : symbols_clean)
+        P_signal += std::norm(s);
+    P_signal /= MySource->NumSym;
+
+    double P_noise = P_signal / pow(10.0, MySource->SNRSymdB / 10.0);
+    double sigma = std::sqrt(P_noise / 2);
+
+    std::mt19937 rng(12345);
+    std::normal_distribution<double> gauss(0.0, sigma);
+
+    for (int i = 0; i < MySource->NumSym; i++) {
+        symbols_noisy[i] = symbols_clean[i] +
+                            std::complex<double>(gauss(rng), gauss(rng));
+    }
+}
+
+
 OfdmParams SignalProcessing::GetOfdmParams()
 {
     OfdmParams ofdm_parms;
@@ -157,7 +187,7 @@ FdmaParams SignalProcessing::GetFDMAParams()
 }
 
 
-void SignalProcessing::TransmitSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
+void SignalProcessing::TransmitSignalProcessing(NeedToRecalc& CurrentRecalcNeeds)
 {
     if(MySource->SigType == "OFDM") {
         OfdmParams ofdm_parms = GetOfdmParams();
@@ -176,10 +206,8 @@ void SignalProcessing::TransmitSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
         ScParams sc_params = GetSCParams();
         if(CurrentRecalcNeeds.RecalcNoiseSig) {}
             //myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
-        else {
-            for(int i = 0; i < MySymbols.size(); ++i)
-                CurrentFdmaResults = myFdma.generate(MySymbols, fdma_parms, sc_params);
-        }
+        else
+            CurrentFdmaResults = myFdma.generate(MySymbols, fdma_parms, sc_params);
         CurrentRes.clear();
         CurrentRes.resize(CurrentFdmaResults.tx.size());
         CurrentRes.tx_sig = CurrentFdmaResults.tx;
@@ -197,9 +225,10 @@ void SignalProcessing::TransmitSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
         CurrentRes.tx_sig = CurrentSCResults.tx;
         CurrentRes.time = CurrentSCResults.t;
     }
+    CurrentRecalcNeeds.PARecalc = true;
 }
 
-void SignalProcessing::PAProcessing(NeedToRecalc CurrentRecalcNeeds)
+void SignalProcessing::PAProcessing(NeedToRecalc& CurrentRecalcNeeds)
 {
     if(!CurrentRes.pa_sig.isEmpty()) {
         CurrentRes.pa_sig = CurrentRes.tx_sig;

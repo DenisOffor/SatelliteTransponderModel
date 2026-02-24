@@ -32,14 +32,15 @@ private:
     OfdmParams GetOfdmParams();
     ScParams GetSCParams();
     FdmaParams GetFDMAParams();
-    void TransmitSignalProcessing(NeedToRecalc CurrentRecalcNeeds);
-    void PAProcessing(NeedToRecalc CurrentRecalcNeeds);
+    void TransmitSignalProcessing(NeedToRecalc& CurrentRecalcNeeds);
+    void PAProcessing(NeedToRecalc& CurrentRecalcNeeds);
     void ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds);
-
+    void SymsAddNoise(QVector<std::complex<double>>& symbols_clean,
+                      QVector<std::complex<double>>& symbols_noisy);
 public:
     SignalProcessing();
     ~SignalProcessing();
-    void GeneratePacksOfSymbols();
+    void GeneratePacksOfSymbols(NeedToRecalc& CurrentRecalcNeeds);
     PaCurve& CalcPaCurve(const QString model_type, const QVector<double> SalehCoefs, const int IBO_dB, const int LinearGain);
     void DataUpdate(Source& UISource);
     Symbols& getSymbols();
