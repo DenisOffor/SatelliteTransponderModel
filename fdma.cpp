@@ -5,7 +5,7 @@ FDMA::FDMA(SC& scRef)
 
 FdmaResult FDMA::generate(
     const QVector<Symbols> symbolsPerCarrier,
-    const FdmaParams& p)
+    const FdmaParams& p, const ScParams& sc_p)
 {
     if(symbolsPerCarrier.size() != p.FDMA_num_subcarriers)
         throw std::runtime_error("Mismatch carriers count");
@@ -30,20 +30,19 @@ FdmaResult FDMA::generate(
         scp.oversampling = p.oversampling;
         scp.fc = p.FDMA_f_carrier + k * p.FDMA_step_carrier;
         scp.SNR_dB = p.SNRSig;
-        scp.SC_rolloff = p.rolloff;
-        scp.SC_filter_length = p.filterSpan;
-        scp.SC_FilterType = p.filterType;
+        scp.SC_rolloff = sc_p.SC_rolloff;
+        scp.SC_filter_length = sc_p.SC_filter_length;
+        scp.SC_FilterType = sc_p.SC_FilterType;
 
         auto scRes = sc.makeSc(symbolsPerCarrier[k].tr_sym_noisy, scp);
 
-        // ✅ FIX: теперь оба аргумента одного типа
         maxLen = std::max(maxLen, scRes.tx.size());
 
         carrierSignals.append(scRes);
     }
 
     // -------------------------------------------------
-    // 2️⃣ Выравнивание длины
+    // Выравнивание длины
     // -------------------------------------------------
 
     res.tx.resize(maxLen);
@@ -56,7 +55,7 @@ FdmaResult FDMA::generate(
     }
 
     // -------------------------------------------------
-    // 3️⃣ Временная шкала
+    // Временная шкала
     // -------------------------------------------------
 
     res.t.resize(maxLen);
@@ -67,13 +66,45 @@ FdmaResult FDMA::generate(
         res.t[n] = static_cast<double>(n) / Fs_eff;
 
     // -------------------------------------------------
-    // 4️⃣ Полоса
+    // Полоса
     // -------------------------------------------------
 
     res.totalBandwidth =
         p.FDMA_num_subcarriers * p.FDMA_step_carrier;
 
     res.perCarrierResults = carrierSignals;
+
+    return res;
+}
+
+QVector<QVector<std::complex<double>>> FDMA::demodulate(
+    const QVector<std::complex<double>>& rxSignal,
+    const FdmaParams& p, const ScParams& sc_p)
+{
+    QVector<QVector<std::complex<double>>> res;
+    res.reserve(p.FDMA_num_subcarriers);
+
+    // -------------------------------------------------
+    // Демодуляция каждой поднесущей
+    // -------------------------------------------------
+
+    for(int k = 0; k < p.FDMA_num_subcarriers; ++k)
+    {
+        ScParams scp;
+
+        scp.SC_symrate = p.FDMA_symrate;
+        scp.fs = p.fs;
+        scp.oversampling = p.oversampling;
+        scp.fc = p.FDMA_f_carrier + k * p.FDMA_step_carrier;
+        scp.SNR_dB = p.SNRSig;
+        scp.SC_rolloff = sc_p.SC_rolloff;
+        scp.SC_filter_length = sc_p.SC_filter_length;
+        scp.SC_FilterType = sc_p.SC_FilterType;
+
+        auto scDemod = sc.demodulateSignal(rxSignal, scp, scp);
+
+        res.append(scDemod);
+    }
 
     return res;
 }

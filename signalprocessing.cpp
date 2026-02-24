@@ -173,11 +173,12 @@ void SignalProcessing::TransmitSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
     }
     else if(MySource->SigType == "FDMA") {
         FdmaParams fdma_parms = GetFDMAParams();
+        ScParams sc_params = GetSCParams();
         if(CurrentRecalcNeeds.RecalcNoiseSig) {}
             //myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
         else {
             for(int i = 0; i < MySymbols.size(); ++i)
-                CurrentFdmaResults = myFdma.generate(MySymbols, fdma_parms);
+                CurrentFdmaResults = myFdma.generate(MySymbols, fdma_parms, sc_params);
         }
         CurrentRes.clear();
         CurrentRes.resize(CurrentFdmaResults.tx.size());
@@ -215,10 +216,16 @@ void SignalProcessing::ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
 {
     OfdmParams ofdm_parms = GetOfdmParams();
     ScParams sc_params = GetSCParams();
+    FdmaParams fdma_params = GetFDMAParams();
     if(MySource->SigType == "OFDM")
         MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentRes.pa_sig, MySymbols[0].tr_sym_clean, ofdm_parms);
     else if(MySource->SigType == "SC")
         MySymbols[0].rec_sym_noisy = mySC.demodulateSignal(CurrentRes.pa_sig, sc_params, sc_params);
+    else if(MySource->SigType == "FDMA") {
+        QVector<QVector<std::complex<double>>> temp = myFdma.demodulate(CurrentRes.pa_sig, fdma_params, sc_params);
+        for(int i = 0; i < MySymbols.size(); ++i)
+            MySymbols[i].rec_sym_noisy = temp[i];
+    }
 }
 
 PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const QVector<double> Coefs, const int IBO_dB, const int LinearGaindB)

@@ -34,6 +34,9 @@ void MetricsEval::comparePSD(
     QVector<double>& psd_tx,
     QVector<double>& psd_rx)
 {
+    freq.clear();
+    psd_rx.clear();
+    psd_tx.clear();
     auto tx_norm = normalizeSignal(tx);
     auto rx_norm = normalizeSignal(rx);
 

@@ -39,7 +39,10 @@ public:
 
     FdmaResult generate(
         const QVector<Symbols> symbolsPerCarrier,
-        const FdmaParams& p);
+        const FdmaParams& p, const ScParams& sc_p);
+    QVector<QVector<std::complex<double>>> demodulate(
+    const QVector<std::complex<double>>& rxSignal,
+        const FdmaParams& p, const ScParams& sc_p);
 
 private:
     SC& sc;
