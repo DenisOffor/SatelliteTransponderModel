@@ -1,6 +1,5 @@
 #ifndef FDMA_H
 #define FDMA_H
-#include <QVector>
 #include <complex>
 #include <cmath>
 #include <QRandomGenerator>
@@ -25,11 +24,11 @@ struct FdmaParams
 
 struct FdmaResult
 {
-    QVector<std::complex<double>> tx;
-    QVector<double> t;
+    std::vector<std::complex<double>> tx;
+    std::vector<double> t;
     double totalBandwidth;
 
-    QVector<ScResult> perCarrierResults;
+    std::vector<ScResult> perCarrierResults;
 };
 
 class FDMA
@@ -38,10 +37,10 @@ public:
     FDMA(SC& scGenerator);
 
     FdmaResult generate(
-        const QVector<Symbols> symbolsPerCarrier,
+        const std::vector<Symbols> symbolsPerCarrier,
         const FdmaParams& p, const ScParams& sc_p);
-    QVector<QVector<std::complex<double>>> demodulate(
-    const QVector<std::complex<double>>& rxSignal,
+    std::vector<std::vector<std::complex<double>>> demodulate(
+    const std::vector<std::complex<double>>& rxSignal,
         const FdmaParams& p, const ScParams& sc_p);
 
 private:

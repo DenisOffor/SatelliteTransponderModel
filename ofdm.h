@@ -1,6 +1,5 @@
 #ifndef OFDM_H
 #define OFDM_H
-#include <QVector>
 #include <complex>
 #include <cmath>
 #include <QRandomGenerator>
@@ -18,9 +17,9 @@ struct OfdmParams {
 };
 
 struct OfdmResult {
-    QVector<std::complex<double>> tx;                     // выходной сигнал
-    QVector<double> t;                      // время
-    QVector<std::complex<double>> currentNoise;
+    std::vector<std::complex<double>> tx;                     // выходной сигнал
+    std::vector<double> t;                      // время
+    std::vector<std::complex<double>> currentNoise;
     double fc;
     double BB = 0.0;                        // полоса
     double Tsym = 0.0;                      // длительность символа
@@ -31,20 +30,20 @@ class OFDM
 {
 public:
     OFDM();
-    OfdmResult makeOfdm(const QVector<std::complex<double>>& symbols,
+    OfdmResult makeOfdm(const std::vector<std::complex<double>>& symbols,
                         const OfdmParams& p);
-    QVector<std::complex<double>> ofdm_demodulate(
-        const QVector<std::complex<double>> &rx,
-        const QVector<std::complex<double>> &sym_clean,
+    std::vector<std::complex<double>> ofdm_demodulate(
+        const std::vector<std::complex<double>> &rx,
+        const std::vector<std::complex<double>> &sym_clean,
         const OfdmParams& p);
     void changeFc(OfdmResult &x, OfdmParams& p);
     void changeAwgn(OfdmResult &x, OfdmParams& p);
 private:
-    QVector<QVector<std::complex<double>>> ofdmSubcarrierMapping(
-        const QVector<std::complex<double>>& dataSymbols,
+    std::vector<std::vector<std::complex<double>>> ofdmSubcarrierMapping(
+        const std::vector<std::complex<double>>& dataSymbols,
         const int Nfft, const int GB_DC, const int GB_Nyq, int& Nactive);
-    QVector<std::complex<double>> ofdm_subcarrier_demapping(
-        const QVector<QVector<std::complex<double>>>& X,
+    std::vector<std::complex<double>> ofdm_subcarrier_demapping(
+        const std::vector<std::vector<std::complex<double>>>& X,
         const int Nfft, const int GB_DC, const int GB_Nyq, const int NumSym);
     void addAwgn(OfdmResult &x, double SNR_dB);
 };

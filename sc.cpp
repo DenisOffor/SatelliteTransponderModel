@@ -2,7 +2,7 @@
 
 SC::SC() {}
 
-ScResult SC::makeSc(const QVector<std::complex<double>>& inputSymbols,
+ScResult SC::makeSc(const std::vector<std::complex<double>>& inputSymbols,
                     const ScParams& p)
 {
     ScResult res;
@@ -14,15 +14,15 @@ ScResult SC::makeSc(const QVector<std::complex<double>>& inputSymbols,
         throw std::runtime_error("Fs too low for symbol rate");
 
     // ----- Паддинг символов -----
-    QVector<std::complex<double>> symbols;
+    std::vector<std::complex<double>> symbols;
 
     int span = p.SC_filter_length;
 
     // padding в начале
     for(int i = 0; i < span; ++i)
-        symbols.append(std::complex<double>(0,0));
+        symbols.push_back(std::complex<double>(0,0));
 
-    symbols += inputSymbols;
+    symbols.insert(symbols.end(), inputSymbols.begin(), inputSymbols.end());
 
     // ----- Полоса -----
     res.bandwidth = (p.SC_FilterType.toLower() == "rrc") ?
@@ -33,7 +33,7 @@ ScResult SC::makeSc(const QVector<std::complex<double>>& inputSymbols,
     auto pulse = rrcFilter(span, sps, p.SC_rolloff);
 
     // ----- Polyphase filtering -----
-    QVector<std::complex<double>> baseband =
+    std::vector<std::complex<double>> baseband =
         polyphaseFilter(symbols, pulse, sps);
 
     // ----- Несущая -----
@@ -78,15 +78,15 @@ ScResult SC::makeSc(const QVector<std::complex<double>>& inputSymbols,
     return res;
 }
 
-QVector<std::complex<double>> SC::polyphaseFilter(
-    const QVector<std::complex<double>>& symbols,
-    const QVector<double>& h,
+std::vector<std::complex<double>> SC::polyphaseFilter(
+    const std::vector<std::complex<double>>& symbols,
+    const std::vector<double>& h,
     int sps)
 {
     int L = h.size();
     int phases = sps;
 
-    QVector<QVector<double>> poly(phases);
+    std::vector<std::vector<double>> poly(phases);
 
     // Polyphase decomposition
     for(int p=0;p<phases;p++)
@@ -95,7 +95,7 @@ QVector<std::complex<double>> SC::polyphaseFilter(
 
     int delay = L/2;
 
-    QVector<std::complex<double>> out(symbols.size()*sps);
+    std::vector<std::complex<double>> out(symbols.size()*sps);
     std::fill(out.begin(), out.end(), std::complex<double>(0,0));
 
     int N = symbols.size();
@@ -126,10 +126,10 @@ QVector<std::complex<double>> SC::polyphaseFilter(
     return out;
 }
 
-QVector<std::complex<double>> SC::upsample(
-    const QVector<std::complex<double>>& in, int sps)
+std::vector<std::complex<double>> SC::upsample(
+    const std::vector<std::complex<double>>& in, int sps)
 {
-    QVector<std::complex<double>> out(in.size() * sps);
+    std::vector<std::complex<double>> out(in.size() * sps);
 
     for(int i = 0; i < in.size(); ++i)
         out[i*sps] = in[i];
@@ -137,10 +137,10 @@ QVector<std::complex<double>> SC::upsample(
     return out;
 }
 
-QVector<double> SC::rrcFilter(int span, int sps, double beta)
+std::vector<double> SC::rrcFilter(int span, int sps, double beta)
 {
     int N = span * sps;
-    QVector<double> h(N+1);
+    std::vector<double> h(N+1);
 
     double T = 1.0;
     int mid = N/2;
@@ -178,11 +178,11 @@ QVector<double> SC::rrcFilter(int span, int sps, double beta)
     return h;
 }
 
-QVector<std::complex<double>> SC::filterSignal(
-    const QVector<std::complex<double>>& x,
-    const QVector<double>& h)
+std::vector<std::complex<double>> SC::filterSignal(
+    const std::vector<std::complex<double>>& x,
+    const std::vector<double>& h)
 {
-    QVector<std::complex<double>> y(x.size());
+    std::vector<std::complex<double>> y(x.size());
 
     for(int n = 0; n < x.size(); ++n)
     {
@@ -224,12 +224,12 @@ void SC::addAwgn(ScResult &x, double SNR_dB)
     }
 }
 
-QVector<std::complex<double>> SC::demodulateSignal(
-    const QVector<std::complex<double>>& tx_signal,
+std::vector<std::complex<double>> SC::demodulateSignal(
+    const std::vector<std::complex<double>>& tx_signal,
     const ScParams& p,
     ScParams& updatedParams)
 {
-    QVector<std::complex<double>> baseband;
+    std::vector<std::complex<double>> baseband;
 
     double Rs = p.SC_symrate;
     int sps = std::round(p.fs * p.oversampling / Rs);
@@ -266,13 +266,13 @@ QVector<std::complex<double>> SC::demodulateSignal(
 
     int span = p.SC_filter_length;
 
-    QVector<double> rx_filter;
+    std::vector<double> rx_filter;
 
     if (p.SC_FilterType.toLower() == "rrc")
         rx_filter = rrcFilter(span, sps, p.SC_rolloff);
     else
     {
-        rx_filter = QVector<double>(sps, 1.0);
+        rx_filter = std::vector<double>(sps, 1.0);
         double norm = 0;
         for(double v : rx_filter) norm += v*v;
         norm = std::sqrt(norm);
@@ -284,8 +284,8 @@ QVector<std::complex<double>> SC::demodulateSignal(
     // удалить суммарную задержку (span символов)
     int total_delay = span;
 
-    if(received.size() > total_delay)
-        received = received.mid(total_delay);
+  //  if(received.size() > total_delay)
+  //      received = received.mid(total_delay);
 
 
     // -------------------------------------------------
@@ -320,16 +320,16 @@ QVector<std::complex<double>> SC::demodulateSignal(
     return received;
 }
 
-QVector<std::complex<double>> SC::matchedFilterDecimate(
-    const QVector<std::complex<double>>& x,
-    const QVector<double>& h,
+std::vector<std::complex<double>> SC::matchedFilterDecimate(
+    const std::vector<std::complex<double>>& x,
+    const std::vector<double>& h,
     int sps)
 {
     int L = h.size();
     int N = x.size();
 
     int outSize = N / sps;
-    QVector<std::complex<double>> out;
+    std::vector<std::complex<double>> out;
     out.reserve(outSize);
 
     int delay = L / 2;
@@ -345,7 +345,7 @@ QVector<std::complex<double>> SC::matchedFilterDecimate(
                 acc += x[idx] * h[k];
         }
 
-        out.append(acc);
+        out.push_back(acc);
     }
 
     return out;

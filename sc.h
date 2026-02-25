@@ -1,6 +1,6 @@
 #ifndef SC_H
 #define SC_H
-#include <QVector>
+
 #include <complex>
 #include <cmath>
 #include <QRandomGenerator>
@@ -20,9 +20,9 @@ struct ScParams {
 };
 
 struct ScResult {
-    QVector<std::complex<double>> tx;
-    QVector<double> t;
-    QVector<std::complex<double>> currentNoise;
+    std::vector<std::complex<double>> tx;
+    std::vector<double> t;
+    std::vector<std::complex<double>> currentNoise;
 
     double bandwidth = 0.0;
     double Tsym = 0.0;
@@ -34,30 +34,30 @@ class SC
 public:
     SC();
 
-    ScResult makeSc(const QVector<std::complex<double>>& symbols,
+    ScResult makeSc(const std::vector<std::complex<double>>& symbols,
                     const ScParams& p);
-    QVector<std::complex<double>> demodulateSignal(
-        const QVector<std::complex<double>>& tx_signal,
+    std::vector<std::complex<double>> demodulateSignal(
+        const std::vector<std::complex<double>>& tx_signal,
         const ScParams& p,
         ScParams& updatedParams);
     void changeAwgn(ScResult &x, ScParams &p);
 
 private:
-    QVector<std::complex<double>> upsample(
-        const QVector<std::complex<double>>& in, int sps);
+    std::vector<std::complex<double>> upsample(
+        const std::vector<std::complex<double>>& in, int sps);
 
-    QVector<double> rrcFilter(int span, int sps, double beta);
+    std::vector<double> rrcFilter(int span, int sps, double beta);
 
-    QVector<std::complex<double>> filterSignal(
-        const QVector<std::complex<double>>& x,
-        const QVector<double>& h);
-    QVector<std::complex<double>> polyphaseFilter(
-        const QVector<std::complex<double>>& symbols,
-        const QVector<double>& h,
+    std::vector<std::complex<double>> filterSignal(
+        const std::vector<std::complex<double>>& x,
+        const std::vector<double>& h);
+    std::vector<std::complex<double>> polyphaseFilter(
+        const std::vector<std::complex<double>>& symbols,
+        const std::vector<double>& h,
         int sps);
-    QVector<std::complex<double>> matchedFilterDecimate(
-        const QVector<std::complex<double>>& x,
-        const QVector<double>& h,
+    std::vector<std::complex<double>> matchedFilterDecimate(
+        const std::vector<std::complex<double>>& x,
+        const std::vector<double>& h,
         int sps);
 
     void addAwgn(ScResult &x, double SNR_dB);

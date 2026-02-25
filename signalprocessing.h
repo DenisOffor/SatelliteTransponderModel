@@ -1,6 +1,5 @@
 #ifndef SIGNALPROCESSING_H
 #define SIGNALPROCESSING_H
-#include <QVector>
 #include "HelpfullStructs.h"
 #include "ofdm.h"
 #include "sc.h"
@@ -13,7 +12,7 @@ class SignalProcessing
 {
 private:
     PaCurve* PACurve;
-    QVector<Symbols> MySymbols;
+    std::vector<Symbols> MySymbols;
     Source* MySource;
     PAModels MyPAModels;
     OFDM myOfdm;
@@ -24,8 +23,8 @@ private:
     FdmaResult CurrentFdmaResults;
     GlobalResults CurrentRes;
     MetricsEval MyMetricsEval;
-    QVector<QVector<double>> freq;
-    QVector<QVector<double>> PSDs;
+    std::vector<std::vector<double>> freq;
+    std::vector<std::vector<double>> PSDs;
 
     //functions
     Symbols GenerateNSymbols();
@@ -35,18 +34,18 @@ private:
     void TransmitSignalProcessing(NeedToRecalc& CurrentRecalcNeeds);
     void PAProcessing(NeedToRecalc& CurrentRecalcNeeds);
     void ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds);
-    void SymsAddNoise(QVector<std::complex<double>>& symbols_clean,
-                      QVector<std::complex<double>>& symbols_noisy);
+    void SymsAddNoise(std::vector<std::complex<double>>& symbols_clean,
+                      std::vector<std::complex<double>>& symbols_noisy);
 public:
     SignalProcessing();
     ~SignalProcessing();
     void GeneratePacksOfSymbols(NeedToRecalc& CurrentRecalcNeeds);
-    PaCurve& CalcPaCurve(const QString model_type, const QVector<double> SalehCoefs, const int IBO_dB, const int LinearGain);
+    PaCurve& CalcPaCurve(const QString model_type, const std::vector<double> SalehCoefs, const int IBO_dB, const int LinearGain);
     void DataUpdate(Source& UISource);
     Symbols& getSymbols();
     GlobalResults& getTimeSignal();
-    QVector<QVector<double>> getFreq();
-    QVector<QVector<double>> getPSDs();
+    std::vector<std::vector<double>> getFreq();
+    std::vector<std::vector<double>> getPSDs();
 
 public slots:
     void MainLogicWork(NeedToRecalc CurrentRecalcNeeds);

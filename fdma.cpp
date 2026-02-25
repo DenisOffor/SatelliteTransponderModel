@@ -4,7 +4,7 @@ FDMA::FDMA(SC& scRef)
     : sc(scRef) {}
 
 FdmaResult FDMA::generate(
-    const QVector<Symbols> symbolsPerCarrier,
+    const std::vector<Symbols> symbolsPerCarrier,
     const FdmaParams& p, const ScParams& sc_p)
 {
     if(symbolsPerCarrier.size() != p.FDMA_num_subcarriers)
@@ -12,10 +12,10 @@ FdmaResult FDMA::generate(
 
     FdmaResult res;
 
-    QVector<ScResult> carrierSignals;
+    std::vector<ScResult> carrierSignals;
     carrierSignals.reserve(p.FDMA_num_subcarriers);
 
-    qsizetype maxLen = 0;
+    size_t maxLen = 0;
 
     // -------------------------------------------------
     // 1️⃣ Генерация каждой поднесущей
@@ -38,7 +38,7 @@ FdmaResult FDMA::generate(
 
         maxLen = std::max(maxLen, scRes.tx.size());
 
-        carrierSignals.append(scRes);
+        carrierSignals.push_back(scRes);
     }
 
     // -------------------------------------------------
@@ -77,11 +77,11 @@ FdmaResult FDMA::generate(
     return res;
 }
 
-QVector<QVector<std::complex<double>>> FDMA::demodulate(
-    const QVector<std::complex<double>>& rxSignal,
+std::vector<std::vector<std::complex<double>>> FDMA::demodulate(
+    const std::vector<std::complex<double>>& rxSignal,
     const FdmaParams& p, const ScParams& sc_p)
 {
-    QVector<QVector<std::complex<double>>> res;
+    std::vector<std::vector<std::complex<double>>> res;
     res.reserve(p.FDMA_num_subcarriers);
 
     // -------------------------------------------------
@@ -103,7 +103,7 @@ QVector<QVector<std::complex<double>>> FDMA::demodulate(
 
         auto scDemod = sc.demodulateSignal(rxSignal, scp, scp);
 
-        res.append(scDemod);
+        res.push_back(scDemod);
     }
 
     return res;

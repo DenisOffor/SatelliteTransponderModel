@@ -37,12 +37,12 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
     timer.restart();
     if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.FullRecalc)
-        if(!CurrentRes.pa_sig.isEmpty())
+        if(!CurrentRes.pa_sig.empty())
             PAProcessing(CurrentRecalcNeeds);
     qDebug() << "PA time:" << timer.elapsed() << "ms";
 
     timer.restart();
-    if(!CurrentRes.pa_sig.isEmpty())
+    if(!CurrentRes.pa_sig.empty())
         ReceiveSignalProcessing(CurrentRecalcNeeds);
     qDebug() << "Rec time:" << timer.elapsed() << "ms";
 
@@ -57,10 +57,10 @@ void SignalProcessing::GeneratePacksOfSymbols(NeedToRecalc& CurrentRecalcNeeds)
         MySymbols.clear();
         if(MySource->SigType == "FDMA")
             for(int i = 0; i < MySource->FDMA_num_subcarriers; i++) {
-                MySymbols.append(GenerateNSymbols());
+                MySymbols.push_back(GenerateNSymbols());
                 SymsAddNoise(MySymbols[i].tr_sym_clean, MySymbols[i].tr_sym_noisy);
             }
-        else { MySymbols.append(GenerateNSymbols()); SymsAddNoise(MySymbols[0].tr_sym_clean, MySymbols[0].tr_sym_noisy); }
+        else { MySymbols.push_back(GenerateNSymbols()); SymsAddNoise(MySymbols[0].tr_sym_clean, MySymbols[0].tr_sym_noisy); }
     }
     else {
         if(MySource->SigType == "FDMA")
@@ -125,7 +125,7 @@ Symbols SignalProcessing::GenerateNSymbols()
     return temp;
 }
 
-void SignalProcessing::SymsAddNoise(QVector<std::complex<double>>& symbols_clean, QVector<std::complex<double>>& symbols_noisy) {
+void SignalProcessing::SymsAddNoise(std::vector<std::complex<double>>& symbols_clean, std::vector<std::complex<double>>& symbols_noisy) {
     double P_signal = 0;
     for (auto& s : symbols_clean)
         P_signal += std::norm(s);
@@ -230,7 +230,7 @@ void SignalProcessing::TransmitSignalProcessing(NeedToRecalc& CurrentRecalcNeeds
 
 void SignalProcessing::PAProcessing(NeedToRecalc& CurrentRecalcNeeds)
 {
-    if(!CurrentRes.pa_sig.isEmpty()) {
+    if(!CurrentRes.pa_sig.empty()) {
         CurrentRes.pa_sig = CurrentRes.tx_sig;
         if(MySource->PAModel == "Saleh")
             MyPAModels.SalehModel(CurrentRes.pa_sig, MySource->SalehCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
@@ -251,13 +251,13 @@ void SignalProcessing::ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
     else if(MySource->SigType == "SC")
         MySymbols[0].rec_sym_noisy = mySC.demodulateSignal(CurrentRes.pa_sig, sc_params, sc_params);
     else if(MySource->SigType == "FDMA") {
-        QVector<QVector<std::complex<double>>> temp = myFdma.demodulate(CurrentRes.pa_sig, fdma_params, sc_params);
+        std::vector<std::vector<std::complex<double>>> temp = myFdma.demodulate(CurrentRes.pa_sig, fdma_params, sc_params);
         for(int i = 0; i < MySymbols.size(); ++i)
             MySymbols[i].rec_sym_noisy = temp[i];
     }
 }
 
-PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const QVector<double> Coefs, const int IBO_dB, const int LinearGaindB)
+PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<double> Coefs, const int IBO_dB, const int LinearGaindB)
 {
     double linear_gain = qPow(10.0, LinearGaindB / 20);
     if(model_type == "Saleh") {
@@ -401,12 +401,12 @@ GlobalResults &SignalProcessing::getTimeSignal()
         return CurrentRes;
 }
 
-QVector<QVector<double> > SignalProcessing::getFreq()
+std::vector<std::vector<double> > SignalProcessing::getFreq()
 {
     return freq;
 }
 
-QVector<QVector<double> > SignalProcessing::getPSDs()
+std::vector<std::vector<double> > SignalProcessing::getPSDs()
 {
     return PSDs;
 }

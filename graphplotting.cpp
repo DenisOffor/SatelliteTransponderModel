@@ -13,8 +13,8 @@ GraphPlotting::~GraphPlotting() {
     }
 }
 
-void GraphPlotting::init(QVector<QWidget*> SetupGraphWidgets, QVector<QWidget*> ConstellationsGraphWidgets,
-                         QVector<QWidget*> TimeDomainGraphWidgets, QVector<QWidget*> PSDGraphWidgets) {
+void GraphPlotting::init(std::vector<QWidget*> SetupGraphWidgets, std::vector<QWidget*> ConstellationsGraphWidgets,
+                         std::vector<QWidget*> TimeDomainGraphWidgets, std::vector<QWidget*> PSDGraphWidgets) {
     InitializeIdealSymConstPlot(SetupGraphWidgets[0]);
     InitializePaCurvePlot(SetupGraphWidgets[1]);
     InitializeConstellationsPlotting(ConstellationsGraphWidgets);
@@ -69,8 +69,8 @@ void GraphPlotting::PlotIdealSymConstellation(const QString ModType) {
 
 void GraphPlotting::PlotConstellationsPlots(const Symbols& MySymbols)
 {
-    if(!MySymbols.tr_sym_clean.isEmpty()) {
-        QVector<double> x, y;
+    QVector<double> x, y;
+    if(!MySymbols.tr_sym_clean.empty()) {
         for (const auto& symbol : MySymbols.tr_sym_clean) {
             x.append(symbol.real());  // X = действительная часть
             y.append(symbol.imag());  // Y = мнимая часть
@@ -79,7 +79,7 @@ void GraphPlotting::PlotConstellationsPlots(const Symbols& MySymbols)
         plotsOfConstellations[0]->replot();
     }
 
-    if(!MySymbols.tr_sym_noisy.isEmpty()) {
+    if(!MySymbols.tr_sym_noisy.empty()) {
         x.clear(); y.clear();
         for (const auto& symbol : MySymbols.tr_sym_noisy) {
             x.append(symbol.real());  // X = действительная часть
@@ -89,7 +89,7 @@ void GraphPlotting::PlotConstellationsPlots(const Symbols& MySymbols)
         plotsOfConstellations[1]->replot();
     }
 
-    if(!MySymbols.rec_sym_noisy.isEmpty()) {
+    if(!MySymbols.rec_sym_noisy.empty()) {
         x.clear(); y.clear();
         for (const auto& symbol : MySymbols.rec_sym_noisy) {
             x.append(symbol.real());  // X = действительная часть
@@ -102,7 +102,7 @@ void GraphPlotting::PlotConstellationsPlots(const Symbols& MySymbols)
 
 void GraphPlotting::PlotTimeDomainPlots(const GlobalResults &CurrentRes, bool rescale)
 {
-    if(!CurrentRes.tx_sig.isEmpty()) {
+    if(!CurrentRes.tx_sig.empty()) {
         QVector<double> y_tx, y_pa;
         for (const auto& symbol : CurrentRes.tx_sig) y_tx.append(symbol.real());
         for (const auto& symbol : CurrentRes.pa_sig) y_pa.append(symbol.real());
@@ -124,18 +124,23 @@ void GraphPlotting::PlotTimeDomainPlots(const GlobalResults &CurrentRes, bool re
     }
 }
 
-void GraphPlotting::PlotPSDPlots(const QVector<QVector<double>>& PSDs, const QVector<QVector<double>>& freqs)
+void GraphPlotting::PlotPSDPlots(const std::vector<std::vector<double>>& PSDs, const std::vector<std::vector<double>>& freqs)
 {
-    if(!PSDs.isEmpty() && !freqs.isEmpty()) {
-        plotsOfPSD[0]->graph(0)->setData(freqs[0], PSDs[0]);
-        plotsOfPSD[1]->graph(0)->setData(freqs[0], PSDs[1]);
+    QVector<QVector<double>> qPSDs;
+    QVector<QVector<double>> qfreqs;
+    for (const auto& psd : PSDs) { qPSDs.append(QVector<double>(psd.begin(), psd.end())); }
+    for (const auto& freqs : freqs) { qfreqs.append(QVector<double>(freqs.begin(), freqs.end())); }
+
+    if(!PSDs.empty() && !freqs.empty()) {
+        plotsOfPSD[0]->graph(0)->setData(qfreqs[0], qPSDs[0]);
+        plotsOfPSD[1]->graph(0)->setData(qfreqs[0], qPSDs[1]);
         plotsOfPSD[0]->graph(0)->rescaleAxes();
         plotsOfPSD[1]->graph(0)->rescaleAxes();
         plotsOfPSD[0]->replot();
         plotsOfPSD[1]->replot();
 
-        plotsOfPSD[3]->graph(0)->setData(freqs[0], PSDs[0]);
-        plotsOfPSD[3]->graph(1)->setData(freqs[0], PSDs[1]);
+        plotsOfPSD[3]->graph(0)->setData(qfreqs[0], qPSDs[0]);
+        plotsOfPSD[3]->graph(1)->setData(qfreqs[0], qPSDs[1]);
         plotsOfPSD[3]->graph(0)->rescaleAxes();
         plotsOfPSD[3]->replot();
     }
@@ -143,47 +148,67 @@ void GraphPlotting::PlotPSDPlots(const QVector<QVector<double>>& PSDs, const QVe
 
 void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
 {
+    QVector<double> x, y;
+    QVector<double> wp_x, wp_y;
     QString xLabel, yLabel;
     x.resize(PACurve.point_num);
     y.resize(PACurve.point_num);
 
     if (actions[0]->isChecked() && actions[3]->isChecked()) {
-        x = PACurve.P_in_norm.linear;
-        y     = PACurve.P_out_norm.linear;
-        wp_x  = PACurve.Working_point_linear_norm.x;
-        wp_y  = PACurve.Working_point_linear_norm.y;
+        x = QVector<double>(PACurve.P_in_norm.linear.begin(),
+                            PACurve.P_in_norm.linear.end());
+        x = QVector<double>(PACurve.P_out_norm.linear.begin(),
+                            PACurve.P_out_norm.linear.end());
+        wp_y  = QVector<double>(PACurve.Working_point_linear_norm.y.begin(),
+                            PACurve.Working_point_linear_norm.y.end());
+        wp_x  = QVector<double>(PACurve.Working_point_linear_norm.x.begin(),
+                            PACurve.Working_point_linear_norm.x.end());
         xLabel = "Pвх/Pнас, Вт";
         yLabel = "Pвх/Pнас, Вт";
     }
     else if (actions[0]->isChecked() && actions[2]->isChecked()) {
-        x     = PACurve.P_in_abs.linear;
-        y     = PACurve.P_out_abs.linear;
-        wp_x  = PACurve.Working_point_linear_abs.x;
-        wp_y  = PACurve.Working_point_linear_abs.y;
+        x = QVector<double>(PACurve.P_in_abs.linear.begin(),
+                            PACurve.P_in_abs.linear.end());
+        x = QVector<double>(PACurve.P_out_abs.linear.begin(),
+                            PACurve.P_out_abs.linear.end());
+        wp_y  = QVector<double>(PACurve.Working_point_linear_abs.y.begin(),
+                               PACurve.Working_point_linear_abs.y.end());
+        wp_x  = QVector<double>(PACurve.Working_point_linear_abs.x.begin(),
+                               PACurve.Working_point_linear_abs.x.end());
         xLabel = "Pвх, Вт";
         yLabel = "Pвых, Вт";
     }
     else if (actions[1]->isChecked() && actions[3]->isChecked()) {
-        x     = PACurve.P_in_norm.dB;
-        y     = PACurve.P_out_norm.dB;
-        wp_x  = PACurve.Working_point_dB_norm.x;
-        wp_y  = PACurve.Working_point_dB_norm.y;
+        x = QVector<double>(PACurve.P_in_norm.linear.begin(),
+                            PACurve.P_in_norm.linear.end());
+        x = QVector<double>(PACurve.P_out_norm.linear.begin(),
+                            PACurve.P_out_norm.linear.end());
+        wp_y  = QVector<double>(PACurve.Working_point_dB_norm.y.begin(),
+                               PACurve.Working_point_dB_norm.y.end());
+        wp_x  = QVector<double>(PACurve.Working_point_dB_norm.x.begin(),
+                               PACurve.Working_point_dB_norm.x.end());
         xLabel = "Pвх/Pнас, дБВт";
         yLabel = "Pвых/Pнас, дБВт";
     }
     else {
-        x     = PACurve.P_in_abs.dB;
-        y     = PACurve.P_out_abs.dB;
-        wp_x  = PACurve.Working_point_dB_abs.x;
-        wp_y  = PACurve.Working_point_dB_abs.y;
+        x = QVector<double>(PACurve.P_in_abs.linear.begin(),
+                            PACurve.P_in_abs.linear.end());
+        x = QVector<double>(PACurve.P_out_abs.linear.begin(),
+                            PACurve.P_out_abs.linear.end());
+        wp_y  = QVector<double>(PACurve.Working_point_dB_abs.y.begin(),
+                               PACurve.Working_point_dB_abs.y.end());
+        wp_x  = QVector<double>(PACurve.Working_point_dB_abs.x.begin(),
+                               PACurve.Working_point_dB_abs.x.end());
         xLabel = "Pвх, дБВт";
         yLabel = "Pвых, дБВт";
     }
 
+    QVector<double> Phi = QVector<double>(PACurve.Phi.begin(), PACurve.Phi.end());
+    QVector<double> Phi_work = QVector<double>(PACurve.Phi_work_grad.begin(), PACurve.Phi_work_grad.end());
     plotPaCurve->graph(0)->setData(x, y);
-    plotPaCurve->graph(1)->setData(x, PACurve.Phi);
+    plotPaCurve->graph(1)->setData(x, Phi);
     plotPaCurve->graph(2)->setData(wp_x, wp_y);
-    plotPaCurve->graph(3)->setData(wp_x, PACurve.Phi_work_grad);
+    plotPaCurve->graph(3)->setData(wp_x, Phi_work);
 
     plotPaCurve->xAxis->setLabel(xLabel);
     plotPaCurve->yAxis->setLabel(yLabel);
@@ -243,7 +268,7 @@ void GraphPlotting::InitializeIdealSymConstPlot(QWidget *GraphWidget)
     PlotIdealSymConstellation("BPSK");
 }
 
-void GraphPlotting::InitializeTimeDomainPlotting(QVector<QWidget*> TimeDomainGraphWidgets)
+void GraphPlotting::InitializeTimeDomainPlotting(std::vector<QWidget*> TimeDomainGraphWidgets)
 {
     for(int i = 0; i < 6; i++) {
         plotsOfTimeDomain[i] = new QCustomPlot(TimeDomainGraphWidgets[i]);
@@ -267,7 +292,7 @@ void GraphPlotting::InitializeTimeDomainPlotting(QVector<QWidget*> TimeDomainGra
     }
 }
 
-void GraphPlotting::InitializePSDPlotting(QVector<QWidget*> PSDGraphWidgets)
+void GraphPlotting::InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets)
 {
     for(int i = 0; i < 6; i++) {
         plotsOfPSD[i] = new QCustomPlot(PSDGraphWidgets[i]);
@@ -300,7 +325,7 @@ void GraphPlotting::InitializePSDPlotting(QVector<QWidget*> PSDGraphWidgets)
     }
 }
 
-void GraphPlotting::InitializeConstellationsPlotting(QVector<QWidget *> ConstellationsGraphWidgets)
+void GraphPlotting::InitializeConstellationsPlotting(std::vector<QWidget *> ConstellationsGraphWidgets)
 {
     for(int i = 0; i < 6; i++) {
         plotsOfConstellations[i] = new QCustomPlot(ConstellationsGraphWidgets[i]);

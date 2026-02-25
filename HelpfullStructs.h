@@ -1,6 +1,5 @@
 #ifndef HELPFULLSTRUCTS_H
 #define HELPFULLSTRUCTS_H
-#include <QVector>
 #include <qmath.h>
 #include <QPair>
 #include <QString>
@@ -12,8 +11,8 @@
 #include "fft.h"
 
 struct Curve2D {
-    QVector<double> dB;
-    QVector<double> linear;
+    std::vector<double> dB;
+    std::vector<double> linear;
 
     void resize(int n) {
         dB.resize(n);
@@ -22,8 +21,8 @@ struct Curve2D {
 };
 
 struct Point {
-    QVector<double> x;
-    QVector<double> y;
+    std::vector<double> x;
+    std::vector<double> y;
 
     void resize(int n) {
         x.resize(n);
@@ -32,11 +31,11 @@ struct Point {
 };
 
 struct Symbols{
-    QVector<std::complex<double>> tr_sym_clean;
-    QVector<std::complex<double>> tr_sym_noisy;
-    QVector<std::complex<double>> sym_after_pa;
-    QVector<std::complex<double>> rec_sym_noisy;
-    QVector<int> data;
+    std::vector<std::complex<double>> tr_sym_clean;
+    std::vector<std::complex<double>> tr_sym_noisy;
+    std::vector<std::complex<double>> sym_after_pa;
+    std::vector<std::complex<double>> rec_sym_noisy;
+    std::vector<int> data;
 
     void resize(int n) {
         data.resize(n);
@@ -59,10 +58,10 @@ struct PaCurve {
     Point Working_point_dB_norm;
     Point Working_point_linear_norm;
 
-    QVector<double> Phi;
-    QVector<double> Phi_work_grad;
-    QVector<double> r_in;
-    QVector<double> Aout;
+    std::vector<double> Phi;
+    std::vector<double> Phi_work_grad;
+    std::vector<double> r_in;
+    std::vector<double> Aout;
 
     explicit PaCurve(int size = 1000) {
         resize(size);
@@ -120,9 +119,9 @@ struct Source {
     QString PAModel;
     int linear_gain_dB;
     int IBO_dB;
-    QVector<double> SalehCoeffs;
-    QVector<double> RappCoeffs;
-    QVector<double> GhorbaniCoeffs;
+    std::vector<double> SalehCoeffs;
+    std::vector<double> RappCoeffs;
+    std::vector<double> GhorbaniCoeffs;
 };
 
 struct NeedToRecalc{
@@ -156,11 +155,11 @@ struct NeedToRecalc{
 };
 
 struct GlobalResults {
-    QVector<std::complex<double>> tx_sig;
-    QVector<std::complex<double>> pa_sig;
-    QVector<std::complex<double>> pa_plus_dpd_sig;
-    QVector<std::complex<double>> rec_sig;
-    QVector<double> time;
+    std::vector<std::complex<double>> tx_sig;
+    std::vector<std::complex<double>> pa_sig;
+    std::vector<std::complex<double>> pa_plus_dpd_sig;
+    std::vector<std::complex<double>> rec_sig;
+    std::vector<double> time;
 
     void resize(int size) {
         tx_sig.resize(size);
@@ -178,8 +177,8 @@ struct GlobalResults {
 };
 
 struct PSDdata {
-    QVector<QVector<double>> f;
-    QVector<QVector<double>> PSD;
+    std::vector<std::vector<double>> f;
+    std::vector<std::vector<double>> PSD;
 
     void resize(int n) {
         f.resize(n);

@@ -4,10 +4,10 @@ MetricsEval::MetricsEval(): fftw8192(FFT_SIZE) {
     window = hamming(WINDOW_SISE);
 }
 
-QVector<std::complex<double>> MetricsEval::normalizeSignal(
-    const QVector<std::complex<double>>& tx)
+std::vector<std::complex<double>> MetricsEval::normalizeSignal(
+    const std::vector<std::complex<double>>& tx)
 {
-    if (tx.isEmpty())
+    if (tx.empty())
         return {};
 
     double sum = 0.0;
@@ -19,7 +19,7 @@ QVector<std::complex<double>> MetricsEval::normalizeSignal(
     if (rms == 0.0)
         return tx;
 
-    QVector<std::complex<double>> tx_norm(tx.size());
+    std::vector<std::complex<double>> tx_norm(tx.size());
     for (int i = 0; i < tx.size(); ++i)
         tx_norm[i] = tx[i] / rms;
 
@@ -27,12 +27,12 @@ QVector<std::complex<double>> MetricsEval::normalizeSignal(
 }
 
 void MetricsEval::comparePSD(
-    const QVector<std::complex<double>>& tx,
-    const QVector<std::complex<double>>& rx,
+    const std::vector<std::complex<double>>& tx,
+    const std::vector<std::complex<double>>& rx,
     double Fs,
-    QVector<double>& freq,
-    QVector<double>& psd_tx,
-    QVector<double>& psd_rx)
+    std::vector<double>& freq,
+    std::vector<double>& psd_tx,
+    std::vector<double>& psd_rx)
 {
     freq.clear();
     psd_rx.clear();
@@ -44,19 +44,19 @@ void MetricsEval::comparePSD(
     computePSDWelch(rx_norm, Fs, freq, psd_rx);
 }
 
-QVector<double> MetricsEval::hamming(int N)
+std::vector<double> MetricsEval::hamming(int N)
 {
-    QVector<double> w(N);
+    std::vector<double> w(N);
     for (int n = 0; n < N; ++n)
         w[n] = 0.54 - 0.46 * std::cos(2.0 * M_PI * n / (N - 1));
     return w;
 }
 
 void MetricsEval::computePSDWelch(
-    const QVector<std::complex<double>>& tx,
+    const std::vector<std::complex<double>>& tx,
     double Fs,
-    QVector<double>& freq,
-    QVector<double>& psd)
+    std::vector<double>& freq,
+    std::vector<double>& psd)
 {
     const int winSize = 2048;
     const int overlap = 1024;
@@ -70,9 +70,10 @@ void MetricsEval::computePSDWelch(
     // MATLAB-совместимое число сегментов
     int segments = 1 + (tx.size() - winSize) / step;
 
-    psd = QVector<double>(nfft, 0.0);
+    psd = std::vector<double>(nfft, 0.0);
 
-    QVector<std::complex<double>> buffer(nfft);
+    std::vector<std::complex<double>> buffer(nfft);
+    //QVector<std::complex<double>> spectrum(nfft);
 
     for (int k = 0; k < segments; ++k)
     {
@@ -83,10 +84,10 @@ void MetricsEval::computePSDWelch(
         for (int i = 0; i < winSize; ++i)
             buffer[i] = tx[start + i] * window[i];
 
-        auto spectrum = fftw8192.fft(buffer);
+        fftw8192.fftInPlace(buffer);
 
         for (int i = 0; i < nfft; ++i)
-            psd[i] += std::norm(spectrum[i]);
+            psd[i] += std::norm(buffer[i]);
     }
 
     // усреднение по сегментам

@@ -2,14 +2,14 @@
 
 PAModels::PAModels() {}
 
-void PAModels::SalehModel(QVector<std::complex<double>>& sig,
-                          QVector<double>& Coeffs,
+void PAModels::SalehModel(std::vector<std::complex<double>>& sig,
+                          std::vector<double>& Coeffs,
                           int& linear_gain_dB, int& IBO_dB)
 {
-    QVector<double> amplitude_in(sig.size());
-    QVector<double> phase_in(sig.size());
-    QVector<double> amplitude_out(sig.size());
-    QVector<double> phase_out(sig.size());
+    std::vector<double> amplitude_in(sig.size());
+    std::vector<double> phase_in(sig.size());
+    std::vector<double> amplitude_out(sig.size());
+    std::vector<double> phase_out(sig.size());
 
     double gain_linear = qPow(10, linear_gain_dB / 10.0);
 
@@ -33,12 +33,12 @@ void PAModels::SalehModel(QVector<std::complex<double>>& sig,
     }
 }
 
-void PAModels::RappModel(QVector<std::complex<double>>& sig, QVector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB)
+void PAModels::RappModel(std::vector<std::complex<double>>& sig, std::vector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB)
 {
-    QVector<double> amplitude_in(sig.size());
-    QVector<double> phase_in(sig.size());
-    QVector<double> amplitude_out(sig.size());
-    QVector<double> phase_out(sig.size());
+    std::vector<double> amplitude_in(sig.size());
+    std::vector<double> phase_in(sig.size());
+    std::vector<double> amplitude_out(sig.size());
+    std::vector<double> phase_out(sig.size());
 
     double gain_linear = qPow(10, linear_gain_dB / 10.0);
 
@@ -57,19 +57,19 @@ void PAModels::RappModel(QVector<std::complex<double>>& sig, QVector<double>& Co
     }
 }
 
-void PAModels::GhorbaniModel(QVector<std::complex<double>>& sig, QVector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB)
+void PAModels::GhorbaniModel(std::vector<std::complex<double>>& sig, std::vector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB)
 {
-    QVector<double> amplitude_in(sig.size());
-    QVector<double> phase_in(sig.size());
-    QVector<double> amplitude_out(sig.size());
-    QVector<double> phase_out(sig.size());
+    std::vector<double> amplitude_in(sig.size());
+    std::vector<double> phase_in(sig.size());
+    std::vector<double> amplitude_out(sig.size());
+    std::vector<double> phase_out(sig.size());
 
     double gain_linear = qPow(10, linear_gain_dB / 10.0);
     double A_sat = find_Asat_Ghorbani(Coeffs, gain_linear);
     apply_IBO(sig, IBO_dB, A_sat);
     double A_rms = 0.0;
 
-    if (!sig.isEmpty())
+    if (!sig.empty())
     {
         double sum = 0.0;
 
@@ -96,11 +96,11 @@ void PAModels::GhorbaniModel(QVector<std::complex<double>>& sig, QVector<double>
     }
 }
 
-void PAModels::apply_IBO(QVector<std::complex<double>>& tx,
+void PAModels::apply_IBO(std::vector<std::complex<double>>& tx,
                          double IBO_dB,
                          double A_sat)
 {
-    if (tx.isEmpty())
+    if (tx.empty())
         return;
 
     double sum = 0.0;
@@ -125,7 +125,7 @@ void PAModels::apply_IBO(QVector<std::complex<double>>& tx,
         s *= scale;
 }
 
-double PAModels::find_Asat_Ghorbani(const QVector<double>& c,
+double PAModels::find_Asat_Ghorbani(const std::vector<double>& c,
                                     double gain_linear)
 {
     double Amax = 10.0;      // верхняя граница поиска

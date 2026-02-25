@@ -8,17 +8,33 @@ MainWindow::MainWindow(QWidget *parent)
     MySigProc()
 {
     ui->setupUi(this);
-    QVector<QWidget*> SetupGraphWidgets;
-    SetupGraphWidgets << ui->SymConstGroupBoxWidget << ui->PAPlotCurve_Widget;
-    QVector<QWidget*> ConstellationsGraphWidgets;
-    ConstellationsGraphWidgets << ui->ConstelPageGraph1_Widget << ui->ConstelPageGraph2_Widget << ui->ConstelPageGraph3_Widget
-                 << ui->ConstelPageGraph4_Widget << ui->ConstelPageGraph5_Widget << ui->ConstelPageGraph6_Widget;
-    QVector<QWidget*> TimeDomainGraphWidgets;
-    TimeDomainGraphWidgets << ui->TimeDomainGraph1_Widget << ui->TimeDomainGraph2_Widget << ui->TimeDomainGraph3_Widget
-                               << ui->TimeDomainGraph4_Widget << ui->TimeDomainGraph5_Widget << ui->TimeDomainGraph6_Widget;
-    QVector<QWidget*> PSDGraphWidgets;
-    PSDGraphWidgets << ui->PSDPageGraph1_Widget << ui->PSDPageGraph2_Widget << ui->PSDPageGraph3_Widget
-                           << ui->PSDPageGraph4_Widget << ui->PSDPageGraph5_Widget << ui->PSDPageGraph6_Widget;
+    std::vector<QWidget*> SetupGraphWidgets;
+    SetupGraphWidgets.push_back(ui->SymConstGroupBoxWidget);
+    SetupGraphWidgets.push_back(ui->PAPlotCurve_Widget);
+
+    std::vector<QWidget*> ConstellationsGraphWidgets;
+    ConstellationsGraphWidgets.push_back(ui->ConstelPageGraph1_Widget);
+    ConstellationsGraphWidgets.push_back(ui->ConstelPageGraph2_Widget);
+    ConstellationsGraphWidgets.push_back(ui->ConstelPageGraph3_Widget);
+    ConstellationsGraphWidgets.push_back(ui->ConstelPageGraph4_Widget);
+    ConstellationsGraphWidgets.push_back(ui->ConstelPageGraph5_Widget);
+    ConstellationsGraphWidgets.push_back(ui->ConstelPageGraph6_Widget);
+
+    std::vector<QWidget*> TimeDomainGraphWidgets;
+    TimeDomainGraphWidgets.push_back(ui->TimeDomainGraph1_Widget);
+    TimeDomainGraphWidgets.push_back(ui->TimeDomainGraph2_Widget);
+    TimeDomainGraphWidgets.push_back(ui->TimeDomainGraph3_Widget);
+    TimeDomainGraphWidgets.push_back(ui->TimeDomainGraph4_Widget);
+    TimeDomainGraphWidgets.push_back(ui->TimeDomainGraph5_Widget);
+    TimeDomainGraphWidgets.push_back(ui->TimeDomainGraph6_Widget);
+
+    std::vector<QWidget*> PSDGraphWidgets;
+    PSDGraphWidgets.push_back(ui->PSDPageGraph1_Widget);
+    PSDGraphWidgets.push_back(ui->PSDPageGraph2_Widget);
+    PSDGraphWidgets.push_back(ui->PSDPageGraph3_Widget);
+    PSDGraphWidgets.push_back(ui->PSDPageGraph4_Widget);
+    PSDGraphWidgets.push_back(ui->PSDPageGraph5_Widget);
+    PSDGraphWidgets.push_back(ui->PSDPageGraph6_Widget);
 
     Graphs.init(SetupGraphWidgets, ConstellationsGraphWidgets, TimeDomainGraphWidgets, PSDGraphWidgets);
 
@@ -57,23 +73,29 @@ void MainWindow::MakeMainCalcAndPlot()
 }
 
 void MainWindow::PaCurvePlot() {
-    QVector<double> Coeffs;
+    std::vector<double> Coeffs;
     QString model_type = ui->PAModel_ComboBox->currentText();
     if(model_type == "Saleh") {
-        Coeffs << ui->SalehCoef1_doubleSpinBox->value() << ui->SalehCoef2_doubleSpinBox->value()
-               << ui->SalehCoef3_doubleSpinBox->value() << ui->SalehCoef4_doubleSpinBox->value();
+        Coeffs.push_back(ui->SalehCoef1_doubleSpinBox->value());
+        Coeffs.push_back(ui->SalehCoef2_doubleSpinBox->value());
+        Coeffs.push_back(ui->SalehCoef3_doubleSpinBox->value());
+        Coeffs.push_back(ui->SalehCoef4_doubleSpinBox->value());
         Graphs.PlotPaCurve(MySigProc.CalcPaCurve(model_type, Coeffs, ui->IBO_SpinBox->value(),
                                                  ui->LinearGain_SpinBox->value()),  ui->PACurveToolButton->menu()->actions());
     }
     else if (model_type == "Rapp") {
-        Coeffs << ui->RappAsatCoef_doubleSpinBox->value() << ui->RappPCoef_doubleSpinBox->value();
+        Coeffs.push_back(ui->RappAsatCoef_doubleSpinBox->value());
+        Coeffs.push_back(ui->RappPCoef_doubleSpinBox->value());
         Graphs.PlotPaCurve(MySigProc.CalcPaCurve(model_type, Coeffs, ui->IBO_SpinBox->value(),
                                                    ui->LinearGain_SpinBox->value()), ui->PACurveToolButton->menu()->actions());
     }
     else if (model_type == "Ghorbani") {
-        Coeffs << ui->GhorbaniCoef1_doubleSpinBox->value() << ui->GhorbaniCoef2_doubleSpinBox->value()
-               << ui->GhorbaniCoef3_doubleSpinBox->value() << ui->GhorbaniCoef4_doubleSpinBox->value()
-               << ui->GhorbaniCoef5_doubleSpinBox->value() << ui->GhorbaniCoef6_doubleSpinBox->value();
+        Coeffs.push_back(ui->GhorbaniCoef1_doubleSpinBox->value());
+        Coeffs.push_back(ui->GhorbaniCoef2_doubleSpinBox->value());
+        Coeffs.push_back(ui->GhorbaniCoef3_doubleSpinBox->value());
+        Coeffs.push_back(ui->GhorbaniCoef4_doubleSpinBox->value());
+        Coeffs.push_back(ui->GhorbaniCoef5_doubleSpinBox->value());
+        Coeffs.push_back(ui->GhorbaniCoef6_doubleSpinBox->value());
         Graphs.PlotPaCurve(MySigProc.CalcPaCurve(model_type, Coeffs, ui->IBO_SpinBox->value(),
                                                    ui->LinearGain_SpinBox->value()), ui->PACurveToolButton->menu()->actions());
     }
@@ -177,12 +199,22 @@ void MainWindow::FirstDataUpdate()
     UISource.oversampling = ui->Oversapmling_SpinBox->value();
     UISource.fs = ui->Fs_SpinBox->value();
     UISource.SNRSig = ui->SNRSig_SpinBox->value();
-    UISource.SalehCoeffs << ui->SalehCoef1_doubleSpinBox->value() << ui->SalehCoef2_doubleSpinBox->value()
-                      << ui->SalehCoef3_doubleSpinBox->value() << ui->SalehCoef4_doubleSpinBox->value();
-    UISource.RappCoeffs << ui->RappAsatCoef_doubleSpinBox->value() << ui->RappPCoef_doubleSpinBox->value();
-    UISource.GhorbaniCoeffs << ui->GhorbaniCoef1_doubleSpinBox->value() << ui->GhorbaniCoef2_doubleSpinBox->value()
-                         << ui->GhorbaniCoef3_doubleSpinBox->value() << ui->GhorbaniCoef4_doubleSpinBox->value()
-                         << ui->GhorbaniCoef5_doubleSpinBox->value() << ui->GhorbaniCoef6_doubleSpinBox->value();
+
+    UISource.SalehCoeffs.push_back(ui->SalehCoef1_doubleSpinBox->value());
+    UISource.SalehCoeffs.push_back(ui->SalehCoef2_doubleSpinBox->value());
+    UISource.SalehCoeffs.push_back(ui->SalehCoef3_doubleSpinBox->value());
+    UISource.SalehCoeffs.push_back(ui->SalehCoef4_doubleSpinBox->value());
+
+    UISource.RappCoeffs.push_back(ui->RappAsatCoef_doubleSpinBox->value());
+    UISource.RappCoeffs.push_back(ui->RappPCoef_doubleSpinBox->value());
+
+    UISource.GhorbaniCoeffs.push_back(ui->GhorbaniCoef1_doubleSpinBox->value());
+    UISource.GhorbaniCoeffs.push_back(ui->GhorbaniCoef2_doubleSpinBox->value());
+    UISource.GhorbaniCoeffs.push_back(ui->GhorbaniCoef3_doubleSpinBox->value());
+    UISource.GhorbaniCoeffs.push_back(ui->GhorbaniCoef4_doubleSpinBox->value());
+    UISource.GhorbaniCoeffs.push_back(ui->GhorbaniCoef5_doubleSpinBox->value());
+    UISource.GhorbaniCoeffs.push_back(ui->GhorbaniCoef6_doubleSpinBox->value());
+
     UISource.linear_gain_dB = ui->LinearGain_SpinBox->value();
     UISource.IBO_dB = ui->IBO_SpinBox->value();
     UISource.PAModel = ui->PAModel_ComboBox->currentText();

@@ -9,16 +9,16 @@ class MetricsEval
 {
 private:
     FFT fftw8192;
-    QVector<double> window;
+    std::vector<double> window;
 public:
     MetricsEval();
-    void computePSDWelch(const QVector<std::complex<double>>& tx, double Fs,
-                         QVector<double>& freq, QVector<double>& psd);
-    QVector<std::complex<double>> normalizeSignal(const QVector<std::complex<double>>& tx);
-    QVector<double> hamming(int N);
-    void comparePSD(const QVector<std::complex<double>>& tx,
-                    const QVector<std::complex<double>>& rx, double Fs,
-                    QVector<double>& freq, QVector<double>& psd_tx, QVector<double>& psd_rx);
+    void computePSDWelch(const std::vector<std::complex<double>>& tx, double Fs,
+                         std::vector<double>& freq, std::vector<double>& psd);
+    std::vector<std::complex<double>> normalizeSignal(const std::vector<std::complex<double>>& tx);
+    std::vector<double> hamming(int N);
+    void comparePSD(const std::vector<std::complex<double>>& tx,
+                    const std::vector<std::complex<double>>& rx, double Fs,
+                    std::vector<double>& freq, std::vector<double>& psd_tx, std::vector<double>& psd_rx);
 };
 
 

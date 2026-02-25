@@ -1,9 +1,9 @@
 #ifndef FFT_H
 #define FFT_H
-#include <QVector>
 #include <complex>
 #include <cmath>
 #include <fftw3.h>
+#include "HelpfullStructs.h"
 
 class FFT
 {
@@ -11,13 +11,16 @@ public:
     FFT(int n);
     ~FFT();
 
-    QVector<std::complex<double>> fft(const QVector<std::complex<double>>& x);
-    QVector<std::complex<double>> ifft(const QVector<std::complex<double>>& X);
+    std::vector<std::complex<double>> fft(const std::vector<std::complex<double>>& x);
+    std::vector<std::complex<double>> ifft(const std::vector<std::complex<double>>& X);
+    std::vector<std::complex<double>> fftInPlace(std::vector<std::complex<double>> x);
+    std::vector<std::complex<double>> ifftInPlace(std::vector<std::complex<double>> x);
+
 private:
     int m_n;
+    std::vector<std::complex<double>> m_buffer;
     fftw_plan m_planForward;
     fftw_plan m_planBackward;
-    fftw_complex *m_in, *m_out;
     bool m_plansCreated;
 };
 

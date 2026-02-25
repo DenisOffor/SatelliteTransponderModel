@@ -2,7 +2,7 @@
 
 OFDM::OFDM() {}
 
-OfdmResult OFDM::makeOfdm(const QVector<std::complex<double> > &symbols, const OfdmParams &p)
+OfdmResult OFDM::makeOfdm(const std::vector<std::complex<double> > &symbols, const OfdmParams &p)
 {
     OfdmResult res;
 
@@ -17,7 +17,7 @@ OfdmResult OFDM::makeOfdm(const QVector<std::complex<double> > &symbols, const O
     // Oversampling (вставка нулей)
     if(p.oversampling > 1) {
         for(auto& row : X) {
-            QVector<std::complex<double>> Xos(Nfft_os);
+            std::vector<std::complex<double>> Xos(Nfft_os);
             int half = p.Nfft / 2;
             for(int i = 0; i < half; ++i)
                 Xos[i] = row[i];
@@ -29,20 +29,20 @@ OfdmResult OFDM::makeOfdm(const QVector<std::complex<double> > &symbols, const O
 
     res.BB = double(Nactive) / p.Nfft * p.fs;
 
-    QVector<std::complex<double>> yBB;
+    std::vector<std::complex<double>> yBB;
 
     FFT myfft(X[0].size());
-    for(const auto& row : X) {
-        auto y = myfft.ifft(row);
+    for(auto& row : X) {
+        auto y = myfft.ifftInPlace(row);
 
         if(p.CP > 0) {
-            QVector<std::complex<double>> ycp;
+            std::vector<std::complex<double>> ycp;
             for(int i = y.size() - p.CP; i < y.size(); ++i)
-                ycp.append(y[i]);
-            ycp += y;
+                ycp.push_back(y[i]);
+            ycp.insert(ycp.end(), y.begin(), y.end());
             y = ycp;
         }
-        yBB += y;
+        yBB.insert(yBB.end(), y.begin(), y.end());
     }
 
     int N = yBB.size();
@@ -68,14 +68,14 @@ OfdmResult OFDM::makeOfdm(const QVector<std::complex<double> > &symbols, const O
     return res;
 }
 
-QVector<std::complex<double>> OFDM::ofdm_demodulate(const QVector<std::complex<double>> &rx, const QVector<std::complex<double>> &sym_clean, const OfdmParams &p)
+std::vector<std::complex<double>> OFDM::ofdm_demodulate(const std::vector<std::complex<double>> &rx, const std::vector<std::complex<double>> &sym_clean, const OfdmParams &p)
 {
     int Nfft_os = p.Nfft * p.oversampling;
     int sym_len = Nfft_os + p.CP;
 
     int numSym = rx.size() / sym_len;
 
-    QVector<std::complex<double>> rx_bb;
+    std::vector<std::complex<double>> rx_bb;
     rx_bb = rx;
 
     if (p.fc > 0) {
@@ -95,7 +95,7 @@ QVector<std::complex<double>> OFDM::ofdm_demodulate(const QVector<std::complex<d
     //}
 
 
-    QVector<QVector<std::complex<double>>> symbols(numSym, QVector<std::complex<double>>(Nfft_os));
+    std::vector<std::vector<std::complex<double>>> symbols(numSym, std::vector<std::complex<double>>(Nfft_os));
 
     // Разбивка + удаление CP
     for (int s = 0; s < numSym; ++s)
@@ -109,7 +109,7 @@ QVector<std::complex<double>> OFDM::ofdm_demodulate(const QVector<std::complex<d
     FFT myfft(symbols[0].size());
     // FFT по каждому символу
     for (int s = 0; s < numSym; ++s) {
-        symbols[s] = myfft.fft(symbols[s]);
+        symbols[s] = myfft.fftInPlace(symbols[s]);
     }
 
     // Убираем oversampling (если есть)
@@ -119,7 +119,7 @@ QVector<std::complex<double>> OFDM::ofdm_demodulate(const QVector<std::complex<d
 
         for (int s = 0; s < numSym; ++s)
         {
-            QVector<std::complex<double>> tmp(p.Nfft);
+            std::vector<std::complex<double>> tmp(p.Nfft);
 
             // нижняя половина
             for (int k = 0; k < half; ++k)
@@ -133,10 +133,10 @@ QVector<std::complex<double>> OFDM::ofdm_demodulate(const QVector<std::complex<d
             symbols[s] = tmp;
         }
     }
-    QVector<std::complex<double>> symbols_rx =
+    std::vector<std::complex<double>> symbols_rx =
         ofdm_subcarrier_demapping(symbols, p.Nfft, p.GB_DC, p.GB_Nyq, sym_clean.size());
 
-    if (!sym_clean.isEmpty() &&
+    if (!sym_clean.empty() &&
         sym_clean.size() == symbols_rx.size())
     {
         std::complex<double> num(0.0, 0.0);
@@ -158,7 +158,7 @@ QVector<std::complex<double>> OFDM::ofdm_demodulate(const QVector<std::complex<d
     return symbols_rx;
 }
 
-QVector<QVector<std::complex<double>>> OFDM::ofdmSubcarrierMapping(const QVector<std::complex<double> > &dataSymbols, const int Nfft,
+std::vector<std::vector<std::complex<double>>> OFDM::ofdmSubcarrierMapping(const std::vector<std::complex<double> > &dataSymbols, const int Nfft,
                                                                    const int GB_DC, const int GB_Nyq, int &Nactive)
 {
     int half = Nfft / 2;
@@ -169,19 +169,19 @@ QVector<QVector<std::complex<double>>> OFDM::ofdmSubcarrierMapping(const QVector
     int neg_start = half + GB_Nyq;
     int neg_end   = Nfft - GB_DC - 1;
 
-    QVector<int> activeIdx;
-    for(int i = pos_start; i <= pos_end; ++i) activeIdx.append(i);
-    for(int i = neg_start; i <= neg_end; ++i) activeIdx.append(i);
+    std::vector<int> activeIdx;
+    for(int i = pos_start; i <= pos_end; ++i) activeIdx.push_back(i);
+    for(int i = neg_start; i <= neg_end; ++i) activeIdx.push_back(i);
 
     Nactive = activeIdx.size();
 
     int numRows = std::ceil(double(dataSymbols.size()) / Nactive);
 
-    QVector<std::complex<double>> padded = dataSymbols;
+    std::vector<std::complex<double>> padded = dataSymbols;
     padded.resize(numRows * Nactive); // zero-padding
 
-    QVector<QVector<std::complex<double>>> X(numRows,
-                                             QVector<std::complex<double>>(Nfft, {0.0, 0.0}));
+    std::vector<std::vector<std::complex<double>>> X(numRows,
+                                             std::vector<std::complex<double>>(Nfft, {0.0, 0.0}));
 
     int k = 0;
     for(int r = 0; r < numRows; ++r)
@@ -191,7 +191,7 @@ QVector<QVector<std::complex<double>>> OFDM::ofdmSubcarrierMapping(const QVector
     return X;
 }
 
-QVector<std::complex<double> > OFDM::ofdm_subcarrier_demapping(const QVector<QVector<std::complex<double> > > &X, const int Nfft, const int GB_DC,
+std::vector<std::complex<double> > OFDM::ofdm_subcarrier_demapping(const std::vector<std::vector<std::complex<double> > > &X, const int Nfft, const int GB_DC,
                                                               const int GB_Nyq, const int NumSym)
 {
     int half = Nfft / 2;
@@ -202,7 +202,7 @@ QVector<std::complex<double> > OFDM::ofdm_subcarrier_demapping(const QVector<QVe
     int neg_start = half + GB_Nyq;
     int neg_end   = Nfft - GB_DC - 1;
 
-    QVector<std::complex<double>> data;
+    std::vector<std::complex<double>> data;
 
     for (const auto& row : X)
     {
