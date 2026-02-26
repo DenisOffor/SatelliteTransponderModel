@@ -56,24 +56,22 @@ FFT::~FFT()
 //     return result;
 // }
 
-std::vector<std::complex<double>> FFT::fftInPlace(std::vector<std::complex<double>> x)
+void FFT::fftInPlace(std::vector<std::complex<double>>& x)
 {
     fftw_execute_dft(
         m_planForward,
         reinterpret_cast<fftw_complex*>(x.data()),
         reinterpret_cast<fftw_complex*>(x.data())
         );
-    return x;
 }
 
-std::vector<std::complex<double>> FFT::ifftInPlace(std::vector<std::complex<double>> x)
+void FFT::ifftInPlace(std::vector<std::complex<double>>& x)
 {
     fftw_execute_dft(
         m_planBackward,
         reinterpret_cast<fftw_complex*>(x.data()),
         reinterpret_cast<fftw_complex*>(x.data())
         );
-    return x;
 }
 
 // std::vector<std::complex<double>> FFT::ifft(const std::vector<std::complex<double>>& X)

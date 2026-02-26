@@ -11,10 +11,10 @@ public:
     FFT(int n);
     ~FFT();
 
-    std::vector<std::complex<double>> fft(const std::vector<std::complex<double>>& x);
-    std::vector<std::complex<double>> ifft(const std::vector<std::complex<double>>& X);
-    std::vector<std::complex<double>> fftInPlace(std::vector<std::complex<double>> x);
-    std::vector<std::complex<double>> ifftInPlace(std::vector<std::complex<double>> x);
+    //std::vector<std::complex<double>> fft(const std::vector<std::complex<double>>& x);
+    //std::vector<std::complex<double>> ifft(const std::vector<std::complex<double>>& X);
+    void fftInPlace(std::vector<std::complex<double>> x);
+    void ifftInPlace(std::vector<std::complex<double>> x);
 
 private:
     int m_n;
