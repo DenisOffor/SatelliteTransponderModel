@@ -30,6 +30,7 @@ void MetricsEval::comparePSD(
     const std::vector<std::complex<double>>& tx,
     const std::vector<std::complex<double>>& rx,
     double Fs,
+    double oversample,
     std::vector<double>& freq,
     std::vector<double>& psd_tx,
     std::vector<double>& psd_rx)
@@ -40,8 +41,8 @@ void MetricsEval::comparePSD(
     auto tx_norm = normalizeSignal(tx);
     auto rx_norm = normalizeSignal(rx);
 
-    computePSDWelch(tx_norm, Fs, freq, psd_tx);
-    computePSDWelch(rx_norm, Fs, freq, psd_rx);
+    computePSDWelch(tx_norm, Fs, oversample, freq, psd_tx);
+    computePSDWelch(rx_norm, Fs, oversample, freq, psd_rx);
 }
 
 std::vector<double> MetricsEval::hamming(int N)
@@ -55,6 +56,7 @@ std::vector<double> MetricsEval::hamming(int N)
 void MetricsEval::computePSDWelch(
     const std::vector<std::complex<double>>& tx,
     double Fs,
+    double oversample,
     std::vector<double>& freq,
     std::vector<double>& psd)
 {
@@ -113,7 +115,7 @@ void MetricsEval::computePSDWelch(
     // Частотная ось
     freq.resize(nfft);
     for (int i = 0; i < nfft; ++i)
-        freq[i] = (i - nfft/2) * Fs / nfft;
+        freq[i] = (i - nfft/2) * Fs * oversample / nfft;
 
     // перевод в dB
     const double eps = 1e-20;

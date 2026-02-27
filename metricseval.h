@@ -12,12 +12,12 @@ private:
     std::vector<double> window;
 public:
     MetricsEval();
-    void computePSDWelch(const std::vector<std::complex<double>>& tx, double Fs,
+    void computePSDWelch(const std::vector<std::complex<double>>& tx, double Fs, double oversample,
                          std::vector<double>& freq, std::vector<double>& psd);
     std::vector<std::complex<double>> normalizeSignal(const std::vector<std::complex<double>>& tx);
     std::vector<double> hamming(int N);
     void comparePSD(const std::vector<std::complex<double>>& tx,
-                    const std::vector<std::complex<double>>& rx, double Fs,
+                    const std::vector<std::complex<double>>& rx, double Fs, double oversample,
                     std::vector<double>& freq, std::vector<double>& psd_tx, std::vector<double>& psd_rx);
 };
 

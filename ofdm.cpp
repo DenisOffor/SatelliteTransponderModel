@@ -32,17 +32,20 @@ OfdmResult OFDM::makeOfdm(const std::vector<std::complex<double> > &symbols, con
     std::vector<std::complex<double>> yBB;
 
     FFT myfft(X[0].size());
+    std::vector<std::complex<double>> temp(X[0].size());
     for(auto& row : X) {
-        auto y = myfft.ifftInPlace(row);
+
+        temp = row;
+        myfft.ifftInPlace(temp);
 
         if(p.CP > 0) {
             std::vector<std::complex<double>> ycp;
-            for(int i = y.size() - p.CP; i < y.size(); ++i)
-                ycp.push_back(y[i]);
-            ycp.insert(ycp.end(), y.begin(), y.end());
-            y = ycp;
+            for(int i = temp.size() - p.CP; i < temp.size(); ++i)
+                ycp.push_back(temp[i]);
+            ycp.insert(ycp.end(), temp.begin(), temp.end());
+            temp = ycp;
         }
-        yBB.insert(yBB.end(), y.begin(), y.end());
+        yBB.insert(yBB.end(), temp.begin(), temp.end());
     }
 
     int N = yBB.size();
@@ -108,9 +111,8 @@ std::vector<std::complex<double>> OFDM::ofdm_demodulate(const std::vector<std::c
 
     FFT myfft(symbols[0].size());
     // FFT по каждому символу
-    for (int s = 0; s < numSym; ++s) {
-        symbols[s] = myfft.fftInPlace(symbols[s]);
-    }
+    for (int s = 0; s < numSym; ++s)
+        myfft.fftInPlace(symbols[s]);
 
     // Убираем oversampling (если есть)
     if (p.oversampling > 1)

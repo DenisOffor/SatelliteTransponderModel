@@ -2176,6 +2176,9 @@
                      <property name="maximum">
                       <number>50000000</number>
                      </property>
+                     <property name="singleStep">
+                      <number>250000</number>
+                     </property>
                      <property name="value">
                       <number>10000000</number>
                      </property>
@@ -2624,7 +2627,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1226</width>
-                 <height>804</height>
+                 <height>814</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_51">
@@ -2925,7 +2928,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1222</width>
-                 <height>127</height>
+                 <height>113</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_70">
@@ -3230,7 +3233,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>139</height>
+                 <height>125</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -3497,7 +3500,7 @@
      <x>0</x>
      <y>0</y>
      <width>1502</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="sizePolicy">

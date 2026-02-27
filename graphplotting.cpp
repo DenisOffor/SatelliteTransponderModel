@@ -110,9 +110,8 @@ void GraphPlotting::PlotTimeDomainPlots(const GlobalResults &CurrentRes, bool re
         QVector<double> scaledX;
         double scaleFactor = 1e6;  // 10^6
         scaledX.reserve(CurrentRes.time.size());
-        for (double x : CurrentRes.time) {
+        for (double x : CurrentRes.time)
             scaledX.append(x * scaleFactor);
-        }
 
         auto xRange = plotsOfTimeDomain[0]->xAxis->range();
         plotsOfTimeDomain[0]->graph(0)->setData(scaledX, y_tx);
@@ -157,7 +156,7 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
     if (actions[0]->isChecked() && actions[3]->isChecked()) {
         x = QVector<double>(PACurve.P_in_norm.linear.begin(),
                             PACurve.P_in_norm.linear.end());
-        x = QVector<double>(PACurve.P_out_norm.linear.begin(),
+        y = QVector<double>(PACurve.P_out_norm.linear.begin(),
                             PACurve.P_out_norm.linear.end());
         wp_y  = QVector<double>(PACurve.Working_point_linear_norm.y.begin(),
                             PACurve.Working_point_linear_norm.y.end());
@@ -169,7 +168,7 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
     else if (actions[0]->isChecked() && actions[2]->isChecked()) {
         x = QVector<double>(PACurve.P_in_abs.linear.begin(),
                             PACurve.P_in_abs.linear.end());
-        x = QVector<double>(PACurve.P_out_abs.linear.begin(),
+        y = QVector<double>(PACurve.P_out_abs.linear.begin(),
                             PACurve.P_out_abs.linear.end());
         wp_y  = QVector<double>(PACurve.Working_point_linear_abs.y.begin(),
                                PACurve.Working_point_linear_abs.y.end());
@@ -179,10 +178,10 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
         yLabel = "Pвых, Вт";
     }
     else if (actions[1]->isChecked() && actions[3]->isChecked()) {
-        x = QVector<double>(PACurve.P_in_norm.linear.begin(),
-                            PACurve.P_in_norm.linear.end());
-        x = QVector<double>(PACurve.P_out_norm.linear.begin(),
-                            PACurve.P_out_norm.linear.end());
+        x = QVector<double>(PACurve.P_in_norm.dB.begin(),
+                            PACurve.P_in_norm.dB.end());
+        y = QVector<double>(PACurve.P_out_norm.dB.begin(),
+                            PACurve.P_out_norm.dB.end());
         wp_y  = QVector<double>(PACurve.Working_point_dB_norm.y.begin(),
                                PACurve.Working_point_dB_norm.y.end());
         wp_x  = QVector<double>(PACurve.Working_point_dB_norm.x.begin(),
@@ -191,10 +190,10 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
         yLabel = "Pвых/Pнас, дБВт";
     }
     else {
-        x = QVector<double>(PACurve.P_in_abs.linear.begin(),
-                            PACurve.P_in_abs.linear.end());
-        x = QVector<double>(PACurve.P_out_abs.linear.begin(),
-                            PACurve.P_out_abs.linear.end());
+        x = QVector<double>(PACurve.P_in_abs.dB.begin(),
+                            PACurve.P_in_abs.dB.end());
+        y = QVector<double>(PACurve.P_out_abs.dB.begin(),
+                            PACurve.P_out_abs.dB.end());
         wp_y  = QVector<double>(PACurve.Working_point_dB_abs.y.begin(),
                                PACurve.Working_point_dB_abs.y.end());
         wp_x  = QVector<double>(PACurve.Working_point_dB_abs.x.begin(),

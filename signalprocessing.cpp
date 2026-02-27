@@ -47,7 +47,7 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
     qDebug() << "Rec time:" << timer.elapsed() << "ms";
 
     timer.restart();
-    MyMetricsEval.comparePSD(CurrentRes.tx_sig, CurrentRes.pa_sig, MySource->fs, freq[0], PSDs[0], PSDs[1]);
+    MyMetricsEval.comparePSD(CurrentRes.tx_sig, CurrentRes.pa_sig, MySource->fs, MySource->oversampling, freq[0], PSDs[0], PSDs[1]);
     qDebug() << "PSD time:" << timer.elapsed() << "ms";
 }
 
@@ -204,8 +204,8 @@ void SignalProcessing::TransmitSignalProcessing(NeedToRecalc& CurrentRecalcNeeds
     else if(MySource->SigType == "FDMA") {
         FdmaParams fdma_parms = GetFDMAParams();
         ScParams sc_params = GetSCParams();
-        if(CurrentRecalcNeeds.RecalcNoiseSig) {}
-            //myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
+        if(CurrentRecalcNeeds.RecalcNoiseSig)
+            myFdma.changeAwgn(CurrentFdmaResults, fdma_parms);
         else
             CurrentFdmaResults = myFdma.generate(MySymbols, fdma_parms, sc_params);
         CurrentRes.clear();
