@@ -309,6 +309,7 @@ void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<d
     auto maxIt = std::max_element(PACurve->P_out_abs.dB.begin(), PACurve->P_out_abs.dB.end());
     double Psat = *maxIt;               // значение максимума
     int maxIndex = maxIt - PACurve->P_out_abs.dB.begin();    // индекс максимума
+    double Asat = PACurve->Aout[maxIndex];
     double P_in_sat_dB = PACurve->P_in_abs.dB[maxIndex];
     double P_in_sat_linear = PACurve->P_in_abs.linear[maxIndex];
     double r_sat = PACurve->r_in[maxIndex];
@@ -354,7 +355,7 @@ void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<d
     PACurve->Working_point_linear_abs.y[0] = qPow(10.0, PACurve->Working_point_dB_abs.y[0] / 10.0);
 
     PACurve->Working_point_dB_norm.x[0] = 20 * std::log10(r_work / r_sat);
-    PACurve->Working_point_dB_norm.y[0] = 10 * std::log10(qPow(A_work, 2)) - P_sat_dB_with_gain;
+    PACurve->Working_point_dB_norm.y[0] = 10 * std::log10(qPow(A_work, 2) / qPow(Asat, 2));
 
     PACurve->Working_point_linear_norm.x[0] = qPow(10.0, PACurve->Working_point_dB_norm.x[0] / 10.0);
     PACurve->Working_point_linear_norm.y[0] = qPow(10.0, PACurve->Working_point_dB_norm.y[0] / 10.0);
@@ -365,6 +366,7 @@ void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<d
         ApplyFIRWithMemory(PACurve->P_out_norm.dB, PACurve->Phi, FIR_Coefs, 3);
         ApplyFIRWithMemory(PACurve->P_out_norm.linear, PACurve->Phi, FIR_Coefs, 3);
     }
+    
 }
 
 void SignalProcessing::ApplyFIRWithMemory(std::vector<double>& amplitude, std::vector<double>& phase,

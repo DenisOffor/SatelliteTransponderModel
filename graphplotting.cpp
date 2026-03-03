@@ -256,8 +256,7 @@ void GraphPlotting::InitializePaCurvePlot(QWidget* GraphWidget) {
     plotPaCurve->yAxis2->setVisible(true);
     plotPaCurve->yAxis2->setLabel("Фвых, град");
     plotPaCurve->replot();
-    connect(plotPaCurve, &QCustomPlot::mousePress,
-            this, &GraphPlotting::onPlotDoubleClick);
+    connect(plotPaCurve, &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
 }
 
 void GraphPlotting::InitializeIdealSymConstPlot(QWidget *GraphWidget)
@@ -277,6 +276,7 @@ void GraphPlotting::InitializeIdealSymConstPlot(QWidget *GraphWidget)
         Qt::black,          // Цвет границы
         6                   // Размер
         ));
+    connect(plotIdealSymConst, &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
     PlotIdealSymConstellation("BPSK");
 }
 
@@ -300,6 +300,7 @@ void GraphPlotting::InitializeTimeDomainPlotting(std::vector<QWidget*> TimeDomai
         plotsOfTimeDomain[i]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
         plotsOfTimeDomain[i]->axisRect()->setRangeZoom(Qt::Horizontal);
         plotsOfTimeDomain[i]->axisRect()->setRangeDrag(Qt::Horizontal);
+        connect(plotsOfTimeDomain[i], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
         plotsOfTimeDomain[i]->replot();
     }
 }
@@ -333,7 +334,47 @@ void GraphPlotting::InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets)
         plotsOfPSD[i]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
         plotsOfPSD[i]->axisRect()->setRangeZoom(Qt::Horizontal);
         plotsOfPSD[i]->axisRect()->setRangeDrag(Qt::Horizontal);
+        connect(plotsOfPSD[i], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
         plotsOfPSD[i]->replot();
+    }
+}
+
+void GraphPlotting::setupGraphActions()
+{
+    PaCurveGraphActions.common = IdealSymConstGraphActions.common = SymConstGraphActions.common
+    = TimeDomainGraphActions.common = PSDGraphActions.common =
+    {
+        new QAction("Сохранить как...", this),
+        new QAction("Копировать", this)
+    };
+
+    PaCurveGraphActions.specific = {
+        new QAction("Статические АХ и ФХ", this),
+        new QAction("Scatter текущих отсчетов", this)
+    };
+
+    m_graphActions["PaCurve"] = PaCurveGraphActions;
+    m_graphActions["SymConst"] = SymConstGraphActions;
+    m_graphActions["IdealSymConst"] = IdealSymConstGraphActions;
+    m_graphActions["TimeDomain"] = TimeDomainGraphActions;
+    m_graphActions["PSD"] = PSDGraphActions;
+}
+
+void GraphPlotting::updateMenuForGraphType(QMenu &menu, const QString &graphType)
+{
+    menu.clear();
+
+    const auto &actions = m_graphActions[graphType];
+
+    if (!actions.specific.isEmpty()) {
+        for (QAction *action : actions.specific) {
+            menu.addAction(action);
+        }
+        menu.addSeparator();
+    }
+
+    for (QAction *action : actions.common) {
+        menu.addAction(action);
     }
 }
 
@@ -355,6 +396,7 @@ void GraphPlotting::InitializeConstellationsPlotting(std::vector<QWidget *> Cons
             Qt::black,          // Цвет границы
             6                   // Размер
             ));
+        connect(plotsOfConstellations[i], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
         plotsOfConstellations[i]->replot();
     }
 }
@@ -382,24 +424,34 @@ void GraphPlotting::saveGraphToFile()
     }
 }
 
-void GraphPlotting::onPlotDoubleClick(QMouseEvent *event)
+void GraphPlotting::onPlotClick(QMouseEvent *event)
 {
     if (event->button() == Qt::RightButton)
     {
-        // Создаем меню в позиции клика
+        QObject *senderObj = sender();
         QMenu menu(Local_ui_copy->centralwidget);
-        QAction *changeAction = menu.addAction("Сменить график");
-        QAction *saveAction = menu.addAction("Сохранить");
-        QAction *copyAction = menu.addAction("Копировать");
 
-        QAction *selected = menu.exec(plotPaCurve->mapToGlobal(event->pos()));
+        QString currentType;
+        if(senderObj == plotPaCurve) currentType = "PaCurve";
+        if(senderObj == plotIdealSymConst) currentType = "IdealSymConst";
+        if(senderObj == plotsOfConstellations[0] || senderObj == plotsOfConstellations[1] || senderObj == plotsOfConstellations[2]
+            || senderObj == plotsOfConstellations[3] || senderObj == plotsOfConstellations[4] || senderObj == plotsOfConstellations[5]) currentType = "SymConst";
+        if(senderObj == plotsOfPSD[0] || senderObj == plotsOfPSD[1] || senderObj == plotsOfPSD[2]
+            || senderObj == plotsOfPSD[3] || senderObj == plotsOfPSD[4] || senderObj == plotsOfPSD[5]) currentType = "PSD";
+        if(senderObj == plotsOfTimeDomain[0] || senderObj == plotsOfTimeDomain[1] || senderObj == plotsOfTimeDomain[2]
+            || senderObj == plotsOfTimeDomain[3] || senderObj == plotsOfTimeDomain[4] || senderObj == plotsOfTimeDomain[5]) currentType = "TimeDomain";
 
-        if (selected == changeAction)
-            changeGraphType();
-        else if (selected == saveAction)
-            saveGraphToFile();
-        else if(selected == copyAction)
-            copyGraphToClipboard();
+        updateMenuForGraphType(menu, currentType);
+
+        QWidget *plotWidget = qobject_cast<QWidget*>(senderObj);
+        QAction *selected = menu.exec(plotWidget->mapToGlobal(event->pos()));
+
+        // if (selected == changeAction)
+        //     changeGraphType();
+        // else if (selected == saveAction)
+        //     saveGraphToFile();
+        // else if(selected == copyAction)
+        //     copyGraphToClipboard();
     }
 }
 
