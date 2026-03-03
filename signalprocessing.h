@@ -40,12 +40,15 @@ public:
     SignalProcessing();
     ~SignalProcessing();
     void GeneratePacksOfSymbols(NeedToRecalc& CurrentRecalcNeeds);
-    PaCurve& CalcPaCurve(const QString model_type, const std::vector<double> SalehCoefs, const int IBO_dB, const int LinearGain);
+    void CalcPaCurve(const QString model_type, const std::vector<double> SalehCoefs, const int IBO_dB, const int LinearGain, bool FIR_enable,
+                        const std::vector<double> FIR_Coefs);
+    void ApplyFIRWithMemory(std::vector<double>& amplitude, std::vector<double>& phase, const std::vector<double>& FIR_Coefs, int numTaps);
     void DataUpdate(Source& UISource);
     Symbols& getSymbols();
     GlobalResults& getTimeSignal();
     std::vector<std::vector<double>> getFreq();
     std::vector<std::vector<double>> getPSDs();
+    PaCurve& getPaCurve();
 
 public slots:
     void MainLogicWork(NeedToRecalc CurrentRecalcNeeds);

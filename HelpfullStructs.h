@@ -122,6 +122,8 @@ struct Source {
     std::vector<double> SalehCoeffs;
     std::vector<double> RappCoeffs;
     std::vector<double> GhorbaniCoeffs;
+    std::vector<double> FIRCoeffs;
+    QString StaticNonlinModel;
 };
 
 struct NeedToRecalc{

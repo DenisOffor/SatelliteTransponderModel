@@ -24,6 +24,9 @@ ScResult SC::makeSc(const std::vector<std::complex<double>>& inputSymbols,
 
     symbols.insert(symbols.end(), inputSymbols.begin(), inputSymbols.end());
 
+    for(int i = 0; i < span; ++i)
+        symbols.push_back(std::complex<double>(0,0));
+
     // ----- Полоса -----
     res.bandwidth = (p.SC_FilterType.toLower() == "rrc") ?
                         Rs * (1.0 + p.SC_rolloff) :
@@ -110,7 +113,7 @@ std::vector<std::complex<double>> SC::polyphaseFilter(
 
             for(int k=0;k<phaseFilter.size();k++)
             {
-                int sym_idx = n - k - delay/sps;
+                int sym_idx = n - k;
 
                 if(sym_idx >= 0)
                     acc += symbols[sym_idx] * phaseFilter[k];
@@ -282,10 +285,13 @@ std::vector<std::complex<double>> SC::demodulateSignal(
     auto received = matchedFilterDecimate(baseband, rx_filter, sps);
 
     // удалить суммарную задержку (span символов)
-    int total_delay = span;
+    int total_delay = 2*span;
 
-  //  if(received.size() > total_delay)
-  //      received = received.mid(total_delay);
+    if(received.size() > total_delay)
+    {
+        received.erase(received.begin(),
+                       received.begin() + total_delay);
+    }
 
 
     // -------------------------------------------------
@@ -308,15 +314,6 @@ std::vector<std::complex<double>> SC::demodulateSignal(
             v /= scale;
     }
 
-    // -------------------------------------------------
-    // 7️⃣ Обновляем параметры
-    // -------------------------------------------------
-
-    // updatedParams = p;
-    // updatedParams.RxSamplesPerSymbol = sps;
-    // updatedParams.NumReceivedSymbols = received.size();
-    // updatedParams.ReceivedSignalPower = power;
-
     return received;
 }
 
@@ -334,7 +331,7 @@ std::vector<std::complex<double>> SC::matchedFilterDecimate(
 
     int delay = L / 2;
 
-    for(int n = delay; n < N; n += sps)
+    for(int n = 0; n < N; n += sps)
     {
         std::complex<double> acc = 0;
 

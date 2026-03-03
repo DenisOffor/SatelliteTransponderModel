@@ -113,11 +113,21 @@ void GraphPlotting::PlotTimeDomainPlots(const GlobalResults &CurrentRes, bool re
         for (double x : CurrentRes.time)
             scaledX.append(x * scaleFactor);
 
-        auto xRange = plotsOfTimeDomain[0]->xAxis->range();
+        QCPRange ranges[6];
+        for(int i = 0; i < 6; ++i)
+            ranges[i] = plotsOfTimeDomain[i]->xAxis->range();
+
         plotsOfTimeDomain[0]->graph(0)->setData(scaledX, y_tx);
         plotsOfTimeDomain[1]->graph(0)->setData(scaledX, y_pa);
-        if(rescale) for(int i = 0; i < 6; ++i) plotsOfTimeDomain[i]->graph(0)->rescaleAxes();
-        else for(int i = 0; i < 6; ++i) plotsOfTimeDomain[i]->xAxis->setRange(xRange);
+
+        if(rescale) {
+            for(int i = 0; i < 6; ++i)
+                plotsOfTimeDomain[i]->graph(0)->rescaleAxes();
+        }
+        else {
+            for(int i = 0; i < 6; ++i)
+                plotsOfTimeDomain[i]->xAxis->setRange(ranges[i]);
+        }
 
         for(int i = 0; i < 6; ++i) plotsOfTimeDomain[i]->replot();
     }
@@ -154,9 +164,9 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
     y.resize(PACurve.point_num);
 
     if (actions[0]->isChecked() && actions[3]->isChecked()) {
-        x = QVector<double>(PACurve.P_in_norm.linear.begin(),
+        x = QVector<double>(PACurve.P_in_norm.linear.begin() + 50,
                             PACurve.P_in_norm.linear.end());
-        y = QVector<double>(PACurve.P_out_norm.linear.begin(),
+        y = QVector<double>(PACurve.P_in_norm.linear.begin() + 50,
                             PACurve.P_out_norm.linear.end());
         wp_y  = QVector<double>(PACurve.Working_point_linear_norm.y.begin(),
                             PACurve.Working_point_linear_norm.y.end());
@@ -166,9 +176,9 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
         yLabel = "Pвх/Pнас, Вт";
     }
     else if (actions[0]->isChecked() && actions[2]->isChecked()) {
-        x = QVector<double>(PACurve.P_in_abs.linear.begin(),
+        x = QVector<double>(PACurve.P_in_abs.linear.begin() + 50,
                             PACurve.P_in_abs.linear.end());
-        y = QVector<double>(PACurve.P_out_abs.linear.begin(),
+        y = QVector<double>(PACurve.P_out_abs.linear.begin() + 50,
                             PACurve.P_out_abs.linear.end());
         wp_y  = QVector<double>(PACurve.Working_point_linear_abs.y.begin(),
                                PACurve.Working_point_linear_abs.y.end());
@@ -178,9 +188,9 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
         yLabel = "Pвых, Вт";
     }
     else if (actions[1]->isChecked() && actions[3]->isChecked()) {
-        x = QVector<double>(PACurve.P_in_norm.dB.begin(),
+        x = QVector<double>(PACurve.P_in_norm.dB.begin() + 50,
                             PACurve.P_in_norm.dB.end());
-        y = QVector<double>(PACurve.P_out_norm.dB.begin(),
+        y = QVector<double>(PACurve.P_out_norm.dB.begin() + 50,
                             PACurve.P_out_norm.dB.end());
         wp_y  = QVector<double>(PACurve.Working_point_dB_norm.y.begin(),
                                PACurve.Working_point_dB_norm.y.end());
@@ -190,9 +200,9 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
         yLabel = "Pвых/Pнас, дБВт";
     }
     else {
-        x = QVector<double>(PACurve.P_in_abs.dB.begin(),
+        x = QVector<double>(PACurve.P_in_abs.dB.begin() + 50,
                             PACurve.P_in_abs.dB.end());
-        y = QVector<double>(PACurve.P_out_abs.dB.begin(),
+        y = QVector<double>(PACurve.P_out_abs.dB.begin() + 50,
                             PACurve.P_out_abs.dB.end());
         wp_y  = QVector<double>(PACurve.Working_point_dB_abs.y.begin(),
                                PACurve.Working_point_dB_abs.y.end());

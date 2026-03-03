@@ -69,17 +69,6 @@ void PAModels::GhorbaniModel(std::vector<std::complex<double>>& sig, std::vector
     apply_IBO(sig, IBO_dB, A_sat);
     double A_rms = 0.0;
 
-    if (!sig.empty())
-    {
-        double sum = 0.0;
-
-        for (const auto& sample : sig)
-            sum += std::norm(sample);
-
-        A_rms = std::sqrt(sum / sig.size());
-    }
-
-    qDebug() << "A_rms =" << A_rms;
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);
@@ -93,6 +82,32 @@ void PAModels::GhorbaniModel(std::vector<std::complex<double>>& sig, std::vector
 
         // Применяем искажения
         sig[i] = std::polar(amplitude_out[i], phase_in[i] + phase_out[i]);
+    }
+}
+
+void PAModels::WienerModel(std::vector<std::complex<double>>& sig, QString Static_model,
+                           std::vector<double>& Coeffs, std::vector<double>& FIR_Coeffs,
+                           int& linear_gain_dB, int& IBO_dB)
+{
+    // Применяем статическую нелинейность
+    if(Static_model == "Saleh")
+        SalehModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+    else if (Static_model == "Rapp")
+        RappModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+    else if (Static_model == "Ghorbani")
+        GhorbaniModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+
+    std::vector<double> amplitude(sig.size());
+    std::vector<double> phas(sig.size());
+    // Применяем FIR фильтр напрямую к комплексному сигналу
+    for(int i = 0; i < sig.size(); ++i) {
+        amplitude[i] = std::abs(sig[i]);
+        phas[i] = std::arg(sig[i]);
+    }
+
+    ApplyFIRWithMemory(amplitude, phas, FIR_Coeffs, 5);  // 3 - лучше сделать параметром
+    for(int i = 0; i < sig.size(); ++i) {
+        sig[i] = std::polar(amplitude[i], phas[i] );
     }
 }
 
@@ -147,4 +162,56 @@ double PAModels::find_Asat_Ghorbani(const std::vector<double>& c,
     }
 
     return A_sat;
+}
+
+void PAModels::ApplyFIRWithMemory(std::vector<double>& amplitude, std::vector<double>& phase,
+                                          const std::vector<double>& FIR_Coefs, int numTaps)
+{
+    const size_t N = amplitude.size();
+
+    double C = FIR_Coefs[0];
+    double alpha = FIR_Coefs[1];
+
+    // Формируем коэффициенты FIR
+    std::vector<double> h(numTaps);
+    for (int m = 0; m < numTaps; ++m)
+    {
+        h[m] = C * std::pow(alpha, m);
+    }
+
+    // Нормировка (чтобы не менять общий gain)
+    double sum = 0.0;
+    for (double val : h)
+        sum += val;
+
+    for (double& val : h)
+        val /= sum;
+
+    // Формируем комплексный вход
+    std::vector<std::complex<double>> input(N);
+    for (size_t n = 0; n < N; ++n)
+    {
+        input[n] = std::polar(amplitude[n], phase[n]);
+    }
+
+    // FIR
+    std::vector<std::complex<double>> output(N, {0.0, 0.0});
+
+    for (size_t n = 0; n < N; ++n)
+    {
+        for (int m = 0; m < numTaps; ++m)
+        {
+            if (n >= static_cast<size_t>(m))
+            {
+                output[n] += h[m] * input[n - m];
+            }
+        }
+    }
+
+    // Обратно в амплитуду и фазу
+    for (size_t n = 0; n < N; ++n)
+    {
+        amplitude[n] = std::abs(output[n]);
+        phase[n] = std::arg(output[n]);
+    }
 }

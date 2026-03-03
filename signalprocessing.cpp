@@ -1,9 +1,9 @@
 #include "signalprocessing.h"
 
 SignalProcessing::SignalProcessing() : myFdma(mySC) {
-    PACurve = new PaCurve(200);
+    PACurve = new PaCurve(250);
     // Input power in dB and linear
-    double dB_start = -20;
+    double dB_start = -25;
     double dB_end = 5;
     double dB_step = (dB_end - dB_start) / (PACurve->point_num - 1);
     for(int i = 0; i < PACurve->point_num; i ++) {
@@ -238,6 +238,17 @@ void SignalProcessing::PAProcessing(NeedToRecalc& CurrentRecalcNeeds)
             MyPAModels.RappModel(CurrentRes.pa_sig, MySource->RappCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
         else if (MySource->PAModel == "Ghorbani")
             MyPAModels.GhorbaniModel(CurrentRes.pa_sig, MySource->GhorbaniCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+        else if (MySource->PAModel == "Wiener") {
+            if(MySource->StaticNonlinModel == "Saleh")
+                MyPAModels.WienerModel(CurrentRes.pa_sig, MySource->StaticNonlinModel,
+                                       MySource->SalehCoeffs, MySource->FIRCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+            else if(MySource->StaticNonlinModel == "Rapp")
+                MyPAModels.WienerModel(CurrentRes.pa_sig, MySource->StaticNonlinModel,
+                                       MySource->RappCoeffs, MySource->FIRCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+            else if(MySource->StaticNonlinModel == "Ghorbani")
+                MyPAModels.WienerModel(CurrentRes.pa_sig, MySource->StaticNonlinModel,
+                                       MySource->GhorbaniCoeffs, MySource->FIRCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+        }
     }
 }
 
@@ -257,7 +268,8 @@ void SignalProcessing::ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
     }
 }
 
-PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<double> Coefs, const int IBO_dB, const int LinearGaindB)
+void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<double> Coefs, const int IBO_dB, const int LinearGaindB, bool FIR_enable,
+                                        const std::vector<double> FIR_Coefs)
 {
     double linear_gain = qPow(10.0, LinearGaindB / 20);
     if(model_type == "Saleh") {
@@ -284,7 +296,6 @@ PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const std::vect
             PACurve->Phi[i] = Coefs[3] * qPow(PACurve->r_in[i], 2) / (1 + Coefs[4] * qPow(PACurve->r_in[i], 2) + Coefs[5] * qPow(PACurve->r_in[i], 4)) * 180 / 3.14;
         }
     }
-    else if (model_type == "Memory Polynimial") {}
 
     // Output power in dB and linear
     for(int i = 0; i < PACurve->point_num; i ++) {
@@ -334,7 +345,6 @@ PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const std::vect
         A_work = Coefs[0] * r_work / (1 + Coefs[1] * qPow(r_work, 2) + Coefs[2] * qPow(r_work, 4));
         PACurve->Phi_work_grad[0] = Coefs[3] * qPow(r_work, 2.0) / (1 + Coefs[4] * qPow(r_work, 2) + Coefs[5] * qPow(r_work, 4)) * 180 / 3.14;
     }
-    else if (model_type == "Memory Polynomial") {}
 
 
     PACurve->Working_point_dB_abs.x[0] = 20 * std::log10(r_work);
@@ -349,7 +359,64 @@ PaCurve& SignalProcessing::CalcPaCurve(const QString model_type, const std::vect
     PACurve->Working_point_linear_norm.x[0] = qPow(10.0, PACurve->Working_point_dB_norm.x[0] / 10.0);
     PACurve->Working_point_linear_norm.y[0] = qPow(10.0, PACurve->Working_point_dB_norm.y[0] / 10.0);
 
-    return *PACurve;
+    if(FIR_enable) {
+        ApplyFIRWithMemory(PACurve->P_out_abs.dB, PACurve->Phi, FIR_Coefs, 3);
+        ApplyFIRWithMemory(PACurve->P_out_abs.linear, PACurve->Phi, FIR_Coefs, 3);
+        ApplyFIRWithMemory(PACurve->P_out_norm.dB, PACurve->Phi, FIR_Coefs, 3);
+        ApplyFIRWithMemory(PACurve->P_out_norm.linear, PACurve->Phi, FIR_Coefs, 3);
+    }
+}
+
+void SignalProcessing::ApplyFIRWithMemory(std::vector<double>& amplitude,std::vector<double>& phase,
+    const std::vector<double>& FIR_Coefs, int numTaps)
+{
+    const size_t N = amplitude.size();
+
+    double C = FIR_Coefs[0];
+    double alpha = FIR_Coefs[1];
+
+    // Формируем коэффициенты FIR
+    std::vector<double> h(numTaps);
+    for (int m = 0; m < numTaps; ++m)
+    {
+        h[m] = C * std::pow(alpha, m);
+    }
+
+    // Нормировка (чтобы не менять общий gain)
+    double sum = 0.0;
+    for (double val : h)
+        sum += val;
+
+    for (double& val : h)
+        val /= sum;
+
+    // Формируем комплексный вход
+    std::vector<std::complex<double>> input(N);
+    for (size_t n = 0; n < N; ++n)
+    {
+        input[n] = std::polar(amplitude[n], phase[n]);
+    }
+
+    // FIR
+    std::vector<std::complex<double>> output(N, {0.0, 0.0});
+
+    for (size_t n = 0; n < N; ++n)
+    {
+        for (int m = 0; m < numTaps; ++m)
+        {
+            if (n >= static_cast<size_t>(m))
+            {
+                output[n] += h[m] * input[n - m];
+            }
+        }
+    }
+
+    // Обратно в амплитуду и фазу
+    for (size_t n = 0; n < N; ++n)
+    {
+        amplitude[n] = std::abs(output[n]);
+        phase[n] = std::arg(output[n]);
+    }
 }
 
 void SignalProcessing::DataUpdate(Source &UISource)
@@ -389,6 +456,8 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource->SalehCoeffs = UISource.SalehCoeffs;
     MySource->RappCoeffs = UISource.RappCoeffs;
     MySource->GhorbaniCoeffs = UISource.GhorbaniCoeffs;
+    MySource->FIRCoeffs = UISource.FIRCoeffs;
+    MySource->StaticNonlinModel = UISource.StaticNonlinModel;
 }
 
 Symbols &SignalProcessing::getSymbols()
@@ -409,6 +478,11 @@ std::vector<std::vector<double> > SignalProcessing::getFreq()
 std::vector<std::vector<double> > SignalProcessing::getPSDs()
 {
     return PSDs;
+}
+
+PaCurve &SignalProcessing::getPaCurve()
+{
+    return *PACurve;
 }
 
 
