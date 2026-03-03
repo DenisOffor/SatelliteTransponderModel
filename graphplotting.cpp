@@ -1,7 +1,8 @@
     #include "graphplotting.h"
 
-GraphPlotting::GraphPlotting() {
-}
+GraphPlotting::GraphPlotting(Ui::MainWindow *ui, QObject *parent)
+    : QObject(parent)
+    , Local_ui_copy(ui) {}
 
 GraphPlotting::~GraphPlotting() {
     delete plotIdealSymConst;
@@ -164,9 +165,9 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
     y.resize(PACurve.point_num);
 
     if (actions[0]->isChecked() && actions[3]->isChecked()) {
-        x = QVector<double>(PACurve.P_in_norm.linear.begin() + 50,
+        x = QVector<double>((PACurve.P_in_norm.linear.begin() + PA_CURVE_BIAS),
                             PACurve.P_in_norm.linear.end());
-        y = QVector<double>(PACurve.P_in_norm.linear.begin() + 50,
+        y = QVector<double>((PACurve.P_out_norm.linear.begin() + PA_CURVE_BIAS),
                             PACurve.P_out_norm.linear.end());
         wp_y  = QVector<double>(PACurve.Working_point_linear_norm.y.begin(),
                             PACurve.Working_point_linear_norm.y.end());
@@ -176,9 +177,9 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
         yLabel = "Pвх/Pнас, Вт";
     }
     else if (actions[0]->isChecked() && actions[2]->isChecked()) {
-        x = QVector<double>(PACurve.P_in_abs.linear.begin() + 50,
+        x = QVector<double>((PACurve.P_in_abs.linear.begin() + PA_CURVE_BIAS),
                             PACurve.P_in_abs.linear.end());
-        y = QVector<double>(PACurve.P_out_abs.linear.begin() + 50,
+        y = QVector<double>((PACurve.P_out_abs.linear.begin() + PA_CURVE_BIAS),
                             PACurve.P_out_abs.linear.end());
         wp_y  = QVector<double>(PACurve.Working_point_linear_abs.y.begin(),
                                PACurve.Working_point_linear_abs.y.end());
@@ -188,9 +189,9 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
         yLabel = "Pвых, Вт";
     }
     else if (actions[1]->isChecked() && actions[3]->isChecked()) {
-        x = QVector<double>(PACurve.P_in_norm.dB.begin() + 50,
+        x = QVector<double>((PACurve.P_in_norm.dB.begin() + PA_CURVE_BIAS),
                             PACurve.P_in_norm.dB.end());
-        y = QVector<double>(PACurve.P_out_norm.dB.begin() + 50,
+        y = QVector<double>((PACurve.P_out_norm.dB.begin() + PA_CURVE_BIAS),
                             PACurve.P_out_norm.dB.end());
         wp_y  = QVector<double>(PACurve.Working_point_dB_norm.y.begin(),
                                PACurve.Working_point_dB_norm.y.end());
@@ -200,9 +201,9 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
         yLabel = "Pвых/Pнас, дБВт";
     }
     else {
-        x = QVector<double>(PACurve.P_in_abs.dB.begin() + 50,
+        x = QVector<double>((PACurve.P_in_abs.dB.begin() + PA_CURVE_BIAS),
                             PACurve.P_in_abs.dB.end());
-        y = QVector<double>(PACurve.P_out_abs.dB.begin() + 50,
+        y = QVector<double>((PACurve.P_out_abs.dB.begin() + PA_CURVE_BIAS),
                             PACurve.P_out_abs.dB.end());
         wp_y  = QVector<double>(PACurve.Working_point_dB_abs.y.begin(),
                                PACurve.Working_point_dB_abs.y.end());
@@ -212,7 +213,7 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
         yLabel = "Pвых, дБВт";
     }
 
-    QVector<double> Phi = QVector<double>(PACurve.Phi.begin(), PACurve.Phi.end());
+    QVector<double> Phi = QVector<double>((PACurve.Phi.begin() + PA_CURVE_BIAS), PACurve.Phi.end());
     QVector<double> Phi_work = QVector<double>(PACurve.Phi_work_grad.begin(), PACurve.Phi_work_grad.end());
     plotPaCurve->graph(0)->setData(x, y);
     plotPaCurve->graph(1)->setData(x, Phi);
@@ -255,6 +256,8 @@ void GraphPlotting::InitializePaCurvePlot(QWidget* GraphWidget) {
     plotPaCurve->yAxis2->setVisible(true);
     plotPaCurve->yAxis2->setLabel("Фвых, град");
     plotPaCurve->replot();
+    connect(plotPaCurve, &QCustomPlot::mousePress,
+            this, &GraphPlotting::onPlotDoubleClick);
 }
 
 void GraphPlotting::InitializeIdealSymConstPlot(QWidget *GraphWidget)
@@ -354,4 +357,64 @@ void GraphPlotting::InitializeConstellationsPlotting(std::vector<QWidget *> Cons
             ));
         plotsOfConstellations[i]->replot();
     }
+}
+
+void GraphPlotting::changeGraphType()
+{
+    // Диалог выбора типа графика
+    QStringList types;
+    types << "Линейный" << "Точечный" << "Ступенчатый" << "Сплайн";
+}
+
+void GraphPlotting::saveGraphToFile()
+{
+    QString fileName = QFileDialog::getSaveFileName(Local_ui_copy->centralwidget,
+                                                    "Сохранить график",
+                                                    QDir::homePath(),
+                                                    "Изображения (*.png *.jpg *.bmp *.pdf)");
+
+    if (!fileName.isEmpty())
+    {
+        if (fileName.endsWith(".pdf"))
+            plotPaCurve->savePdf(fileName);
+        else
+            plotPaCurve->savePng(fileName);
+    }
+}
+
+void GraphPlotting::onPlotDoubleClick(QMouseEvent *event)
+{
+    if (event->button() == Qt::RightButton)
+    {
+        // Создаем меню в позиции клика
+        QMenu menu(Local_ui_copy->centralwidget);
+        QAction *changeAction = menu.addAction("Сменить график");
+        QAction *saveAction = menu.addAction("Сохранить");
+        QAction *copyAction = menu.addAction("Копировать");
+
+        QAction *selected = menu.exec(plotPaCurve->mapToGlobal(event->pos()));
+
+        if (selected == changeAction)
+            changeGraphType();
+        else if (selected == saveAction)
+            saveGraphToFile();
+        else if(selected == copyAction)
+            copyGraphToClipboard();
+    }
+}
+
+void GraphPlotting::copyGraphToClipboard()
+{
+    if (!plotPaCurve) return;
+
+    // Копируем график как изображение
+    QClipboard *clipboard = QApplication::clipboard();
+
+    // Вариант 1: Копировать как PNG
+    QPixmap pixmap = plotPaCurve->toPixmap(800, 600); // ширина, высота
+    clipboard->setPixmap(pixmap);
+
+    // Показываем уведомление
+    QMessageBox::information(plotPaCurve, "Успех",
+                             "График скопирован в буфер обмена как изображение");
 }

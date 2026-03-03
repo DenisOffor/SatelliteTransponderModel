@@ -4,7 +4,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow),
-    Graphs(),
+    Graphs(ui, this),
     MySigProc()
 {
     ui->setupUi(this);

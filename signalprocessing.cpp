@@ -1,7 +1,7 @@
 #include "signalprocessing.h"
 
 SignalProcessing::SignalProcessing() : myFdma(mySC) {
-    PACurve = new PaCurve(250);
+    PACurve = new PaCurve(200);
     // Input power in dB and linear
     double dB_start = -25;
     double dB_end = 5;
@@ -307,17 +307,17 @@ void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<d
     // Make artificial saturation
     // --- ЭМПИРИЧЕСКАЯ сатурация (по факту, без аналитической асимптоты) ---
     auto maxIt = std::max_element(PACurve->P_out_abs.dB.begin(), PACurve->P_out_abs.dB.end());
-    double Asat = *maxIt;               // значение максимума
+    double Psat = *maxIt;               // значение максимума
     int maxIndex = maxIt - PACurve->P_out_abs.dB.begin();    // индекс максимума
     double P_in_sat_dB = PACurve->P_in_abs.dB[maxIndex];
     double P_in_sat_linear = PACurve->P_in_abs.linear[maxIndex];
     double r_sat = PACurve->r_in[maxIndex];
     // мощность насыщения (включая gain_linear) — используется для нормировки дБ
-    double P_sat_dB_with_gain = 10 * std::log10(qPow(Asat, 2)) + LinearGaindB;
+    double P_sat_dB_with_gain = Psat + LinearGaindB;
 
     //Нормированная выходная мощность: вычитаем Psat (gain_linear автоматически уйдёт)
     for (int i = 0; i < PACurve->point_num; i++) {
-        PACurve->P_out_norm.dB[i] = PACurve->P_out_abs.dB[i] - P_sat_dB_with_gain;
+        PACurve->P_out_norm.dB[i] = PACurve->P_out_abs.dB[i] - Psat;
         PACurve->P_out_norm.linear[i] = qPow(10.0, PACurve->P_out_norm.dB[i] / 10.0);
     }
 
@@ -338,7 +338,7 @@ void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<d
         PACurve->Phi_work_grad[0] = (Coefs[2] * qPow(r_work, 2)) / (1 + Coefs[3] * qPow(r_work, 2)) * 180 / 3.14;
     }
     else if(model_type == "Rapp") {
-        A_work = linear_gain * r_work / qPow(1 + qPow(r_work / Coefs[0], 2 * Coefs[1]), 1 / (2 * Coefs[1]));
+        A_work = r_work / qPow(1 + qPow(r_work / Coefs[0], 2 * Coefs[1]), 1 / (2 * Coefs[1]));
         PACurve->Phi_work_grad[0] = 0;
     }
     else if(model_type == "Ghorbani") {
@@ -354,7 +354,7 @@ void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<d
     PACurve->Working_point_linear_abs.y[0] = qPow(10.0, PACurve->Working_point_dB_abs.y[0] / 10.0);
 
     PACurve->Working_point_dB_norm.x[0] = 20 * std::log10(r_work / r_sat);
-    PACurve->Working_point_dB_norm.y[0] = 10 * std::log10(qPow(A_work, 2) / qPow(Asat, 2));
+    PACurve->Working_point_dB_norm.y[0] = 10 * std::log10(qPow(A_work, 2)) - P_sat_dB_with_gain;
 
     PACurve->Working_point_linear_norm.x[0] = qPow(10.0, PACurve->Working_point_dB_norm.x[0] / 10.0);
     PACurve->Working_point_linear_norm.y[0] = qPow(10.0, PACurve->Working_point_dB_norm.y[0] / 10.0);
@@ -367,7 +367,7 @@ void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<d
     }
 }
 
-void SignalProcessing::ApplyFIRWithMemory(std::vector<double>& amplitude,std::vector<double>& phase,
+void SignalProcessing::ApplyFIRWithMemory(std::vector<double>& amplitude, std::vector<double>& phase,
     const std::vector<double>& FIR_Coefs, int numTaps)
 {
     const size_t N = amplitude.size();

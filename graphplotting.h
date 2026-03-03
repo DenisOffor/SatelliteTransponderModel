@@ -6,11 +6,15 @@
 #include <QScreen>
 #include "HelpfullStructs.h"
 #include "ofdm.h"
+#include "./ui_mainwindow.h"
+
+#define PA_CURVE_BIAS 0
 
 class GraphPlotting : public QObject
 {
     Q_OBJECT
 private:
+    Ui::MainWindow* Local_ui_copy;
     QCustomPlot* plotIdealSymConst;
     QCustomPlot* plotPaCurve;
     QCustomPlot* plotsOfConstellations[6];
@@ -21,10 +25,14 @@ private:
     void InitializeTimeDomainPlotting(std::vector<QWidget*> TimeDomainGraphWidgets);
     void InitializeConstellationsPlotting(std::vector<QWidget*> ConstellationsGraphWidgets);
     void InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets);
+    void changeGraphType();
+    void saveGraphToFile();
+    void copyGraphToClipboard();
+    void onPlotDoubleClick(QMouseEvent *event);
 
 public:
     //need to get GroupBox to constuctor in order to place QCustomPlot in widget in GropuBox
-    GraphPlotting();
+    GraphPlotting(Ui::MainWindow *ui, QObject *parent);
     void init(std::vector<QWidget*> SetupGraphWidgets, std::vector<QWidget*> ConstellationsGraphWidgets,
               std::vector<QWidget*> TimeDomainGraphWidgets, std::vector<QWidget*> PSDGraphWidgets);
     ~GraphPlotting();
