@@ -2767,7 +2767,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1226</width>
-                 <height>814</height>
+                 <height>804</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_51">
@@ -3068,7 +3068,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1222</width>
-                 <height>113</height>
+                 <height>804</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_70">
@@ -3116,7 +3116,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>GroupBox</string>
+                     <string>Передаваемый сигнал</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_71">
                      <property name="spacing">
@@ -3155,7 +3155,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>GroupBox</string>
+                     <string>Сигнал после УМ</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_72">
                      <property name="spacing">
@@ -3194,7 +3194,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>GroupBox</string>
+                     <string>Сигнал после УМ с DPD</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_73">
                      <property name="spacing">
@@ -3373,7 +3373,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>125</height>
+                 <height>804</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -3640,7 +3640,7 @@
      <x>0</x>
      <y>0</y>
      <width>1502</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <property name="sizePolicy">
