@@ -1,8 +1,11 @@
     #include "graphplotting.h"
 
-GraphPlotting::GraphPlotting(Ui::MainWindow *ui, QObject *parent)
+GraphPlotting::GraphPlotting(SignalProcessing* sig_proc, Ui::MainWindow *ui, QObject *parent)
     : QObject(parent)
-    , Local_ui_copy(ui) {}
+    , Local_ui_copy(ui)
+    , Local_copy_SigProc(sig_proc){
+    PACurveType = "Static";
+}
 
 GraphPlotting::~GraphPlotting() {
     delete plotIdealSymConst;
@@ -14,6 +17,19 @@ GraphPlotting::~GraphPlotting() {
     }
 }
 
+void GraphPlotting::PaCurvePlot()
+{
+    plotPaCurve->graph(0)->data()->clear();
+    plotPaCurve->graph(1)->data()->clear();
+    plotPaCurve->graph(2)->data()->clear();
+    plotPaCurve->graph(3)->data()->clear();
+
+    if(PACurveType == "Static")
+        PlotStaticPaCurve(Local_copy_SigProc->getPaCurve(), Local_ui_copy->PACurveToolButton->menu()->actions());
+    else
+        PlotScatterPaCurve(Local_copy_SigProc->getTimeSignal());
+}
+
 void GraphPlotting::init(std::vector<QWidget*> SetupGraphWidgets, std::vector<QWidget*> ConstellationsGraphWidgets,
                          std::vector<QWidget*> TimeDomainGraphWidgets, std::vector<QWidget*> PSDGraphWidgets) {
     InitializeIdealSymConstPlot(SetupGraphWidgets[0]);
@@ -21,6 +37,7 @@ void GraphPlotting::init(std::vector<QWidget*> SetupGraphWidgets, std::vector<QW
     InitializeConstellationsPlotting(ConstellationsGraphWidgets);
     InitializeTimeDomainPlotting(TimeDomainGraphWidgets);
     InitializePSDPlotting(PSDGraphWidgets);
+    setupGraphActions();
 }
 
 void GraphPlotting::PlotIdealSymConstellation(const QString ModType) {
@@ -156,7 +173,12 @@ void GraphPlotting::PlotPSDPlots(const std::vector<std::vector<double>>& PSDs, c
     }
 }
 
-void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
+QString GraphPlotting::GetPaCurveType()
+{
+    return PACurveType;
+}
+
+void GraphPlotting::PlotStaticPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
 {
     QVector<double> x, y;
     QVector<double> wp_x, wp_y;
@@ -226,6 +248,29 @@ void GraphPlotting::PlotPaCurve(PaCurve& PACurve, const QList<QAction*> actions)
     plotPaCurve->graph(0)->rescaleAxes();
     plotPaCurve->graph(1)->rescaleAxes();
 
+    auto yRange = plotPaCurve->yAxis->range();
+    double padding = (yRange.upper - yRange.lower) * 0.05;
+    plotPaCurve->yAxis->setRange(yRange.lower, yRange.upper + padding);
+
+    plotPaCurve->replot();
+}
+
+void GraphPlotting::PlotScatterPaCurve(GlobalResults &res)
+{
+    QVector<double> x, y;
+    QVector<double> Phi;
+
+    for(int i = 0; i < res.tx_sig.size(); i += 10) {
+        x.append(std::abs(res.tx_sig[i]));
+        y.append(std::abs(res.pa_sig[i]));
+        Phi.append(std::arg(res.pa_sig[i]) - std::arg(res.tx_sig[i]) * 180 / 3.14);
+    }
+
+    plotPaCurve->graph(2)->setData(x, y);
+    plotPaCurve->graph(3)->setData(x, Phi);
+
+    plotPaCurve->graph(2)->rescaleAxes();
+    plotPaCurve->yAxis2->setRange(0, 45);
     auto yRange = plotPaCurve->yAxis->range();
     double padding = (yRange.upper - yRange.lower) * 0.05;
     plotPaCurve->yAxis->setRange(yRange.lower, yRange.upper + padding);
@@ -339,6 +384,29 @@ void GraphPlotting::InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets)
     }
 }
 
+void GraphPlotting::InitializeConstellationsPlotting(std::vector<QWidget *> ConstellationsGraphWidgets)
+{
+    for(int i = 0; i < 6; i++) {
+        plotsOfConstellations[i] = new QCustomPlot(ConstellationsGraphWidgets[i]);
+        QVBoxLayout* layout = new QVBoxLayout(ConstellationsGraphWidgets[i]);
+        layout->setContentsMargins(3, 3, 3, 3);
+        plotsOfConstellations[i]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        ConstellationsGraphWidgets[i]->layout()->addWidget(plotsOfConstellations[i]);
+        plotsOfConstellations[i]->xAxis->setRange(-1.2, 1.2);
+        plotsOfConstellations[i]->yAxis->setRange(-1.2, 1.2);
+        plotsOfConstellations[i]->addGraph();
+        plotsOfConstellations[i]->graph(0)->setLineStyle(QCPGraph::lsNone);
+        plotsOfConstellations[i]->graph(0)->setScatterStyle(QCPScatterStyle(
+            QCPScatterStyle::ssCircle,
+            Qt::transparent,    // Цвет заливки
+            Qt::black,          // Цвет границы
+            6                   // Размер
+            ));
+        connect(plotsOfConstellations[i], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
+        plotsOfConstellations[i]->replot();
+    }
+}
+
 void GraphPlotting::setupGraphActions()
 {
     PaCurveGraphActions.common = IdealSymConstGraphActions.common = SymConstGraphActions.common
@@ -347,6 +415,8 @@ void GraphPlotting::setupGraphActions()
         new QAction("Сохранить как...", this),
         new QAction("Копировать", this)
     };
+    //connect(PaCurveGraphActions.common[0], &QAction::triggered, this, GraphPlotting::saveGraphToFile);
+    //connect(PaCurveGraphActions.common[1], &QAction::triggered, this, GraphPlotting::copyGraphToClipboard);
 
     PaCurveGraphActions.specific = {
         new QAction("Статические АХ и ФХ", this),
@@ -378,29 +448,6 @@ void GraphPlotting::updateMenuForGraphType(QMenu &menu, const QString &graphType
     }
 }
 
-void GraphPlotting::InitializeConstellationsPlotting(std::vector<QWidget *> ConstellationsGraphWidgets)
-{
-    for(int i = 0; i < 6; i++) {
-        plotsOfConstellations[i] = new QCustomPlot(ConstellationsGraphWidgets[i]);
-        QVBoxLayout* layout = new QVBoxLayout(ConstellationsGraphWidgets[i]);
-        layout->setContentsMargins(3, 3, 3, 3);
-        plotsOfConstellations[i]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        ConstellationsGraphWidgets[i]->layout()->addWidget(plotsOfConstellations[i]);
-        plotsOfConstellations[i]->xAxis->setRange(-1.2, 1.2);
-        plotsOfConstellations[i]->yAxis->setRange(-1.2, 1.2);
-        plotsOfConstellations[i]->addGraph();
-        plotsOfConstellations[i]->graph(0)->setLineStyle(QCPGraph::lsNone);
-        plotsOfConstellations[i]->graph(0)->setScatterStyle(QCPScatterStyle(
-            QCPScatterStyle::ssCircle,
-            Qt::transparent,    // Цвет заливки
-            Qt::black,          // Цвет границы
-            6                   // Размер
-            ));
-        connect(plotsOfConstellations[i], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
-        plotsOfConstellations[i]->replot();
-    }
-}
-
 void GraphPlotting::changeGraphType()
 {
     // Диалог выбора типа графика
@@ -408,7 +455,7 @@ void GraphPlotting::changeGraphType()
     types << "Линейный" << "Точечный" << "Ступенчатый" << "Сплайн";
 }
 
-void GraphPlotting::saveGraphToFile()
+void GraphPlotting::saveGraphToFile(QCustomPlot* plot)
 {
     QString fileName = QFileDialog::getSaveFileName(Local_ui_copy->centralwidget,
                                                     "Сохранить график",
@@ -418,9 +465,9 @@ void GraphPlotting::saveGraphToFile()
     if (!fileName.isEmpty())
     {
         if (fileName.endsWith(".pdf"))
-            plotPaCurve->savePdf(fileName);
+            plot->savePdf(fileName);
         else
-            plotPaCurve->savePng(fileName);
+            plot->savePng(fileName);
     }
 }
 
@@ -443,30 +490,41 @@ void GraphPlotting::onPlotClick(QMouseEvent *event)
 
         updateMenuForGraphType(menu, currentType);
 
-        QWidget *plotWidget = qobject_cast<QWidget*>(senderObj);
-        QAction *selected = menu.exec(plotWidget->mapToGlobal(event->pos()));
+        QWidget *Widget = qobject_cast<QWidget*>(senderObj);
+        QAction *selected = menu.exec(Widget->mapToGlobal(event->pos()));
+        QCustomPlot *plotWidget = qobject_cast<QCustomPlot*>(senderObj);
 
-        // if (selected == changeAction)
-        //     changeGraphType();
-        // else if (selected == saveAction)
-        //     saveGraphToFile();
-        // else if(selected == copyAction)
-        //     copyGraphToClipboard();
+        if (selected == PaCurveGraphActions.common[0])
+             saveGraphToFile(plotWidget);
+        else if (selected == PaCurveGraphActions.common[1])
+             copyGraphToClipboard(plotWidget);
+
+        if (selected == PaCurveGraphActions.specific[0] || selected == PaCurveGraphActions.specific[1])
+            PACurveTypeChanged(selected == PaCurveGraphActions.specific[0] ? true : false);
     }
 }
 
-void GraphPlotting::copyGraphToClipboard()
+void GraphPlotting::PACurveTypeChanged(bool IsStatic)
 {
-    if (!plotPaCurve) return;
+    if(IsStatic) {
+        plotPaCurve->graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::black, 10));
+        plotPaCurve->graph(3)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::blue, 10));
+        PACurveType = "Static";
+    }
+    else {
+        plotPaCurve->graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::black, 3));
+        plotPaCurve->graph(3)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::blue, 3));
+        PACurveType = "Scatter";
+    }
+    PaCurvePlot();
+}
 
+void GraphPlotting::copyGraphToClipboard(QCustomPlot* plot)
+{
     // Копируем график как изображение
     QClipboard *clipboard = QApplication::clipboard();
 
     // Вариант 1: Копировать как PNG
-    QPixmap pixmap = plotPaCurve->toPixmap(800, 600); // ширина, высота
+    QPixmap pixmap = plot->toPixmap(800, 600); // ширина, высота
     clipboard->setPixmap(pixmap);
-
-    // Показываем уведомление
-    QMessageBox::information(plotPaCurve, "Успех",
-                             "График скопирован в буфер обмена как изображение");
 }

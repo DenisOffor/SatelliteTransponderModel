@@ -134,6 +134,7 @@ struct NeedToRecalc{
     bool FullRecalc;
     bool PARecalc;
     bool TimePlotsRescale;
+    bool PaCurveReplot;
 
     void init() {
         RecalcSymbols = true;
@@ -143,6 +144,7 @@ struct NeedToRecalc{
         FullRecalc = true;
         PARecalc = true;
         TimePlotsRescale = true;
+        PaCurveReplot = true;
     }
 
     void clear() {
@@ -153,6 +155,7 @@ struct NeedToRecalc{
         FullRecalc = false;
         PARecalc = false;
         TimePlotsRescale = false;
+        PaCurveReplot = false;
     }
 };
 

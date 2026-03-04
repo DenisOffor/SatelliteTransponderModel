@@ -650,7 +650,7 @@
                      <item>
                       <widget class="QDoubleSpinBox" name="FIR_alpha_doubleSpinBox">
                        <property name="minimum">
-                        <double>0.600000000000000</double>
+                        <double>0.400000000000000</double>
                        </property>
                        <property name="maximum">
                         <double>2.000000000000000</double>
@@ -2767,7 +2767,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1226</width>
-                 <height>804</height>
+                 <height>814</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_51">
@@ -3068,7 +3068,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1222</width>
-                 <height>127</height>
+                 <height>113</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_70">
@@ -3373,7 +3373,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>139</height>
+                 <height>125</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -3640,7 +3640,7 @@
      <x>0</x>
      <y>0</y>
      <width>1502</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="sizePolicy">

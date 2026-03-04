@@ -313,8 +313,6 @@ void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<d
     double P_in_sat_dB = PACurve->P_in_abs.dB[maxIndex];
     double P_in_sat_linear = PACurve->P_in_abs.linear[maxIndex];
     double r_sat = PACurve->r_in[maxIndex];
-    // мощность насыщения (включая gain_linear) — используется для нормировки дБ
-    double P_sat_dB_with_gain = Psat + LinearGaindB;
 
     //Нормированная выходная мощность: вычитаем Psat (gain_linear автоматически уйдёт)
     for (int i = 0; i < PACurve->point_num; i++) {
@@ -365,8 +363,7 @@ void SignalProcessing::CalcPaCurve(const QString model_type, const std::vector<d
         ApplyFIRWithMemory(PACurve->P_out_abs.linear, PACurve->Phi, FIR_Coefs, 3);
         ApplyFIRWithMemory(PACurve->P_out_norm.dB, PACurve->Phi, FIR_Coefs, 3);
         ApplyFIRWithMemory(PACurve->P_out_norm.linear, PACurve->Phi, FIR_Coefs, 3);
-    }
-    
+    }   
 }
 
 void SignalProcessing::ApplyFIRWithMemory(std::vector<double>& amplitude, std::vector<double>& phase,
@@ -472,12 +469,12 @@ GlobalResults &SignalProcessing::getTimeSignal()
         return CurrentRes;
 }
 
-std::vector<std::vector<double> > SignalProcessing::getFreq()
+std::vector<std::vector<double>> SignalProcessing::getFreq()
 {
     return freq;
 }
 
-std::vector<std::vector<double> > SignalProcessing::getPSDs()
+std::vector<std::vector<double>> SignalProcessing::getPSDs()
 {
     return PSDs;
 }
