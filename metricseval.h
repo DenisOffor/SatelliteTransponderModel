@@ -19,6 +19,7 @@ public:
     void comparePSD(const std::vector<std::complex<double>>& tx,
                     const std::vector<std::complex<double>>& rx, double Fs, double oversample,
                     std::vector<double>& freq, std::vector<double>& psd_tx, std::vector<double>& psd_rx);
+    double Calc_BER(std::vector<Symbols>& symbols);
 };
 
 

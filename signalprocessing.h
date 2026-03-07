@@ -7,6 +7,7 @@
 #include "pamodels.h"
 #include "metricseval.h"
 #include "QElapsedTimer"
+#include "dpd.h"
 
 class SignalProcessing
 {
@@ -14,6 +15,7 @@ private:
     PaCurve* PACurve;
     std::vector<Symbols> MySymbols;
     Source* MySource;
+    DPD mydpd;
     PAModels MyPAModels;
     OFDM myOfdm;
     SC mySC;
@@ -26,6 +28,11 @@ private:
     std::vector<std::vector<double>> freq;
     std::vector<std::vector<double>> PSDs;
 
+    std::vector<std::complex<double>> BPSK_const;
+    std::vector<std::complex<double>> QPSK_const;
+    std::vector<std::complex<double>> QAM16_const;
+    std::vector<std::complex<double>> QAM64_const;
+
     //functions
     Symbols GenerateNSymbols();
     OfdmParams GetOfdmParams();
@@ -36,12 +43,16 @@ private:
     void ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds);
     void SymsAddNoise(std::vector<std::complex<double>>& symbols_clean,
                       std::vector<std::complex<double>>& symbols_noisy);
+    int DemodulateSymbol(const std::complex<double>& r, const std::vector<std::complex<double>>& constellation);
+    void Demodulate(Symbols& MySymbols, const std::vector<std::complex<double>>& constellation);
+    void InitializeConstellations();
+    void RecalcDPD();
+    std::vector<std::complex<double>>& getCurrentConstellation();
 public:
     SignalProcessing();
     ~SignalProcessing();
     void GeneratePacksOfSymbols(NeedToRecalc& CurrentRecalcNeeds);
-    void CalcPaCurve(const QString model_type, const std::vector<double> SalehCoefs, const int IBO_dB, const int LinearGain, bool FIR_enable,
-                        const std::vector<double> FIR_Coefs);
+    void CalcPaCurve();
     void ApplyFIRWithMemory(std::vector<double>& amplitude, std::vector<double>& phase, const std::vector<double>& FIR_Coefs, int numTaps);
     void DataUpdate(Source& UISource);
     Symbols& getSymbols();

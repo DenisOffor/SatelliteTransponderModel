@@ -35,10 +35,14 @@ struct Symbols{
     std::vector<std::complex<double>> tr_sym_noisy;
     std::vector<std::complex<double>> sym_after_pa;
     std::vector<std::complex<double>> rec_sym_noisy;
-    std::vector<int> data;
+    std::vector<std::complex<double>> rec_sym_noisy_with_DPD;
+    std::vector<int> data_tx;
+    std::vector<int> data_rx;
+    std::vector<int> data_rx_with_DPD;
 
     void resize(int n) {
-        data.resize(n);
+        data_tx.resize(n);
+        data_rx.resize(n);
         tr_sym_clean.resize(n);
         tr_sym_noisy.resize(n);
         rec_sym_noisy.resize(n);
@@ -124,6 +128,9 @@ struct Source {
     std::vector<double> GhorbaniCoeffs;
     std::vector<double> FIRCoeffs;
     QString StaticNonlinModel;
+
+    int MP_K;
+    int MP_P;
 };
 
 struct NeedToRecalc{
@@ -135,6 +142,7 @@ struct NeedToRecalc{
     bool PARecalc;
     bool TimePlotsRescale;
     bool PaCurveReplot;
+    bool DPDRecalc;
 
     void init() {
         RecalcSymbols = true;
@@ -145,6 +153,7 @@ struct NeedToRecalc{
         PARecalc = true;
         TimePlotsRescale = true;
         PaCurveReplot = true;
+        DPDRecalc = true;
     }
 
     void clear() {
@@ -156,6 +165,7 @@ struct NeedToRecalc{
         PARecalc = false;
         TimePlotsRescale = false;
         PaCurveReplot = false;
+        DPDRecalc = false;
     }
 };
 
@@ -165,6 +175,8 @@ struct GlobalResults {
     std::vector<std::complex<double>> pa_plus_dpd_sig;
     std::vector<std::complex<double>> rec_sig;
     std::vector<double> time;
+
+    double BER;
 
     void resize(int size) {
         tx_sig.resize(size);

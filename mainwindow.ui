@@ -104,7 +104,7 @@
         </property>
         <item>
          <property name="text">
-          <string>Predistorter </string>
+          <string>Predistorter</string>
          </property>
         </item>
         <item>
@@ -174,7 +174,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -400,6 +400,22 @@
                </sizepolicy>
               </property>
              </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="Metric_Page">
+        <layout class="QVBoxLayout" name="verticalLayout_81">
+         <item>
+          <widget class="QGroupBox" name="groupBox_2">
+           <property name="title">
+            <string>GroupBox</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_82">
+            <item>
+             <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
             </item>
            </layout>
           </widget>
@@ -2645,6 +2661,77 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="PagePredistorter">
+        <layout class="QVBoxLayout" name="verticalLayout_84">
+         <item>
+          <widget class="QGroupBox" name="groupBox_4">
+           <property name="title">
+            <string>GroupBox</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_85">
+            <item>
+             <widget class="QGroupBox" name="groupBox_6">
+              <property name="title">
+               <string>K coeff</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_86">
+               <item>
+                <widget class="QSpinBox" name="MP_K_spinBox">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>10</number>
+                 </property>
+                 <property name="value">
+                  <number>3</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox_7">
+              <property name="title">
+               <string>P coeff</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_87">
+               <item>
+                <widget class="QSpinBox" name="MP_P_spinBox">
+                 <property name="minimum">
+                  <number>1</number>
+                 </property>
+                 <property name="maximum">
+                  <number>15</number>
+                 </property>
+                 <property name="value">
+                  <number>5</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox_8">
+              <property name="title">
+               <string>GroupBox</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_5">
+           <property name="title">
+            <string>GroupBox</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </widget>
       <widget class="QWidget" name="plotArea" native="true">
        <property name="sizePolicy">
@@ -2755,6 +2842,9 @@
             </property>
             <item>
              <widget class="QScrollArea" name="scrollAreaConstellationPage">
+              <property name="verticalScrollBarPolicy">
+               <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOn</enum>
+              </property>
               <property name="horizontalScrollBarPolicy">
                <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOn</enum>
               </property>
@@ -2767,7 +2857,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1226</width>
-                 <height>804</height>
+                 <height>724</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_51">
@@ -3068,7 +3158,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1222</width>
-                 <height>804</height>
+                 <height>127</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_70">
@@ -3373,7 +3463,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>804</height>
+                 <height>139</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -3626,6 +3716,18 @@
            </layout>
           </widget>
           <widget class="QWidget" name="DPDlearningPage"/>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_3">
+          <property name="title">
+           <string>GroupBox</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_83">
+           <item>
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>

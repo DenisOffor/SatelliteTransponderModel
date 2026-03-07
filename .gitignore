@@ -10,6 +10,7 @@
 *.dll
 *.dylib
 /build
+/eigen
 
 # Qt-es
 object_script.*.Release

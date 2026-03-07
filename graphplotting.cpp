@@ -26,7 +26,7 @@ void GraphPlotting::PaCurvePlot()
 
     if(PACurveType == "Static")
         PlotStaticPaCurve(Local_copy_SigProc->getPaCurve(), Local_ui_copy->PACurveToolButton->menu()->actions());
-    else
+    else if(PACurveType == "Scatter")
         PlotScatterPaCurve(Local_copy_SigProc->getTimeSignal());
 }
 
@@ -516,6 +516,8 @@ void GraphPlotting::PACurveTypeChanged(bool IsStatic)
         plotPaCurve->graph(3)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::blue, 3));
         PACurveType = "Scatter";
     }
+    if(PACurveType == "Static")
+        Local_copy_SigProc->CalcPaCurve();
     PaCurvePlot();
 }
 

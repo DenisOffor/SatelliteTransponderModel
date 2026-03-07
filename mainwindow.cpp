@@ -70,6 +70,7 @@ void MainWindow::MakeMainCalcAndPlot()
     DoPlotting();
     qDebug() << "Graphs time:" << timer.elapsed() << "ms";
     qDebug() << "\n";
+    ui->doubleSpinBox_2->setValue(MySigProc.getTimeSignal().BER);
 }
 
 void MainWindow::PaCurvePlot() {
@@ -81,63 +82,11 @@ void MainWindow::PaCurvePlot() {
 
     QElapsedTimer timer;
     timer.start();
-    if(ui->pipelineTree->currentItem() && ui->pipelineTree->currentItem()->text(0) == "Power Amplifier") {
-        if(Graphs.GetPaCurveType() == "Static") {
-            std::vector<double> Coeffs;
-            std::vector<double> FIR_Coeffs;
-            QString model_type = ui->PAModel_ComboBox->currentText();
-            if(model_type == "Saleh") {
-                Coeffs.push_back(ui->SalehCoef1_doubleSpinBox->value());
-                Coeffs.push_back(ui->SalehCoef2_doubleSpinBox->value());
-                Coeffs.push_back(ui->SalehCoef3_doubleSpinBox->value());
-                Coeffs.push_back(ui->SalehCoef4_doubleSpinBox->value());
-                MySigProc.CalcPaCurve(model_type, Coeffs, ui->IBO_SpinBox->value(),
-                                                         ui->LinearGain_SpinBox->value(), false, FIR_Coeffs);
-            }
-            else if (model_type == "Rapp") {
-                Coeffs.push_back(ui->RappAsatCoef_doubleSpinBox->value());
-                Coeffs.push_back(ui->RappPCoef_doubleSpinBox->value());
-                MySigProc.CalcPaCurve(model_type, Coeffs, ui->IBO_SpinBox->value(),
-                                                           ui->LinearGain_SpinBox->value(), false, FIR_Coeffs);
-            }
-            else if (model_type == "Ghorbani") {
-                Coeffs.push_back(ui->GhorbaniCoef1_doubleSpinBox->value());
-                Coeffs.push_back(ui->GhorbaniCoef2_doubleSpinBox->value());
-                Coeffs.push_back(ui->GhorbaniCoef3_doubleSpinBox->value());
-                Coeffs.push_back(ui->GhorbaniCoef4_doubleSpinBox->value());
-                Coeffs.push_back(ui->GhorbaniCoef5_doubleSpinBox->value());
-                Coeffs.push_back(ui->GhorbaniCoef6_doubleSpinBox->value());
-                MySigProc.CalcPaCurve(model_type, Coeffs, ui->IBO_SpinBox->value(),
-                                                           ui->LinearGain_SpinBox->value(), false, FIR_Coeffs);
-            }
-            else if (model_type == "Wiener") {
-                model_type = ui->StaticNonlin_comboBox->currentText();
-                if(model_type == "Saleh") {
-                    Coeffs.push_back(ui->SalehCoef1_doubleSpinBox->value());
-                    Coeffs.push_back(ui->SalehCoef2_doubleSpinBox->value());
-                    Coeffs.push_back(ui->SalehCoef3_doubleSpinBox->value());
-                    Coeffs.push_back(ui->SalehCoef4_doubleSpinBox->value());
-                }
-                else if(model_type == "Rapp") {
-                    Coeffs.push_back(ui->RappAsatCoef_doubleSpinBox->value());
-                    Coeffs.push_back(ui->RappPCoef_doubleSpinBox->value());
-                }
-                else {
-                    Coeffs.push_back(ui->GhorbaniCoef1_doubleSpinBox->value());
-                    Coeffs.push_back(ui->GhorbaniCoef2_doubleSpinBox->value());
-                    Coeffs.push_back(ui->GhorbaniCoef3_doubleSpinBox->value());
-                    Coeffs.push_back(ui->GhorbaniCoef4_doubleSpinBox->value());
-                    Coeffs.push_back(ui->GhorbaniCoef5_doubleSpinBox->value());
-                    Coeffs.push_back(ui->GhorbaniCoef6_doubleSpinBox->value());
-                }
-                FIR_Coeffs.push_back(ui->FIR_C_value_doubleSpinBox->value());
-                FIR_Coeffs.push_back(ui->FIR_alpha_doubleSpinBox->value());
-                MySigProc.CalcPaCurve(model_type, Coeffs, ui->IBO_SpinBox->value(),
-                                                         ui->LinearGain_SpinBox->value(), true, FIR_Coeffs);
-            }
-        }
-        Graphs.PaCurvePlot();
-    }
+    if(ui->pipelineTree->currentItem() && ui->pipelineTree->currentItem()->text(0) == "Power Amplifier")
+        if(Graphs.GetPaCurveType() == "Static")
+            MySigProc.CalcPaCurve();
+
+    Graphs.PaCurvePlot();
     qDebug() << "PaCurve time:" << timer.elapsed() << "ms";
 }
 
@@ -227,6 +176,11 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->PAModel_ComboBox) {UISource.PAModel = ui->PAModel_ComboBox->currentText();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; CurrentRecalcNeeds.TimePlotsRescale = true;}
 
+    if(senderObj == ui->MP_K_spinBox) { UISource.MP_K = ui->MP_K_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->MP_P_spinBox) { UISource.MP_K = ui->MP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+
+    if(CurrentRecalcNeeds.PARecalc)
+        CurrentRecalcNeeds.DPDRecalc = true;
 
     MySigProc.DataUpdate(UISource);
     MakeMainCalcAndPlot();
@@ -284,6 +238,9 @@ void MainWindow::FirstDataUpdate()
     UISource.PAModel = ui->PAModel_ComboBox->currentText();
     UISource.StaticNonlinModel = ui->StaticNonlin_comboBox->currentText();
 
+    UISource.MP_K = ui->MP_K_spinBox->value();
+    UISource.MP_P = ui->MP_P_spinBox->value();
+
     CurrentRecalcNeeds.init();
     MySigProc.DataUpdate(UISource);
     MakeMainCalcAndPlot();
@@ -324,6 +281,12 @@ void MainWindow::onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem
     else if (name == "Power Amplifier") {
         PaCurvePlot();
         ui->settingsStack->setCurrentWidget(ui->PagePA);   
+    }
+    else if (name == "Metrics") {
+        ui->settingsStack->setCurrentWidget(ui->Metric_Page);
+    }
+    else if (name == "Predistorter") {
+        ui->settingsStack->setCurrentWidget(ui->PagePredistorter);
     }
 }
 
@@ -536,29 +499,6 @@ void MainWindow::setupPACurvePlotting() {
     // //Connecting chosen PA model type with settings of this model and setting starting page
      connect(ui->PAModel_ComboBox, &QComboBox::currentTextChanged, this, &MainWindow::PaModelTypeComboBoxTextChanged);
      ui->PaSettings_StackedWidget->setCurrentWidget(ui->Saleh_model_settings);
-
-    // connect(ui->PAModel_ComboBox, &QComboBox::currentTextChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->IBO_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->LinearGain_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-
-    // connect(ui->SalehCoef1_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->SalehCoef2_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->SalehCoef3_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->SalehCoef4_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-
-    // connect(ui->RappAsatCoef_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->RappPCoef_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-
-    // connect(ui->GhorbaniCoef1_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->GhorbaniCoef2_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->GhorbaniCoef3_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->GhorbaniCoef4_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->GhorbaniCoef5_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->GhorbaniCoef6_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-
-    // connect(ui->StaticNonlin_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->FIR_C_value_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
-    // connect(ui->FIR_alpha_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::PaCurvePlot);
 }
 
 void MainWindow::setupPaCurveToolButton() {
