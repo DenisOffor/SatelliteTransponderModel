@@ -470,6 +470,9 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->FIR_C_value_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->FIR_alpha_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->StaticNonlin_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
+
+    connect(ui->MP_K_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    connect(ui->MP_P_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
 }
 
 void MainWindow::onGraphsListItemChanged(QListWidgetItem* current, QListWidgetItem*) {

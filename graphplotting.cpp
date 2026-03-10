@@ -107,6 +107,16 @@ void GraphPlotting::PlotConstellationsPlots(const Symbols& MySymbols)
         plotsOfConstellations[1]->replot();
     }
 
+    if(!MySymbols.rec_sym_noisy_with_DPD.empty()) {
+        x.clear(); y.clear();
+        for (const auto& symbol : MySymbols.rec_sym_noisy_with_DPD) {
+            x.append(symbol.real());  // X = действительная часть
+            y.append(symbol.imag());  // Y = мнимая часть
+        }
+        plotsOfConstellations[3]->graph(0)->setData(x, y);
+        plotsOfConstellations[3]->replot();
+    }
+
     if(!MySymbols.rec_sym_noisy.empty()) {
         x.clear(); y.clear();
         for (const auto& symbol : MySymbols.rec_sym_noisy) {

@@ -34,24 +34,24 @@ private:
     std::vector<std::complex<double>> QAM64_const;
 
     //functions
-    Symbols GenerateNSymbols();
+    Symbols GenerateNSymbols(Source& source);
     OfdmParams GetOfdmParams();
     ScParams GetSCParams();
     FdmaParams GetFDMAParams();
-    void TransmitSignalProcessing(NeedToRecalc& CurrentRecalcNeeds);
-    void PAProcessing(NeedToRecalc& CurrentRecalcNeeds);
-    void ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds);
+    void TransmitSignalProcessing(Source& source, NeedToRecalc& CurrentRecalcNeeds);
+    void PAProcessing(Source& source, NeedToRecalc& CurrentRecalcNeeds);
+    void ReceiveSignalProcessing(Source& source, NeedToRecalc CurrentRecalcNeeds);
     void SymsAddNoise(std::vector<std::complex<double>>& symbols_clean,
                       std::vector<std::complex<double>>& symbols_noisy);
     int DemodulateSymbol(const std::complex<double>& r, const std::vector<std::complex<double>>& constellation);
-    void Demodulate(Symbols& MySymbols, const std::vector<std::complex<double>>& constellation);
+    void Demodulate(Symbols& symbols, const std::vector<std::complex<double>>& constellation);
     void InitializeConstellations();
-    void RecalcDPD();
+    void RecalcDPD(NeedToRecalc& CurrentRecalcNeeds);
     std::vector<std::complex<double>>& getCurrentConstellation();
 public:
     SignalProcessing();
     ~SignalProcessing();
-    void GeneratePacksOfSymbols(NeedToRecalc& CurrentRecalcNeeds);
+    void GeneratePacksOfSymbols(std::vector<Symbols>& Symbols, Source& source, NeedToRecalc& CurrentRecalcNeeds);
     void CalcPaCurve();
     void ApplyFIRWithMemory(std::vector<double>& amplitude, std::vector<double>& phase, const std::vector<double>& FIR_Coefs, int numTaps);
     void DataUpdate(Source& UISource);
