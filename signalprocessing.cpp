@@ -11,16 +11,31 @@ SignalProcessing::SignalProcessing() : myFdma(mySC) {
         PACurve->P_in_abs.linear[i] = qPow(10.0, PACurve->P_in_abs.dB[i] / 10.0);
         PACurve->r_in[i] = qSqrt(PACurve->P_in_abs.linear[i]);
     }
-    MySource = new Source;
     freq.resize(6);
     PSDs.resize(6);
     InitializeConstellations();
+
+    //
+    TrainSource.ModType = "16QAM";
+    TrainSource.NumSym = 5000;
+    TrainSource.SNRSymdB = 40;
+    TrainSource.M = 16;
+
+    TrainSource.SigType = "OFDM";
+    TrainSource.OFDM_f_carrier = 0;
+    TrainSource.OFDM_Nfft = 64;
+    TrainSource.OFDM_GB_DC = 0;
+    TrainSource.OFDM_GB_Nyq = 0;
+    TrainSource.OFDM_cycle_prefix = 0;
+
+    TrainSource.oversampling = 1;
+    TrainSource.fs = 20e6;
+    TrainSource.SNRSig = 100;
 }
 
 
 SignalProcessing::~SignalProcessing() {
     delete PACurve;
-    delete MySource;
 }
 
 void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
@@ -33,87 +48,87 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
     timer.restart();
     if(CurrentRecalcNeeds.RecalcSymbols || CurrentRecalcNeeds.RecalcNoiseSym || CurrentRecalcNeeds.FullRecalc)
-        GeneratePacksOfSymbols(MySymbols, CurrentRecalcNeeds);
+        GeneratePacksOfSymbols(MySymbols, MySource, CurrentRecalcNeeds);
     qDebug() << "Sym time:" << timer.elapsed() << "ms";
 
 
     timer.restart();
     if(CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc || CurrentRecalcNeeds.RecalcNoiseSig)
-        TransmitSignalProcessing(CurrentRecalcNeeds);
+        TransmitSignalProcessing(MySource, MySymbols, CurrentRecalcNeeds, CurrentRes);
     qDebug() << "Sig time:" << timer.elapsed() << "ms";
 
     timer.restart();
     if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.FullRecalc)
         if(!CurrentRes.pa_sig.empty())
-            PAProcessing(CurrentRecalcNeeds);
+            PAProcessing(MySource, CurrentRecalcNeeds, CurrentRes);
     qDebug() << "PA time:" << timer.elapsed() << "ms";
 
     timer.restart();
     if(!CurrentRes.pa_sig.empty())
-        ReceiveSignalProcessing(CurrentRecalcNeeds);
+        ReceiveSignalProcessing(MySource, MySymbols, CurrentRecalcNeeds, CurrentRes);
     qDebug() << "Rec time:" << timer.elapsed() << "ms";
 
     timer.restart();
-    MyMetricsEval.comparePSD(CurrentRes.tx_sig, CurrentRes.pa_sig, MySource->fs, MySource->oversampling, freq[0], PSDs[0], PSDs[1]);
+    MyMetricsEval.comparePSD(CurrentRes.tx_sig, CurrentRes.pa_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[0], PSDs[1]);
     qDebug() << "PSD time:" << timer.elapsed() << "ms";
 
     CurrentRes.BER = MyMetricsEval.Calc_BER(MySymbols);
 }
 
-void SignalProcessing::GeneratePacksOfSymbols(std::vector<Symbols>& Symbols, NeedToRecalc& CurrentRecalcNeeds)
+void SignalProcessing::GeneratePacksOfSymbols(std::vector<Symbols>& Symbols, Source& source, NeedToRecalc& CurrentRecalcNeeds)
 {
     if(CurrentRecalcNeeds.RecalcSymbols || CurrentRecalcNeeds.FullRecalc) {
         Symbols.clear();
-        if(MySource->SigType == "FDMA")
-            for(int i = 0; i < MySource->FDMA_num_subcarriers; i++) {
-                Symbols.push_back(GenerateNSymbols());
-                SymsAddNoise(Symbols[i].tr_sym_clean, Symbols[i].tr_sym_noisy);
+        if(source.SigType == "FDMA")
+            for(int i = 0; i < source.FDMA_num_subcarriers; i++) {
+                Symbols.push_back(GenerateNSymbols(source));
+                SymsAddNoise(source, Symbols[i].tr_sym_clean, Symbols[i].tr_sym_noisy);
             }
-        else { Symbols.push_back(GenerateNSymbols()); SymsAddNoise(Symbols[0].tr_sym_clean, Symbols[0].tr_sym_noisy); }
+        else { Symbols.push_back(GenerateNSymbols(source)); SymsAddNoise(source, Symbols[0].tr_sym_clean, Symbols[0].tr_sym_noisy); }
     }
     else {
-        if(MySource->SigType == "FDMA")
-            for(int i = 0; i < MySource->FDMA_num_subcarriers; i++)
-                SymsAddNoise(Symbols[i].tr_sym_clean, Symbols[i].tr_sym_noisy);
-        else { SymsAddNoise(Symbols[0].tr_sym_clean, Symbols[0].tr_sym_noisy); }
+        if(source.SigType == "FDMA")
+            for(int i = 0; i < source.FDMA_num_subcarriers; i++)
+                SymsAddNoise(source, Symbols[i].tr_sym_clean, Symbols[i].tr_sym_noisy);
+        else { SymsAddNoise(source, Symbols[0].tr_sym_clean, Symbols[0].tr_sym_noisy); }
     }
     CurrentRecalcNeeds.RecalcSig = true;
 }
 
-Symbols SignalProcessing::GenerateNSymbols()
+Symbols SignalProcessing::GenerateNSymbols(Source& source)
 {
     Symbols temp;
-    temp.tr_sym_clean.resize(MySource->NumSym);
-    temp.tr_sym_noisy.resize(MySource->NumSym);
-    temp.data_tx.resize(MySource->NumSym);
-    for (int i = 0; i < MySource->NumSym; i++)
-        temp.data_tx[i] = QRandomGenerator::global()->bounded(MySource->M);
+    temp.tr_sym_clean.resize(source.NumSym);
+    temp.tr_sym_noisy.resize(source.NumSym);
+    temp.data_tx.resize(source.NumSym);
+    for (int i = 0; i < source.NumSym; i++)
+        temp.data_tx[i] = QRandomGenerator::global()->bounded(source.M);
 
-    if(MySource->ModType == "BPSK") {
-        for (int i = 0; i < MySource->NumSym; i++) {
+    if(source.ModType == "BPSK") {
+        for (int i = 0; i < source.NumSym; i++) {
             int s = temp.data_tx[i];
             temp.tr_sym_clean[i] = BPSK_const[s];
         }
     }
-    else if(MySource->ModType == "QPSK") {
-        for (int i = 0; i < MySource->NumSym; i++) {
+    else if(source.ModType == "QPSK") {
+        for (int i = 0; i < source.NumSym; i++) {
             int s = temp.data_tx[i];
             temp.tr_sym_clean[i] = QPSK_const[s];
         }
     }
-    else if(MySource->ModType == "16QAM") {
-        for (int i = 0; i < MySource->NumSym; i++) {
+    else if(source.ModType == "16QAM") {
+        for (int i = 0; i < source.NumSym; i++) {
             int s = temp.data_tx[i];
             temp.tr_sym_clean[i] = QAM16_const[s];
         }
     }
-    else if(MySource->ModType == "64QAM") {
-        for (int i = 0; i < MySource->NumSym; i++) {
+    else if(source.ModType == "64QAM") {
+        for (int i = 0; i < source.NumSym; i++) {
             int s = temp.data_tx[i];
             temp.tr_sym_clean[i] = QAM64_const[s];
         }
     }
-    else if(MySource->ModType == "APSK") {
+    else if(source.ModType == "APSK") {
         //int ring = ...;   // номер кольца
         //int idx  = ...;   // индекс на кольце
         //double r = RADi[ring];
@@ -125,15 +140,15 @@ Symbols SignalProcessing::GenerateNSymbols()
     double P_signal = 0;
     for (auto& s : temp.tr_sym_clean)
         P_signal += std::norm(s);
-    P_signal /= MySource->NumSym;
+    P_signal /= source.NumSym;
 
-    double P_noise = P_signal / pow(10.0, MySource->SNRSymdB / 10.0);
+    double P_noise = P_signal / pow(10.0, source.SNRSymdB / 10.0);
     double sigma = std::sqrt(P_noise / 2);
 
     std::mt19937 rng(12345);
     std::normal_distribution<double> gauss(0.0, sigma);
 
-    for (int i = 0; i < MySource->NumSym; i++) {
+    for (int i = 0; i < source.NumSym; i++) {
         temp.tr_sym_noisy[i] = temp.tr_sym_clean[i] +
                                      std::complex<double>(gauss(rng), gauss(rng));
     }
@@ -141,19 +156,20 @@ Symbols SignalProcessing::GenerateNSymbols()
     return temp;
 }
 
-void SignalProcessing::SymsAddNoise(std::vector<std::complex<double>>& symbols_clean, std::vector<std::complex<double>>& symbols_noisy) {
+void SignalProcessing::SymsAddNoise(Source& source,
+                                    std::vector<std::complex<double>>& symbols_clean, std::vector<std::complex<double>>& symbols_noisy) {
     double P_signal = 0;
     for (auto& s : symbols_clean)
         P_signal += std::norm(s);
-    P_signal /= MySource->NumSym;
+    P_signal /= source.NumSym;
 
-    double P_noise = P_signal / pow(10.0, MySource->SNRSymdB / 10.0);
+    double P_noise = P_signal / pow(10.0, source.SNRSymdB / 10.0);
     double sigma = std::sqrt(P_noise / 2);
 
     std::mt19937 rng(12345);
     std::normal_distribution<double> gauss(0.0, sigma);
 
-    for (int i = 0; i < MySource->NumSym; i++) {
+    for (int i = 0; i < source.NumSym; i++) {
         symbols_noisy[i] = symbols_clean[i] +
                             std::complex<double>(gauss(rng), gauss(rng));
     }
@@ -178,12 +194,12 @@ int SignalProcessing::DemodulateSymbol(const std::complex<double> &r, const std:
     return bestIndex;
 }
 
-void SignalProcessing::Demodulate(Symbols& MySymbols, const std::vector<std::complex<double> > &constellation)
+void SignalProcessing::Demodulate(Symbols& symbols, const std::vector<std::complex<double> > &constellation)
 {
-    MySymbols.data_rx.resize(MySymbols.data_tx.size());
-    for (size_t i = 0; i < MySymbols.rec_sym_noisy.size(); i++)
+    symbols.data_rx.resize(symbols.data_tx.size());
+    for (size_t i = 0; i < symbols.rec_sym_noisy.size(); i++)
     {
-        MySymbols.data_rx[i] = DemodulateSymbol(MySymbols.rec_sym_noisy[i], constellation);
+        symbols.data_rx[i] = DemodulateSymbol(symbols.rec_sym_noisy[i], constellation);
     }
 }
 
@@ -236,215 +252,225 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
 {
     NeedToRecalc temp;
     temp.init();
-    QString ModType = MySource->ModType;
-    MySource->ModType = "16QAM";
-    GeneratePacksOfSymbols(temp);
-    OfdmParams ofdm_parms = GetOfdmParams();
-    CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
-    CurrentRes.clear();
-    CurrentRes.resize(CurrentOfdmResults.tx.size());
-    CurrentRes.tx_sig = CurrentOfdmResults.tx;
-    CurrentRes.pa_sig = CurrentOfdmResults.tx;
-    CurrentRes.time = CurrentOfdmResults.t;
-    MyPAModels.SalehModel(CurrentRes.pa_sig, MySource->SalehCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
 
-    mydpd.setMemory(MySource->MP_P);
-    mydpd.setOrder(MySource->MP_K);
-    mydpd.train(CurrentRes.tx_sig, CurrentRes.pa_sig);
-    MySource->ModType = ModType;
+    std::vector<Symbols> TrainSymbols;
 
-    CurrentRecalcNeeds.RecalcSymbols = true;
+    TrainSource.PAModel = MySource.PAModel;
+    TrainSource.linear_gain_dB = MySource.linear_gain_dB;
+    TrainSource.IBO_dB = MySource.IBO_dB;
+    TrainSource.SalehCoeffs = MySource.SalehCoeffs;
+    TrainSource.RappCoeffs = MySource.RappCoeffs;
+    TrainSource.GhorbaniCoeffs = MySource.GhorbaniCoeffs;
+    TrainSource.FIRCoeffs = MySource.FIRCoeffs;
+    TrainSource.StaticNonlinModel = MySource.StaticNonlinModel;
+    TrainSource.MP_K = MySource.MP_K;
+    TrainSource.MP_P = MySource.MP_P;
+
+    GeneratePacksOfSymbols(TrainSymbols, TrainSource, temp);
+    OfdmParams ofdm_parms = GetOfdmParams(TrainSource);
+    OfdmResult TrainOfdmResults = myOfdm.makeOfdm(TrainSymbols[0].tr_sym_noisy, ofdm_parms);
+    GlobalResults TrainRes;
+    TrainRes.clear();
+    TrainRes.resize(TrainOfdmResults.tx.size());
+    TrainRes.tx_sig = TrainOfdmResults.tx;
+    TrainRes.pa_sig = TrainOfdmResults.tx;
+    TrainRes.time = TrainOfdmResults.t;
+    MyPAModels.SalehModel(TrainRes.pa_sig, TrainSource.SalehCoeffs, TrainSource.linear_gain_dB, TrainSource.IBO_dB);
+
+    mydpd.setMemory(TrainSource.MP_P);
+    mydpd.setOrder(TrainSource.MP_K);
+    mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig);
+
+    CurrentRecalcNeeds.PARecalc = true;
 }
 
-std::vector<std::complex<double>>& SignalProcessing::getCurrentConstellation()
+std::vector<std::complex<double>>& SignalProcessing::getCurrentConstellation(Source& source)
 {
-    if(MySource->ModType == "BPSK") {
+    if(source.ModType == "BPSK") {
         return BPSK_const;
     }
-    else if(MySource->ModType == "QPSK") {
+    else if(source.ModType == "QPSK") {
         return QPSK_const;
     }
-    else if(MySource->ModType == "16QAM") {
+    else if(source.ModType == "16QAM") {
         return QAM16_const;
     }
     //else 64 QAM
     return QAM64_const;
 }
 
-OfdmParams SignalProcessing::GetOfdmParams()
+OfdmParams SignalProcessing::GetOfdmParams(Source& source)
 {
     OfdmParams ofdm_parms;
-    ofdm_parms.CP = MySource->OFDM_cycle_prefix;
-    ofdm_parms.GB_DC = MySource->OFDM_GB_DC;
-    ofdm_parms.GB_Nyq = MySource->OFDM_GB_Nyq;
-    ofdm_parms.Nfft = MySource->OFDM_Nfft;
-    ofdm_parms.SNR_dB = MySource->SNRSig;
-    ofdm_parms.fc = MySource->OFDM_f_carrier;
-    ofdm_parms.fs = MySource->fs;
-    ofdm_parms.oversampling = MySource->oversampling;
+    ofdm_parms.CP = source.OFDM_cycle_prefix;
+    ofdm_parms.GB_DC = source.OFDM_GB_DC;
+    ofdm_parms.GB_Nyq = source.OFDM_GB_Nyq;
+    ofdm_parms.Nfft = source.OFDM_Nfft;
+    ofdm_parms.SNR_dB = source.SNRSig;
+    ofdm_parms.fc = source.OFDM_f_carrier;
+    ofdm_parms.fs = source.fs;
+    ofdm_parms.oversampling = source.oversampling;
     return ofdm_parms;
 }
 
-ScParams SignalProcessing::GetSCParams()
+ScParams SignalProcessing::GetSCParams(Source& source)
 {
     ScParams sc_params;
-    sc_params.SC_FilterType = MySource->SC_FilterType;
-    sc_params.SC_filter_length = MySource->SC_filter_length;
-    sc_params.SC_f_carrier = MySource->SC_f_carrier;
-    sc_params.SC_rolloff = MySource->SC_rolloff;
-    sc_params.SC_symrate = MySource->SC_symrate;
-    sc_params.SNR_dB = MySource->SNRSig;
-    sc_params.fs = MySource->fs;
-    sc_params.oversampling = MySource->oversampling;
+    sc_params.SC_FilterType = source.SC_FilterType;
+    sc_params.SC_filter_length = source.SC_filter_length;
+    sc_params.SC_f_carrier = source.SC_f_carrier;
+    sc_params.SC_rolloff = source.SC_rolloff;
+    sc_params.SC_symrate = source.SC_symrate;
+    sc_params.SNR_dB = source.SNRSig;
+    sc_params.fs = source.fs;
+    sc_params.oversampling = source.oversampling;
     return sc_params;
 }
 
-FdmaParams SignalProcessing::GetFDMAParams()
+FdmaParams SignalProcessing::GetFDMAParams(Source& source)
 {
     FdmaParams fdma_params;
-    fdma_params.FDMA_f_carrier = MySource->FDMA_f_carrier;
-    fdma_params.FDMA_symrate = MySource->FDMA_symrate;
-    fdma_params.FDMA_num_subcarriers = MySource->FDMA_num_subcarriers;
-    fdma_params.FDMA_step_carrier = MySource->FDMA_step_carrier;
-    fdma_params.SNRSig = MySource->SNRSig;
-    fdma_params.fs = MySource->fs;
-    fdma_params.oversampling = MySource->oversampling;
+    fdma_params.FDMA_f_carrier = source.FDMA_f_carrier;
+    fdma_params.FDMA_symrate = source.FDMA_symrate;
+    fdma_params.FDMA_num_subcarriers = source.FDMA_num_subcarriers;
+    fdma_params.FDMA_step_carrier = source.FDMA_step_carrier;
+    fdma_params.SNRSig = source.SNRSig;
+    fdma_params.fs = source.fs;
+    fdma_params.oversampling = source.oversampling;
 
     return fdma_params;
 }
 
-void SignalProcessing::TransmitSignalProcessing(NeedToRecalc& CurrentRecalcNeeds)
+void SignalProcessing::TransmitSignalProcessing(Source& source, std::vector<Symbols>& symbols, NeedToRecalc& CurrentRecalcNeeds, GlobalResults& CurRes)
 {
-    if(MySource->SigType == "OFDM") {
-        OfdmParams ofdm_parms = GetOfdmParams();
+    if(source.SigType == "OFDM") {
+        OfdmParams ofdm_parms = GetOfdmParams(source);
         if(CurrentRecalcNeeds.RecalcNoiseSig)
             myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
         else {
-            CurrentOfdmResults = myOfdm.makeOfdm(MySymbols[0].tr_sym_noisy, ofdm_parms);
+            CurrentOfdmResults = myOfdm.makeOfdm(symbols[0].tr_sym_noisy, ofdm_parms);
         }
-        CurrentRes.clear();
-        CurrentRes.resize(CurrentOfdmResults.tx.size());
-        CurrentRes.tx_sig = CurrentOfdmResults.tx;
-        CurrentRes.time = CurrentOfdmResults.t;
+        CurRes.clear();
+        CurRes.resize(CurrentOfdmResults.tx.size());
+        CurRes.tx_sig = CurrentOfdmResults.tx;
+        CurRes.time = CurrentOfdmResults.t;
     }
-    else if(MySource->SigType == "FDMA") {
-        FdmaParams fdma_parms = GetFDMAParams();
-        ScParams sc_params = GetSCParams();
+    else if(source.SigType == "FDMA") {
+        FdmaParams fdma_parms = GetFDMAParams(source);
+        ScParams sc_params = GetSCParams(source);
         if(CurrentRecalcNeeds.RecalcNoiseSig)
             myFdma.changeAwgn(CurrentFdmaResults, fdma_parms);
         else
-            CurrentFdmaResults = myFdma.generate(MySymbols, fdma_parms, sc_params);
-        CurrentRes.clear();
-        CurrentRes.resize(CurrentFdmaResults.tx.size());
-        CurrentRes.tx_sig = CurrentFdmaResults.tx;
-        CurrentRes.time = CurrentFdmaResults.t;
+            CurrentFdmaResults = myFdma.generate(symbols, fdma_parms, sc_params);
+        CurRes.clear();
+        CurRes.resize(CurrentFdmaResults.tx.size());
+        CurRes.tx_sig = CurrentFdmaResults.tx;
+        CurRes.time = CurrentFdmaResults.t;
     }
-    else if(MySource->SigType == "SC") {
-        ScParams sc_params = GetSCParams();
+    else if(source.SigType == "SC") {
+        ScParams sc_params = GetSCParams(source);
         if(CurrentRecalcNeeds.RecalcNoiseSig && !CurrentRecalcNeeds.FullRecalc)
             mySC.changeAwgn(CurrentSCResults, sc_params);
         else {
-            CurrentSCResults = mySC.makeSc(MySymbols[0].tr_sym_noisy, sc_params);
+            CurrentSCResults = mySC.makeSc(symbols[0].tr_sym_noisy, sc_params);
         }
-        CurrentRes.clear();
-        CurrentRes.resize(CurrentSCResults.tx.size());
-        CurrentRes.tx_sig = CurrentSCResults.tx;
-        CurrentRes.time = CurrentSCResults.t;
+        CurRes.clear();
+        CurRes.resize(CurrentSCResults.tx.size());
+        CurRes.tx_sig = CurrentSCResults.tx;
+        CurRes.time = CurrentSCResults.t;
     }
     CurrentRecalcNeeds.PARecalc = true;
 }
 
-void SignalProcessing::PAProcessing(NeedToRecalc& CurrentRecalcNeeds)
+void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcNeeds, GlobalResults& CurRes)
 {
-    if(!CurrentRes.pa_sig.empty()) {
-        CurrentRes.pa_sig = CurrentRes.tx_sig;
-        CurrentRes.pa_plus_dpd_sig = CurrentRes.tx_sig;
-        CurrentRes.pa_plus_dpd_sig = mydpd.predistort(CurrentRes.pa_plus_dpd_sig);
-        if(MySource->PAModel == "Saleh") {
-            MyPAModels.SalehModel(CurrentRes.pa_sig, MySource->SalehCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
-            MyPAModels.SalehModel(CurrentRes.pa_plus_dpd_sig, MySource->SalehCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+    if(!CurRes.pa_sig.empty()) {
+        CurRes.pa_sig = CurRes.tx_sig;
+        CurRes.pa_plus_dpd_sig = CurRes.tx_sig;
+        CurRes.pa_plus_dpd_sig = mydpd.predistort(CurRes.pa_plus_dpd_sig);
+        if(source.PAModel == "Saleh") {
+            MyPAModels.SalehModel(CurRes.pa_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
+            MyPAModels.SalehModel(CurRes.pa_plus_dpd_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
         }
-        else if (MySource->PAModel == "Rapp") {
-            MyPAModels.RappModel(CurrentRes.pa_sig, MySource->RappCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
-            MyPAModels.RappModel(CurrentRes.pa_plus_dpd_sig, MySource->RappCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+        else if (source.PAModel == "Rapp") {
+            MyPAModels.RappModel(CurRes.pa_sig, source.RappCoeffs, source.linear_gain_dB, source.IBO_dB);
+            MyPAModels.RappModel(CurRes.pa_plus_dpd_sig, source.RappCoeffs, source.linear_gain_dB, source.IBO_dB);
         }
-        else if (MySource->PAModel == "Ghorbani") {
-            MyPAModels.GhorbaniModel(CurrentRes.pa_sig, MySource->GhorbaniCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
-            MyPAModels.GhorbaniModel(CurrentRes.pa_plus_dpd_sig, MySource->GhorbaniCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+        else if (source.PAModel == "Ghorbani") {
+            MyPAModels.GhorbaniModel(CurRes.pa_sig, source.GhorbaniCoeffs, source.linear_gain_dB, source.IBO_dB);
+            MyPAModels.GhorbaniModel(CurRes.pa_plus_dpd_sig, source.GhorbaniCoeffs, source.linear_gain_dB, source.IBO_dB);
         }
-        else if (MySource->PAModel == "Wiener") {
-            if(MySource->StaticNonlinModel == "Saleh") {
-                MyPAModels.WienerModel(CurrentRes.pa_sig, MySource->StaticNonlinModel,
-                                       MySource->SalehCoeffs, MySource->FIRCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
-                MyPAModels.WienerModel(CurrentRes.pa_plus_dpd_sig, MySource->StaticNonlinModel,
-                                       MySource->SalehCoeffs, MySource->FIRCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+        else if (source.PAModel == "Wiener") {
+            if(source.StaticNonlinModel == "Saleh") {
+                MyPAModels.WienerModel(CurRes.pa_sig, source.StaticNonlinModel,
+                                       source.SalehCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.StaticNonlinModel,
+                                       source.SalehCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
             }
-            else if(MySource->StaticNonlinModel == "Rapp") {
-                MyPAModels.WienerModel(CurrentRes.pa_sig, MySource->StaticNonlinModel,
-                                       MySource->RappCoeffs, MySource->FIRCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
-                MyPAModels.WienerModel(CurrentRes.pa_plus_dpd_sig, MySource->StaticNonlinModel,
-                                       MySource->RappCoeffs, MySource->FIRCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+            else if(source.StaticNonlinModel == "Rapp") {
+                MyPAModels.WienerModel(CurRes.pa_sig, source.StaticNonlinModel,
+                                       source.RappCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.StaticNonlinModel,
+                                       source.RappCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
             }
-            else if(MySource->StaticNonlinModel == "Ghorbani") {
-                MyPAModels.WienerModel(CurrentRes.pa_sig, MySource->StaticNonlinModel,
-                                       MySource->GhorbaniCoeffs, MySource->FIRCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
-                MyPAModels.WienerModel(CurrentRes.pa_plus_dpd_sig, MySource->StaticNonlinModel,
-                                       MySource->GhorbaniCoeffs, MySource->FIRCoeffs, MySource->linear_gain_dB, MySource->IBO_dB);
+            else if(source.StaticNonlinModel == "Ghorbani") {
+                MyPAModels.WienerModel(CurRes.pa_sig, source.StaticNonlinModel,
+                                       source.GhorbaniCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.StaticNonlinModel,
+                                       source.GhorbaniCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
             }
         }
     }
 }
 
-void SignalProcessing::ReceiveSignalProcessing(NeedToRecalc CurrentRecalcNeeds)
+void SignalProcessing::ReceiveSignalProcessing(Source& source, std::vector<Symbols>& symbols, NeedToRecalc CurrentRecalcNeeds, GlobalResults& CurRes)
 {
-    OfdmParams ofdm_parms = GetOfdmParams();
-    ScParams sc_params = GetSCParams();
-    FdmaParams fdma_params = GetFDMAParams();
-    if(MySource->SigType == "OFDM") {
-        MySymbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurrentRes.pa_sig, MySymbols[0].tr_sym_clean, ofdm_parms);
-        MySymbols[0].rec_sym_noisy_with_DPD = myOfdm.ofdm_demodulate(CurrentRes.pa_plus_dpd_sig, MySymbols[0].tr_sym_clean, ofdm_parms);
+    OfdmParams ofdm_parms = GetOfdmParams(source);
+    ScParams sc_params = GetSCParams(source);
+    FdmaParams fdma_params = GetFDMAParams(source);
+    if(source.SigType == "OFDM") {
+        symbols[0].rec_sym_noisy = myOfdm.ofdm_demodulate(CurRes.pa_sig, symbols[0].tr_sym_clean, ofdm_parms);
+        symbols[0].rec_sym_noisy_with_DPD = myOfdm.ofdm_demodulate(CurRes.pa_plus_dpd_sig, symbols[0].tr_sym_clean, ofdm_parms);
     }
-    else if(MySource->SigType == "SC") {
-        MySymbols[0].rec_sym_noisy = mySC.demodulateSignal(CurrentRes.pa_sig, sc_params, sc_params);
-        MySymbols[0].rec_sym_noisy_with_DPD = mySC.demodulateSignal(CurrentRes.pa_plus_dpd_sig, sc_params, sc_params);
+    else if(source.SigType == "SC") {
+        symbols[0].rec_sym_noisy = mySC.demodulateSignal(CurRes.pa_sig, sc_params, sc_params);
+        symbols[0].rec_sym_noisy_with_DPD = mySC.demodulateSignal(CurRes.pa_plus_dpd_sig, sc_params, sc_params);
     }
-    else if(MySource->SigType == "FDMA") {
-        std::vector<std::vector<std::complex<double>>> temp = myFdma.demodulate(CurrentRes.pa_sig, fdma_params, sc_params);
-        std::vector<std::vector<std::complex<double>>> temp_with_DPD = myFdma.demodulate(CurrentRes.pa_plus_dpd_sig, fdma_params, sc_params);
-        for(int i = 0; i < MySymbols.size(); ++i) {
-            MySymbols[i].rec_sym_noisy = temp[i];
-            MySymbols[i].rec_sym_noisy_with_DPD = temp_with_DPD[i];
+    else if(source.SigType == "FDMA") {
+        std::vector<std::vector<std::complex<double>>> temp = myFdma.demodulate(CurRes.pa_sig, fdma_params, sc_params);
+        std::vector<std::vector<std::complex<double>>> temp_with_DPD = myFdma.demodulate(CurRes.pa_plus_dpd_sig, fdma_params, sc_params);
+        for(int i = 0; i < symbols.size(); ++i) {
+            symbols[i].rec_sym_noisy = temp[i];
+            symbols[i].rec_sym_noisy_with_DPD = temp_with_DPD[i];
         }
     }
 
-    std::vector<std::complex<double>> BPSK = getCurrentConstellation();
-
-    for(int i = 0; i < MySymbols.size(); ++i)
-        Demodulate(MySymbols[i], getCurrentConstellation());
+    for(int i = 0; i < symbols.size(); ++i)
+        Demodulate(symbols[i], getCurrentConstellation(source));
 }
 
 void SignalProcessing::CalcPaCurve()
 {
     bool FIR_enable;
-    QString model_type = MySource->PAModel;
+    QString model_type = MySource.PAModel;
     if(model_type == "Wiener") {
-        model_type = MySource->StaticNonlinModel;
+        model_type = MySource.StaticNonlinModel;
         FIR_enable = true;
     }
 
-    double linear_gain = qPow(10.0, MySource->linear_gain_dB / 20);
+    double linear_gain = qPow(10.0, MySource.linear_gain_dB / 20);
     if(model_type == "Saleh") {
         for(int i = 0; i < PACurve->point_num; i ++) {
             // AM/AM (unnormalized)
-            PACurve->Aout[i] = (MySource->SalehCoeffs[0] * PACurve->r_in[i]) / (1 + MySource->SalehCoeffs[1] * qPow(PACurve->r_in[i], 2.0)) ;
+            PACurve->Aout[i] = (MySource.SalehCoeffs[0] * PACurve->r_in[i]) / (1 + MySource.SalehCoeffs[1] * qPow(PACurve->r_in[i], 2.0)) ;
             // AM/PM
-            PACurve->Phi[i] = (MySource->SalehCoeffs[2] * qPow(PACurve->r_in[i], 2)) /  (1 + MySource->SalehCoeffs[3] * qPow(PACurve->r_in[i], 2)) * 180 / 3.14;
+            PACurve->Phi[i] = (MySource.SalehCoeffs[2] * qPow(PACurve->r_in[i], 2)) /  (1 + MySource.SalehCoeffs[3] * qPow(PACurve->r_in[i], 2)) * 180 / 3.14;
         }
     }
     else if (model_type == "Rapp") {
         for(int i = 0; i < PACurve->point_num; i ++) {
             // AM/AM (unnormalized)
-            PACurve->Aout[i] = linear_gain * PACurve->r_in[i] / qPow(1 + qPow(PACurve->r_in[i] / MySource->RappCoeffs[0], 2 * MySource->RappCoeffs[1]), 1 / (2 * MySource->RappCoeffs[1]));
+            PACurve->Aout[i] = linear_gain * PACurve->r_in[i] / qPow(1 + qPow(PACurve->r_in[i] / MySource.RappCoeffs[0], 2 * MySource.RappCoeffs[1]), 1 / (2 * MySource.RappCoeffs[1]));
             // AM/PM
             PACurve->Phi[i] = 0;
         }
@@ -452,16 +478,16 @@ void SignalProcessing::CalcPaCurve()
     else if (model_type == "Ghorbani") {
         for(int i = 0; i < PACurve->point_num; i ++) {
             // AM/AM (unnormalized)
-            PACurve->Aout[i] = MySource->GhorbaniCoeffs[0] * PACurve->r_in[i] / (1 + MySource->GhorbaniCoeffs[1] * qPow(PACurve->r_in[i], 2) + MySource->GhorbaniCoeffs[2] * qPow(PACurve->r_in[i], 4));
+            PACurve->Aout[i] = MySource.GhorbaniCoeffs[0] * PACurve->r_in[i] / (1 + MySource.GhorbaniCoeffs[1] * qPow(PACurve->r_in[i], 2) + MySource.GhorbaniCoeffs[2] * qPow(PACurve->r_in[i], 4));
             // AM/PM
-            PACurve->Phi[i] = MySource->GhorbaniCoeffs[3] * qPow(PACurve->r_in[i], 2) / (1 + MySource->GhorbaniCoeffs[4] * qPow(PACurve->r_in[i], 2) + MySource->GhorbaniCoeffs[5] * qPow(PACurve->r_in[i], 4)) * 180 / 3.14;
+            PACurve->Phi[i] = MySource.GhorbaniCoeffs[3] * qPow(PACurve->r_in[i], 2) / (1 + MySource.GhorbaniCoeffs[4] * qPow(PACurve->r_in[i], 2) + MySource.GhorbaniCoeffs[5] * qPow(PACurve->r_in[i], 4)) * 180 / 3.14;
         }
     }
 
     // Output power in dB and linear
     for(int i = 0; i < PACurve->point_num; i ++) {
         // P out in dB with linear gain
-        PACurve->P_out_abs.dB[i] =  10 * std::log10(qPow(PACurve->Aout[i], 2)) + MySource->linear_gain_dB;
+        PACurve->P_out_abs.dB[i] =  10 * std::log10(qPow(PACurve->Aout[i], 2)) + MySource.linear_gain_dB;
         PACurve->P_out_abs.linear[i] = qPow(10.0, PACurve->P_out_abs.dB[i] / 10.0);
     }
 
@@ -489,26 +515,26 @@ void SignalProcessing::CalcPaCurve()
     }
 
     // Рабочая точка
-    double IBO_linear = qPow(10.0, MySource->IBO_dB / 10.0);
+    double IBO_linear = qPow(10.0, MySource.IBO_dB / 10.0);
     double r_work = r_sat / std::sqrt(IBO_linear);
 
     double A_work;
     if(model_type == "Saleh") {
-        A_work = (MySource->SalehCoeffs[0] * r_work) / (1 + MySource->SalehCoeffs[1] * qPow(r_work, 2));
-        PACurve->Phi_work_grad[0] = (MySource->SalehCoeffs[2] * qPow(r_work, 2)) / (1 + MySource->SalehCoeffs[3] * qPow(r_work, 2)) * 180 / 3.14;
+        A_work = (MySource.SalehCoeffs[0] * r_work) / (1 + MySource.SalehCoeffs[1] * qPow(r_work, 2));
+        PACurve->Phi_work_grad[0] = (MySource.SalehCoeffs[2] * qPow(r_work, 2)) / (1 + MySource.SalehCoeffs[3] * qPow(r_work, 2)) * 180 / 3.14;
     }
     else if(model_type == "Rapp") {
-        A_work = r_work / qPow(1 + qPow(r_work / MySource->RappCoeffs[0], 2 * MySource->RappCoeffs[1]), 1 / (2 * MySource->RappCoeffs[1]));
+        A_work = r_work / qPow(1 + qPow(r_work / MySource.RappCoeffs[0], 2 * MySource.RappCoeffs[1]), 1 / (2 * MySource.RappCoeffs[1]));
         PACurve->Phi_work_grad[0] = 0;
     }
     else if(model_type == "Ghorbani") {
-        A_work = MySource->GhorbaniCoeffs[0] * r_work / (1 + MySource->GhorbaniCoeffs[1] * qPow(r_work, 2) + MySource->GhorbaniCoeffs[2] * qPow(r_work, 4));
-        PACurve->Phi_work_grad[0] = MySource->GhorbaniCoeffs[3] * qPow(r_work, 2.0) / (1 + MySource->GhorbaniCoeffs[4] * qPow(r_work, 2) + MySource->GhorbaniCoeffs[5] * qPow(r_work, 4)) * 180 / 3.14;
+        A_work = MySource.GhorbaniCoeffs[0] * r_work / (1 + MySource.GhorbaniCoeffs[1] * qPow(r_work, 2) + MySource.GhorbaniCoeffs[2] * qPow(r_work, 4));
+        PACurve->Phi_work_grad[0] = MySource.GhorbaniCoeffs[3] * qPow(r_work, 2.0) / (1 + MySource.GhorbaniCoeffs[4] * qPow(r_work, 2) + MySource.GhorbaniCoeffs[5] * qPow(r_work, 4)) * 180 / 3.14;
     }
 
 
     PACurve->Working_point_dB_abs.x[0] = 20 * std::log10(r_work);
-    PACurve->Working_point_dB_abs.y[0] = 10 * std::log10(qPow(A_work, 2)) + MySource->linear_gain_dB;
+    PACurve->Working_point_dB_abs.y[0] = 10 * std::log10(qPow(A_work, 2)) + MySource.linear_gain_dB;
 
     PACurve->Working_point_linear_abs.x[0] = qPow(10.0, PACurve->Working_point_dB_abs.x[0] / 10.0);
     PACurve->Working_point_linear_abs.y[0] = qPow(10.0, PACurve->Working_point_dB_abs.y[0] / 10.0);
@@ -520,10 +546,10 @@ void SignalProcessing::CalcPaCurve()
     PACurve->Working_point_linear_norm.y[0] = qPow(10.0, PACurve->Working_point_dB_norm.y[0] / 10.0);
 
     if(FIR_enable) {
-        ApplyFIRWithMemory(PACurve->P_out_abs.dB, PACurve->Phi, MySource->FIRCoeffs, 5);
-        ApplyFIRWithMemory(PACurve->P_out_abs.linear, PACurve->Phi, MySource->FIRCoeffs, 5);
-        ApplyFIRWithMemory(PACurve->P_out_norm.dB, PACurve->Phi, MySource->FIRCoeffs, 5);
-        ApplyFIRWithMemory(PACurve->P_out_norm.linear, PACurve->Phi, MySource->FIRCoeffs, 5);
+        ApplyFIRWithMemory(PACurve->P_out_abs.dB, PACurve->Phi, MySource.FIRCoeffs, 5);
+        ApplyFIRWithMemory(PACurve->P_out_abs.linear, PACurve->Phi, MySource.FIRCoeffs, 5);
+        ApplyFIRWithMemory(PACurve->P_out_norm.dB, PACurve->Phi, MySource.FIRCoeffs, 5);
+        ApplyFIRWithMemory(PACurve->P_out_norm.linear, PACurve->Phi, MySource.FIRCoeffs, 5);
     }   
 }
 
@@ -581,48 +607,47 @@ void SignalProcessing::ApplyFIRWithMemory(std::vector<double>& amplitude, std::v
 
 void SignalProcessing::DataUpdate(Source &UISource)
 {
-    MySource->ModType = UISource.ModType;
-    MySource->SNRSymdB = UISource.SNRSymdB;
-    MySource->NumSym = UISource.NumSym;
-    MySource->M = UISource.M;
-    MySource->SigType = UISource.SigType;
+    MySource.ModType = UISource.ModType;
+    MySource.SNRSymdB = UISource.SNRSymdB;
+    MySource.NumSym = UISource.NumSym;
+    MySource.M = UISource.M;
+    MySource.SigType = UISource.SigType;
 
-    MySource->SC_f_carrier = UISource.SC_f_carrier;
-    MySource->SC_symrate = UISource.SC_symrate;
-    MySource->SC_rolloff = UISource.SC_rolloff;
-    MySource->SC_filter_length = UISource.SC_filter_length;
-    MySource->SC_FilterType = UISource.SC_FilterType;
+    MySource.SC_f_carrier = UISource.SC_f_carrier;
+    MySource.SC_symrate = UISource.SC_symrate;
+    MySource.SC_rolloff = UISource.SC_rolloff;
+    MySource.SC_filter_length = UISource.SC_filter_length;
+    MySource.SC_FilterType = UISource.SC_FilterType;
 
-    MySource->OFDM_f_carrier = UISource.OFDM_f_carrier;
-    MySource->OFDM_Nfft = UISource.OFDM_Nfft;
-    MySource->OFDM_f_carrier = UISource.OFDM_f_carrier;
-    MySource->OFDM_Nfft = UISource.OFDM_Nfft;
-    MySource->OFDM_GB_DC = UISource.OFDM_GB_DC;
-    MySource->OFDM_GB_Nyq = UISource.OFDM_GB_Nyq;
-    MySource->OFDM_cycle_prefix = UISource.OFDM_cycle_prefix;
+    MySource.OFDM_f_carrier = UISource.OFDM_f_carrier;
+    MySource.OFDM_Nfft = UISource.OFDM_Nfft;
+    MySource.OFDM_f_carrier = UISource.OFDM_f_carrier;
+    MySource.OFDM_Nfft = UISource.OFDM_Nfft;
+    MySource.OFDM_GB_DC = UISource.OFDM_GB_DC;
+    MySource.OFDM_GB_Nyq = UISource.OFDM_GB_Nyq;
+    MySource.OFDM_cycle_prefix = UISource.OFDM_cycle_prefix;
 
-    MySource->FDMA_f_carrier = UISource.FDMA_f_carrier;
-    MySource->FDMA_symrate = UISource.FDMA_symrate;
-    MySource->FDMA_num_subcarriers = UISource.FDMA_num_subcarriers;
-    MySource->FDMA_step_carrier = UISource.FDMA_step_carrier;
+    MySource.FDMA_f_carrier = UISource.FDMA_f_carrier;
+    MySource.FDMA_symrate = UISource.FDMA_symrate;
+    MySource.FDMA_num_subcarriers = UISource.FDMA_num_subcarriers;
+    MySource.FDMA_step_carrier = UISource.FDMA_step_carrier;
 
-    MySource->oversampling = UISource.oversampling;
-    MySource->fs = UISource.fs;
-    MySource->SNRSig = UISource.SNRSig;
+    MySource.oversampling = UISource.oversampling;
+    MySource.fs = UISource.fs;
+    MySource.SNRSig = UISource.SNRSig;
 
-    MySource->PAModel = UISource.PAModel;
-    MySource->IBO_dB = UISource.IBO_dB;
-    MySource->linear_gain_dB = UISource.linear_gain_dB;
-    MySource->SalehCoeffs = UISource.SalehCoeffs;
-    MySource->RappCoeffs = UISource.RappCoeffs;
-    MySource->GhorbaniCoeffs = UISource.GhorbaniCoeffs;
-    MySource->FIRCoeffs = UISource.FIRCoeffs;
-    MySource->StaticNonlinModel = UISource.StaticNonlinModel;
+    MySource.PAModel = UISource.PAModel;
+    MySource.IBO_dB = UISource.IBO_dB;
+    MySource.linear_gain_dB = UISource.linear_gain_dB;
+    MySource.SalehCoeffs = UISource.SalehCoeffs;
+    MySource.RappCoeffs = UISource.RappCoeffs;
+    MySource.GhorbaniCoeffs = UISource.GhorbaniCoeffs;
+    MySource.FIRCoeffs = UISource.FIRCoeffs;
+    MySource.StaticNonlinModel = UISource.StaticNonlinModel;
 
-    MySource->MP_K = UISource.MP_K;
-    MySource->MP_P = UISource.MP_P;
+    MySource.MP_K = UISource.MP_K;
+    MySource.MP_P = UISource.MP_P;
 }
-
 
 Symbols &SignalProcessing::getSymbols()
 {

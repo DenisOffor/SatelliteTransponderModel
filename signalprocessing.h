@@ -14,7 +14,8 @@ class SignalProcessing
 private:
     PaCurve* PACurve;
     std::vector<Symbols> MySymbols;
-    Source* MySource;
+    Source MySource;
+    Source TrainSource;
     DPD mydpd;
     PAModels MyPAModels;
     OFDM myOfdm;
@@ -35,19 +36,19 @@ private:
 
     //functions
     Symbols GenerateNSymbols(Source& source);
-    OfdmParams GetOfdmParams();
-    ScParams GetSCParams();
-    FdmaParams GetFDMAParams();
-    void TransmitSignalProcessing(Source& source, NeedToRecalc& CurrentRecalcNeeds);
-    void PAProcessing(Source& source, NeedToRecalc& CurrentRecalcNeeds);
-    void ReceiveSignalProcessing(Source& source, NeedToRecalc CurrentRecalcNeeds);
-    void SymsAddNoise(std::vector<std::complex<double>>& symbols_clean,
+    OfdmParams GetOfdmParams(Source& source);
+    ScParams GetSCParams(Source& source);
+    FdmaParams GetFDMAParams(Source& source);
+    void TransmitSignalProcessing(Source& source, std::vector<Symbols>& symbols, NeedToRecalc& CurrentRecalcNeeds, GlobalResults& CurRes);
+    void PAProcessing(Source& source, NeedToRecalc& CurrentRecalcNeeds, GlobalResults& CurRes);
+    void ReceiveSignalProcessing(Source& source, std::vector<Symbols>& symbols, NeedToRecalc CurrentRecalcNeeds, GlobalResults& CurRes);
+    void SymsAddNoise(Source& source, std::vector<std::complex<double>>& symbols_clean,
                       std::vector<std::complex<double>>& symbols_noisy);
     int DemodulateSymbol(const std::complex<double>& r, const std::vector<std::complex<double>>& constellation);
     void Demodulate(Symbols& symbols, const std::vector<std::complex<double>>& constellation);
     void InitializeConstellations();
     void RecalcDPD(NeedToRecalc& CurrentRecalcNeeds);
-    std::vector<std::complex<double>>& getCurrentConstellation();
+    std::vector<std::complex<double>>& getCurrentConstellation(Source& source);
 public:
     SignalProcessing();
     ~SignalProcessing();
