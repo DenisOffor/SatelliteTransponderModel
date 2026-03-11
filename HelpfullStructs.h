@@ -176,7 +176,12 @@ struct GlobalResults {
     std::vector<std::complex<double>> rec_sig;
     std::vector<double> time;
 
-    double BER;
+    double BER_noDPD;
+    double BER_withDPD;
+    double EVM_noDPD;
+    double EVM_withDPD;
+    double ACLR_noDPD;
+    double ACLR_withDPD;
 
     void resize(int size) {
         tx_sig.resize(size);

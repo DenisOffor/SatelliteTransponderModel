@@ -70,7 +70,8 @@ void MainWindow::MakeMainCalcAndPlot()
     DoPlotting();
     qDebug() << "Graphs time:" << timer.elapsed() << "ms";
     qDebug() << "\n";
-    ui->doubleSpinBox_2->setValue(MySigProc.getTimeSignal().BER);
+    ui->BER_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_noDPD);
+    ui->BER_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_withDPD);
 }
 
 void MainWindow::PaCurvePlot() {
@@ -103,7 +104,7 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->SNRSymSpinBox) { UISource.SNRSymdB = ui->SNRSymSpinBox->value(); CurrentRecalcNeeds.RecalcNoiseSym = true; }
     if(senderObj == ui->NumSymSpinBox) { UISource.NumSym = ui->NumSymSpinBox->value(); CurrentRecalcNeeds.FullRecalc = true; }
     if(senderObj == ui->SignalTypeComboBox) { UISource.SigType = ui->SignalTypeComboBox->currentText();
-        CurrentRecalcNeeds.FullRecalc = true; CurrentRecalcNeeds.TimePlotsRescale = true; }
+        CurrentRecalcNeeds.FullRecalc = true; CurrentRecalcNeeds.TimePlotsRescale = true; CurrentRecalcNeeds.DPDRecalc = true; }
 
     if(senderObj == ui->SC_fc_SpinBox) { UISource.SC_f_carrier = ui->SC_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->SC_SymRate_SpinBox) { UISource.SC_symrate = ui->SC_SymRate_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
@@ -179,7 +180,7 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->MP_K_spinBox) { UISource.MP_K = ui->MP_K_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->MP_P_spinBox) { UISource.MP_K = ui->MP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
 
-    if(CurrentRecalcNeeds.PARecalc)
+    if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc)
         CurrentRecalcNeeds.DPDRecalc = true;
 
     MySigProc.DataUpdate(UISource);

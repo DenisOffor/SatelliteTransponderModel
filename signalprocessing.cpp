@@ -16,20 +16,26 @@ SignalProcessing::SignalProcessing() : myFdma(mySC) {
     InitializeConstellations();
 
     //
-    TrainSource.ModType = "16QAM";
-    TrainSource.NumSym = 5000;
+    TrainSource.ModType = "BPSK";
+    TrainSource.NumSym = 500;
     TrainSource.SNRSymdB = 40;
-    TrainSource.M = 16;
+    TrainSource.M = 2;
 
-    TrainSource.SigType = "OFDM";
-    TrainSource.OFDM_f_carrier = 0;
-    TrainSource.OFDM_Nfft = 64;
-    TrainSource.OFDM_GB_DC = 0;
-    TrainSource.OFDM_GB_Nyq = 0;
-    TrainSource.OFDM_cycle_prefix = 0;
+    TrainSource.SigType = "SC";
+    TrainSource.SC_FilterType = "RRC";
+    TrainSource.SC_filter_length = 6;
+    TrainSource.SC_f_carrier = 0;
+    TrainSource.SC_rolloff = 0.25;
+    TrainSource.SC_symrate = 1000000;
+
+    //TrainSource.OFDM_f_carrier = 0;
+    //TrainSource.OFDM_Nfft = 64;
+    //TrainSource.OFDM_GB_DC = 0;
+    //TrainSource.OFDM_GB_Nyq = 0;
+    //TrainSource.OFDM_cycle_prefix = 0;
 
     TrainSource.oversampling = 1;
-    TrainSource.fs = 20e6;
+    TrainSource.fs = 10e6;
     TrainSource.SNRSig = 100;
 }
 
@@ -72,7 +78,7 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
     MyMetricsEval.comparePSD(CurrentRes.tx_sig, CurrentRes.pa_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[0], PSDs[1]);
     qDebug() << "PSD time:" << timer.elapsed() << "ms";
 
-    CurrentRes.BER = MyMetricsEval.Calc_BER(MySymbols);
+    std::tie(CurrentRes.BER_noDPD, CurrentRes.BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
 }
 
 void SignalProcessing::GeneratePacksOfSymbols(std::vector<Symbols>& Symbols, Source& source, NeedToRecalc& CurrentRecalcNeeds)
@@ -197,9 +203,11 @@ int SignalProcessing::DemodulateSymbol(const std::complex<double> &r, const std:
 void SignalProcessing::Demodulate(Symbols& symbols, const std::vector<std::complex<double> > &constellation)
 {
     symbols.data_rx.resize(symbols.data_tx.size());
+    symbols.data_rx_with_DPD.resize(symbols.data_tx.size());
     for (size_t i = 0; i < symbols.rec_sym_noisy.size(); i++)
     {
         symbols.data_rx[i] = DemodulateSymbol(symbols.rec_sym_noisy[i], constellation);
+        symbols.data_rx_with_DPD[i] = DemodulateSymbol(symbols.rec_sym_noisy_with_DPD[i], constellation);
     }
 }
 
@@ -252,6 +260,8 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
 {
     NeedToRecalc temp;
     temp.init();
+    temp.RecalcNoiseSig = false;
+    temp.RecalcNoiseSym = false;
 
     std::vector<Symbols> TrainSymbols;
 
@@ -266,19 +276,33 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     TrainSource.MP_K = MySource.MP_K;
     TrainSource.MP_P = MySource.MP_P;
 
-    GeneratePacksOfSymbols(TrainSymbols, TrainSource, temp);
-    OfdmParams ofdm_parms = GetOfdmParams(TrainSource);
-    OfdmResult TrainOfdmResults = myOfdm.makeOfdm(TrainSymbols[0].tr_sym_noisy, ofdm_parms);
     GlobalResults TrainRes;
-    TrainRes.clear();
-    TrainRes.resize(TrainOfdmResults.tx.size());
-    TrainRes.tx_sig = TrainOfdmResults.tx;
-    TrainRes.pa_sig = TrainOfdmResults.tx;
-    TrainRes.time = TrainOfdmResults.t;
+    GeneratePacksOfSymbols(TrainSymbols, MySource, temp);
+    TransmitSignalProcessing(MySource, TrainSymbols, temp, TrainRes);
+
+    TrainRes.pa_sig = TrainRes.tx_sig;
     MyPAModels.SalehModel(TrainRes.pa_sig, TrainSource.SalehCoeffs, TrainSource.linear_gain_dB, TrainSource.IBO_dB);
 
     mydpd.setMemory(TrainSource.MP_P);
     mydpd.setOrder(TrainSource.MP_K);
+
+    // double avg_gain = 0;
+    // for(int i = 0; i < TrainRes.pa_sig.size(); i++) {
+    //     avg_gain += std::abs(TrainRes.pa_sig[i]) / std::abs(TrainRes.tx_sig[i]);
+    // }
+    // avg_gain /= TrainRes.pa_sig.size();
+
+    // std::vector<std::complex<double>> pa_output_normalized = TrainRes.pa_sig;
+    // for(int i = 0; i < TrainRes.pa_sig.size(); i++)
+    //     pa_output_normalized[i] /= avg_gain;
+
+    TrainRes.tx_sig = MyMetricsEval.normalizeSignal(TrainRes.tx_sig);
+    TrainRes.pa_sig = MyMetricsEval.normalizeSignal(TrainRes.pa_sig);
+
+    //std::vector<std::complex<double>> input = {{1, 0}, {2, 0}, {3, 0}, {4, 0}};
+    //std::vector<std::complex<double>> output = input;
+    //mydpd.train(input, output);
+
     mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig);
 
     CurrentRecalcNeeds.PARecalc = true;
@@ -386,8 +410,7 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
 {
     if(!CurRes.pa_sig.empty()) {
         CurRes.pa_sig = CurRes.tx_sig;
-        CurRes.pa_plus_dpd_sig = CurRes.tx_sig;
-        CurRes.pa_plus_dpd_sig = mydpd.predistort(CurRes.pa_plus_dpd_sig);
+        CurRes.pa_plus_dpd_sig = mydpd.predistort(CurRes.tx_sig);
         if(source.PAModel == "Saleh") {
             MyPAModels.SalehModel(CurRes.pa_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
             MyPAModels.SalehModel(CurRes.pa_plus_dpd_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);

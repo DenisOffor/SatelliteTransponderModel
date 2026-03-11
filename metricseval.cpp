@@ -45,16 +45,19 @@ void MetricsEval::comparePSD(
     computePSDWelch(rx_norm, Fs, oversample, freq, psd_rx);
 }
 
-double MetricsEval::Calc_BER(std::vector<Symbols> &symbols)
+QPair<double, double> MetricsEval::Calc_BER(std::vector<Symbols> &symbols)
 {
-    double errors = 0;
+    double errors_noDPD = 0;
+    double errors_withDPD = 0;
     for(int n = 0; n < symbols.size(); ++n) {
         for(int i = 0; i < symbols[n].data_rx.size(); ++i) {
             if(symbols[n].data_rx[i] != symbols[n].data_tx[i])
-                errors++;
+                errors_noDPD++;
+            if(symbols[n].data_rx_with_DPD[i] != symbols[n].data_tx[i])
+                errors_withDPD++;
         }
     }
-    return 1.0 * errors / (symbols.size() * symbols[0].data_tx.size());
+    return QPair<double, double> (1.0 * errors_noDPD / (symbols.size() * symbols[0].data_tx.size()), 1.0 * errors_withDPD / (symbols.size() * symbols[0].data_tx.size()));
 }
 
 std::vector<double> MetricsEval::hamming(int N)
