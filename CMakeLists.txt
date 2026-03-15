@@ -9,8 +9,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets PrintSupport)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets PrintSupport)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets PrintSupport Concurrent)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets PrintSupport Concurrent)
 
 add_library(qcustomplot STATIC
     qcustomplot.cpp
@@ -55,6 +55,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         sc.h sc.cpp
         fdma.h fdma.cpp
         dpd.h dpd.cpp
+        worker.h worker.cpp
     )
 
 
@@ -95,6 +96,7 @@ target_link_libraries(SatelliteTransponderModel
     PRIVATE
         Qt${QT_VERSION_MAJOR}::Widgets
         Qt${QT_VERSION_MAJOR}::PrintSupport
+        Qt${QT_VERSION_MAJOR}::Concurrent
         qcustomplot
         fftw3
 )

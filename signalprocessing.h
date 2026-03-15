@@ -15,7 +15,6 @@ private:
     PaCurve* PACurve;
     std::vector<Symbols> MySymbols;
     Source MySource;
-    Source TrainSource;
     DPD mydpd;
     PAModels MyPAModels;
     OFDM myOfdm;

@@ -60,6 +60,47 @@ QPair<double, double> MetricsEval::Calc_BER(std::vector<Symbols> &symbols)
     return QPair<double, double> (1.0 * errors_noDPD / (symbols.size() * symbols[0].data_tx.size()), 1.0 * errors_withDPD / (symbols.size() * symbols[0].data_tx.size()));
 }
 
+QPair<double, double> MetricsEval::Calc_EVM(const std::vector<Symbols>& frames)
+{
+    double err_no_dpd = 0.0;
+    double err_with_dpd = 0.0;
+    double ref_power = 0.0;
+
+    size_t N = 0;
+
+    for(const auto& f : frames)
+    {
+        size_t n = std::min({f.tr_sym_clean.size(),
+                             f.rec_sym_noisy.size(),
+                             f.rec_sym_noisy_with_DPD.size()});
+
+        for(size_t i = 0; i < n; ++i)
+        {
+            const auto& ref = f.tr_sym_clean[i];
+
+            auto err1 = f.rec_sym_noisy[i] - ref;
+            auto err2 = f.rec_sym_noisy_with_DPD[i] - ref;
+
+            err_no_dpd += std::norm(err1);
+            err_with_dpd += std::norm(err2);
+
+            ref_power += std::norm(ref);
+
+            ++N;
+        }
+    }
+
+    QPair<double, double> res;
+
+    if(ref_power > 0)
+    {
+        res.first = 20*std::log10(std::sqrt(err_no_dpd / ref_power));
+        res.second = 20*std::log10(std::sqrt(err_with_dpd / ref_power));
+    }
+
+    return res;
+}
+
 std::vector<double> MetricsEval::hamming(int N)
 {
     std::vector<double> w(N);

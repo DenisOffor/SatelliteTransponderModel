@@ -1,6 +1,6 @@
 #include "signalprocessing.h"
 
-SignalProcessing::SignalProcessing() : myFdma(mySC) {
+SignalProcessing::SignalProcessing() : myFdma(mySC), mydpd(3, 5) {
     PACurve = new PaCurve(200);
     // Input power in dB and linear
     double dB_start = -25;
@@ -14,29 +14,6 @@ SignalProcessing::SignalProcessing() : myFdma(mySC) {
     freq.resize(6);
     PSDs.resize(6);
     InitializeConstellations();
-
-    //
-    TrainSource.ModType = "BPSK";
-    TrainSource.NumSym = 500;
-    TrainSource.SNRSymdB = 40;
-    TrainSource.M = 2;
-
-    TrainSource.SigType = "SC";
-    TrainSource.SC_FilterType = "RRC";
-    TrainSource.SC_filter_length = 6;
-    TrainSource.SC_f_carrier = 0;
-    TrainSource.SC_rolloff = 0.25;
-    TrainSource.SC_symrate = 1000000;
-
-    //TrainSource.OFDM_f_carrier = 0;
-    //TrainSource.OFDM_Nfft = 64;
-    //TrainSource.OFDM_GB_DC = 0;
-    //TrainSource.OFDM_GB_Nyq = 0;
-    //TrainSource.OFDM_cycle_prefix = 0;
-
-    TrainSource.oversampling = 1;
-    TrainSource.fs = 10e6;
-    TrainSource.SNRSig = 100;
 }
 
 
@@ -76,9 +53,11 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
     timer.restart();
     MyMetricsEval.comparePSD(CurrentRes.tx_sig, CurrentRes.pa_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[0], PSDs[1]);
+    MyMetricsEval.comparePSD(CurrentRes.pa_sig, CurrentRes.pa_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[2], PSDs[3]);
     qDebug() << "PSD time:" << timer.elapsed() << "ms";
 
     std::tie(CurrentRes.BER_noDPD, CurrentRes.BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
+    std::tie(CurrentRes.EVM_noDPD, CurrentRes.EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
 }
 
 void SignalProcessing::GeneratePacksOfSymbols(std::vector<Symbols>& Symbols, Source& source, NeedToRecalc& CurrentRecalcNeeds)
@@ -265,46 +244,21 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
 
     std::vector<Symbols> TrainSymbols;
 
-    TrainSource.PAModel = MySource.PAModel;
-    TrainSource.linear_gain_dB = MySource.linear_gain_dB;
-    TrainSource.IBO_dB = MySource.IBO_dB;
-    TrainSource.SalehCoeffs = MySource.SalehCoeffs;
-    TrainSource.RappCoeffs = MySource.RappCoeffs;
-    TrainSource.GhorbaniCoeffs = MySource.GhorbaniCoeffs;
-    TrainSource.FIRCoeffs = MySource.FIRCoeffs;
-    TrainSource.StaticNonlinModel = MySource.StaticNonlinModel;
-    TrainSource.MP_K = MySource.MP_K;
-    TrainSource.MP_P = MySource.MP_P;
-
     GlobalResults TrainRes;
+    int overs = MySource.oversampling;
+    MySource.oversampling = 1;
     GeneratePacksOfSymbols(TrainSymbols, MySource, temp);
     TransmitSignalProcessing(MySource, TrainSymbols, temp, TrainRes);
 
     TrainRes.pa_sig = TrainRes.tx_sig;
-    MyPAModels.SalehModel(TrainRes.pa_sig, TrainSource.SalehCoeffs, TrainSource.linear_gain_dB, TrainSource.IBO_dB);
+    MyPAModels.SalehModel(TrainRes.pa_sig, MySource.SalehCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
 
-    mydpd.setMemory(TrainSource.MP_P);
-    mydpd.setOrder(TrainSource.MP_K);
-
-    // double avg_gain = 0;
-    // for(int i = 0; i < TrainRes.pa_sig.size(); i++) {
-    //     avg_gain += std::abs(TrainRes.pa_sig[i]) / std::abs(TrainRes.tx_sig[i]);
-    // }
-    // avg_gain /= TrainRes.pa_sig.size();
-
-    // std::vector<std::complex<double>> pa_output_normalized = TrainRes.pa_sig;
-    // for(int i = 0; i < TrainRes.pa_sig.size(); i++)
-    //     pa_output_normalized[i] /= avg_gain;
-
-    TrainRes.tx_sig = MyMetricsEval.normalizeSignal(TrainRes.tx_sig);
-    TrainRes.pa_sig = MyMetricsEval.normalizeSignal(TrainRes.pa_sig);
-
-    //std::vector<std::complex<double>> input = {{1, 0}, {2, 0}, {3, 0}, {4, 0}};
-    //std::vector<std::complex<double>> output = input;
-    //mydpd.train(input, output);
+    mydpd.setMemory(MySource.MP_P);
+    mydpd.setOrder(MySource.MP_K);
 
     mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig);
 
+    MySource.oversampling = overs;
     CurrentRecalcNeeds.PARecalc = true;
 }
 
@@ -410,7 +364,7 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
 {
     if(!CurRes.pa_sig.empty()) {
         CurRes.pa_sig = CurRes.tx_sig;
-        CurRes.pa_plus_dpd_sig = mydpd.predistort(CurRes.tx_sig);
+        CurRes.pa_plus_dpd_sig = mydpd.apply(CurRes.tx_sig);
         if(source.PAModel == "Saleh") {
             MyPAModels.SalehModel(CurRes.pa_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
             MyPAModels.SalehModel(CurRes.pa_plus_dpd_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
@@ -456,12 +410,12 @@ void SignalProcessing::ReceiveSignalProcessing(Source& source, std::vector<Symbo
         symbols[0].rec_sym_noisy_with_DPD = myOfdm.ofdm_demodulate(CurRes.pa_plus_dpd_sig, symbols[0].tr_sym_clean, ofdm_parms);
     }
     else if(source.SigType == "SC") {
-        symbols[0].rec_sym_noisy = mySC.demodulateSignal(CurRes.pa_sig, sc_params, sc_params);
-        symbols[0].rec_sym_noisy_with_DPD = mySC.demodulateSignal(CurRes.pa_plus_dpd_sig, sc_params, sc_params);
+        symbols[0].rec_sym_noisy = mySC.demodulateSignal(CurRes.pa_sig, symbols[0].tr_sym_clean, sc_params, sc_params);
+        symbols[0].rec_sym_noisy_with_DPD = mySC.demodulateSignal(CurRes.pa_plus_dpd_sig, symbols[0].tr_sym_clean, sc_params, sc_params);
     }
     else if(source.SigType == "FDMA") {
-        std::vector<std::vector<std::complex<double>>> temp = myFdma.demodulate(CurRes.pa_sig, fdma_params, sc_params);
-        std::vector<std::vector<std::complex<double>>> temp_with_DPD = myFdma.demodulate(CurRes.pa_plus_dpd_sig, fdma_params, sc_params);
+        std::vector<std::vector<std::complex<double>>> temp = myFdma.demodulate(CurRes.pa_sig, symbols, fdma_params, sc_params);
+        std::vector<std::vector<std::complex<double>>> temp_with_DPD = myFdma.demodulate(CurRes.pa_plus_dpd_sig, symbols, fdma_params, sc_params);
         for(int i = 0; i < symbols.size(); ++i) {
             symbols[i].rec_sym_noisy = temp[i];
             symbols[i].rec_sym_noisy_with_DPD = temp_with_DPD[i];

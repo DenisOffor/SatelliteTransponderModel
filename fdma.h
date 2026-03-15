@@ -41,7 +41,7 @@ public:
         const std::vector<Symbols> symbolsPerCarrier,
         const FdmaParams& p, const ScParams& sc_p);
     std::vector<std::vector<std::complex<double>>> demodulate(
-    const std::vector<std::complex<double>>& rxSignal,
+    const std::vector<std::complex<double>>& rxSignal, std::vector<Symbols>& symbols,
         const FdmaParams& p, const ScParams& sc_p);
     void changeAwgn(FdmaResult &x, FdmaParams &p);
 

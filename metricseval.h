@@ -20,6 +20,7 @@ public:
                     const std::vector<std::complex<double>>& rx, double Fs, double oversample,
                     std::vector<double>& freq, std::vector<double>& psd_tx, std::vector<double>& psd_rx);
     QPair<double, double> Calc_BER(std::vector<Symbols>& symbols);
+    QPair<double, double> Calc_EVM(const std::vector<Symbols>& frames);
 };
 
 

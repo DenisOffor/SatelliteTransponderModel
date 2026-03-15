@@ -37,7 +37,7 @@ public:
     ScResult makeSc(const std::vector<std::complex<double>>& symbols,
                     const ScParams& p);
     std::vector<std::complex<double>> demodulateSignal(
-        const std::vector<std::complex<double>>& tx_signal,
+        const std::vector<std::complex<double>>& tx_signal, const std::vector<std::complex<double>> &sym_clean,
         const ScParams& p,
         ScParams& updatedParams);
     void changeAwgn(ScResult &x, ScParams &p);

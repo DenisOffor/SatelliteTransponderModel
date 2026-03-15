@@ -6,6 +6,8 @@
 #include <QListWidgetItem>
 #include <QScreen>
 #include <QDebug>
+#include <QThread>
+#include "worker.h"
 #include "graphplotting.h"
 #include "signalprocessing.h"
 
@@ -39,6 +41,8 @@ private:
     SignalProcessing MySigProc;
     Source UISource;
     NeedToRecalc CurrentRecalcNeeds;
+    QThread* thread;
+    Worker* worker;
 
     void setupAdaptiveWindow();
     void setupSplitter();
@@ -48,8 +52,13 @@ private:
     void setupMainPipelineTree();
     void SetupSelectedGraphsListWidget();
     void SetupMainLogicWork();
+    void SetupWorker();
+    void LockParChange();
+    void UnLockParChange();
 
 private slots:
-    void DoPlotting();
+    void handleResult();
+signals:
+    void startSimulation(SignalProcessing* sig, NeedToRecalc recalc);
 };
 #endif // MAINWINDOW_H

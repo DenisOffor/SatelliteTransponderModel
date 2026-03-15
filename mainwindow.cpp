@@ -54,24 +54,23 @@ MainWindow::MainWindow(QWidget *parent)
     SetupSelectedGraphsListWidget();
     SetupMainLogicWork();
     CurrentRecalcNeeds.init();
+    SetupWorker();
     FirstDataUpdate();
 }
 
 MainWindow::~MainWindow()
 {
+    thread->quit();
+    thread->wait();
+    delete thread;
+    delete worker;
     delete ui;
 }
 
 void MainWindow::MakeMainCalcAndPlot()
 {
-    MySigProc.MainLogicWork(CurrentRecalcNeeds);
-    QElapsedTimer timer;
-    timer.start();
-    DoPlotting();
-    qDebug() << "Graphs time:" << timer.elapsed() << "ms";
-    qDebug() << "\n";
-    ui->BER_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_noDPD);
-    ui->BER_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_withDPD);
+    LockParChange();
+    emit startSimulation(&MySigProc, CurrentRecalcNeeds);
 }
 
 void MainWindow::PaCurvePlot() {
@@ -183,6 +182,7 @@ void MainWindow::DataUpdate()
     if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc)
         CurrentRecalcNeeds.DPDRecalc = true;
 
+    qDebug() << "Сигнал получен от:" << senderObj->metaObject()->className();
     MySigProc.DataUpdate(UISource);
     MakeMainCalcAndPlot();
 }
@@ -247,8 +247,12 @@ void MainWindow::FirstDataUpdate()
     MakeMainCalcAndPlot();
 }
 
-void MainWindow::DoPlotting()
+void MainWindow::handleResult()
 {
+    UnLockParChange();
+    QElapsedTimer timer;
+    timer.start();
+
     auto item = ui->SelectedGraphs_ListWidget->currentItem();
     QString text;
     if (item)
@@ -265,6 +269,14 @@ void MainWindow::DoPlotting()
 
     if(text == "    PSD    ")
         Graphs.PlotPSDPlots(MySigProc.getPSDs(), MySigProc.getFreq());
+
+    qDebug() << "Graphs time:" << timer.elapsed() << "ms";
+    qDebug() << "\n";
+
+    ui->BER_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_noDPD);
+    ui->BER_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_withDPD);
+    ui->EVM_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_noDPD);
+    ui->EVM_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_withDPD);
 }
 
 void MainWindow::onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem*)
@@ -351,6 +363,20 @@ void MainWindow::setupSplitter()
 
 void MainWindow::setupLabels()
 {
+    ui->progressBar->setEnabled(false);
+    ui->progressBar->setRange(0,0);
+    ui->progressBar->setStyleSheet(
+        "QProgressBar {"
+        "    border: 1px solid #888;"
+        "    border-radius: 5px;"
+        "    background-color: #f0f0f0;"  // Светлый фон
+        "}"
+        "QProgressBar::chunk {"
+        "    background-color: #4CAF50;"   // Зеленый цвет бегущей полоски
+        "    width: 20px;"                  // Ширина сегмента (для анимации)"
+        "}"
+        );
+
     ui->SalehFormulaLabel->setText(
         "A(r) = αₐ·r / (1 + βₐ·r²)\n\n"
         "Φ(r) = αᵩ·r² / (1 + βᵩ·r²)\n"
@@ -418,6 +444,19 @@ void MainWindow::setupMainPipelineTree()
     //Connecting pipeline tree with settings and setting starting page
     connect(ui->pipelineTree, &QTreeWidget::currentItemChanged, this, &MainWindow::onPipelineItemChanged);
     ui->settingsStack->setCurrentWidget(ui->PageModulation);
+
+    ui->Maintain_GroupBox->setStyleSheet(
+           "QGroupBox {"
+           "    border: none;"           // Убираем все рамки
+           "    padding-top: 0px;"       // Убираем отступ сверху для заголовка
+           "    margin-top: 0px;"         // Убираем внешний отступ
+           "}");
+    ui->Menu_groupBox->setStyleSheet(
+        "QGroupBox {"
+        "    border: none;"           // Убираем все рамки
+        "    padding-top: 0px;"       // Убираем отступ сверху для заголовка
+        "    margin-top: 0px;"         // Убираем внешний отступ
+        "}");
 }
 
 void MainWindow::SetupSelectedGraphsListWidget()
@@ -426,13 +465,13 @@ void MainWindow::SetupSelectedGraphsListWidget()
     connect(ui->SelectedGraphs_ListWidget, &QListWidget::currentItemChanged, this, &MainWindow::onGraphsListItemChanged);
     ui->SelectedGraphs_ListWidget->setCurrentRow(0);
     ui->GraphsListstackedWidget->setCurrentWidget(ui->ConstellationGraphsPage);
-    connect(ui->SelectedGraphs_ListWidget, &QListWidget::currentItemChanged, this, &MainWindow::DoPlotting);
+    connect(ui->SelectedGraphs_ListWidget, &QListWidget::currentItemChanged, this, &MainWindow::handleResult);
 }
 
 void MainWindow::SetupMainLogicWork()
 {
     connect(ui->ModTypeComboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
-    connect(ui->NumSymSpinBox, &QSpinBox::editingFinished, this, &MainWindow::DataUpdate);
+    connect(ui->NumSymSpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SNRSymSpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SC_fc_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SC_SymRate_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
@@ -451,7 +490,6 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->Oversapmling_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->Fs_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SNRSig_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
-
 
     connect(ui->SalehCoef1_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SalehCoef2_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
@@ -474,6 +512,128 @@ void MainWindow::SetupMainLogicWork()
 
     connect(ui->MP_K_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->MP_P_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+}
+
+void MainWindow::SetupWorker()
+{
+    thread = new QThread;
+    worker = new Worker;
+
+    worker->moveToThread(thread);
+
+    connect(this, &MainWindow::startSimulation,
+            worker, &Worker::process);
+
+    connect(worker, &Worker::resultReady,
+            this, &MainWindow::handleResult);
+
+    thread->start();
+}
+
+void MainWindow::LockParChange()
+{
+    ui->progressBar->setEnabled(true);
+
+    ui->ModTypeComboBox->setEnabled(false);
+    ui->SNRSymSpinBox->setEnabled(false);
+    ui->NumSymSpinBox->setEnabled(false);
+    ui->SignalTypeComboBox->setEnabled(false);
+    ui->SC_fc_SpinBox->setEnabled(false);
+    ui->SC_SymRate_SpinBox->setEnabled(false);
+    ui->SC_Rolloff_doubleSpinBox->setEnabled(false);
+    ui->SC_FilterLength_SpinBox->setEnabled(false);
+    ui->SC_FilterType_ComboBox->setEnabled(false);
+    ui->OFDM_fc_SpinBox->setEnabled(false);
+    ui->OFDM_Nfft_SpinBox->setEnabled(false);
+    ui->OFDM_GB_DC_SpinBox->setEnabled(false);
+    ui->OFDM_GBNyq_SpinBox->setEnabled(false);
+    ui->OFDM_CyclePref_SpinBox->setEnabled(false);
+    ui->FDMA_fc_SpinBox->setEnabled(false);
+    ui->FDMA_SymRate_SpinBox->setEnabled(false);
+    ui->FDMA_NumCarriers_SpinBox->setEnabled(false);
+    ui->FDMA_StepCarrier_SpinBox->setEnabled(false);
+    ui->Oversapmling_SpinBox->setEnabled(false);
+    ui->Fs_SpinBox->setEnabled(false);
+    ui->SNRSig_SpinBox->setEnabled(false);
+
+    ui->SalehCoef1_doubleSpinBox->setEnabled(false);
+    ui->SalehCoef2_doubleSpinBox->setEnabled(false);
+    ui->SalehCoef3_doubleSpinBox->setEnabled(false);
+    ui->SalehCoef4_doubleSpinBox->setEnabled(false);
+
+    ui->RappAsatCoef_doubleSpinBox->setEnabled(false);
+    ui->RappPCoef_doubleSpinBox->setEnabled(false);
+
+    ui->GhorbaniCoef1_doubleSpinBox->setEnabled(false);
+    ui->GhorbaniCoef2_doubleSpinBox->setEnabled(false);
+    ui->GhorbaniCoef3_doubleSpinBox->setEnabled(false);
+    ui->GhorbaniCoef4_doubleSpinBox->setEnabled(false);
+    ui->GhorbaniCoef5_doubleSpinBox->setEnabled(false);
+    ui->GhorbaniCoef6_doubleSpinBox->setEnabled(false);
+
+    ui->FIR_C_value_doubleSpinBox->setEnabled(false);
+    ui->FIR_alpha_doubleSpinBox->setEnabled(false);
+
+    ui->LinearGain_SpinBox->setEnabled(false);
+    ui->IBO_SpinBox->setEnabled(false);
+    ui->PAModel_ComboBox->setEnabled(false);
+    ui->StaticNonlin_comboBox->setEnabled(false);
+
+    ui->MP_K_spinBox->setEnabled(false);
+    ui->MP_P_spinBox->setEnabled(false);
+}
+
+void MainWindow::UnLockParChange()
+{
+    ui->progressBar->setEnabled(false);
+
+    ui->ModTypeComboBox->setEnabled(true);
+    ui->SNRSymSpinBox->setEnabled(true);
+    ui->NumSymSpinBox->setEnabled(true);
+    ui->SignalTypeComboBox->setEnabled(true);
+    ui->SC_fc_SpinBox->setEnabled(true);
+    ui->SC_SymRate_SpinBox->setEnabled(true);
+    ui->SC_Rolloff_doubleSpinBox->setEnabled(true);
+    ui->SC_FilterLength_SpinBox->setEnabled(true);
+    ui->SC_FilterType_ComboBox->setEnabled(true);
+    ui->OFDM_fc_SpinBox->setEnabled(true);
+    ui->OFDM_Nfft_SpinBox->setEnabled(true);
+    ui->OFDM_GB_DC_SpinBox->setEnabled(true);
+    ui->OFDM_GBNyq_SpinBox->setEnabled(true);
+    ui->OFDM_CyclePref_SpinBox->setEnabled(true);
+    ui->FDMA_fc_SpinBox->setEnabled(true);
+    ui->FDMA_SymRate_SpinBox->setEnabled(true);
+    ui->FDMA_NumCarriers_SpinBox->setEnabled(true);
+    ui->FDMA_StepCarrier_SpinBox->setEnabled(true);
+    ui->Oversapmling_SpinBox->setEnabled(true);
+    ui->Fs_SpinBox->setEnabled(true);
+    ui->SNRSig_SpinBox->setEnabled(true);
+
+    ui->SalehCoef1_doubleSpinBox->setEnabled(true);
+    ui->SalehCoef2_doubleSpinBox->setEnabled(true);
+    ui->SalehCoef3_doubleSpinBox->setEnabled(true);
+    ui->SalehCoef4_doubleSpinBox->setEnabled(true);
+
+    ui->RappAsatCoef_doubleSpinBox->setEnabled(true);
+    ui->RappPCoef_doubleSpinBox->setEnabled(true);
+
+    ui->GhorbaniCoef1_doubleSpinBox->setEnabled(true);
+    ui->GhorbaniCoef2_doubleSpinBox->setEnabled(true);
+    ui->GhorbaniCoef3_doubleSpinBox->setEnabled(true);
+    ui->GhorbaniCoef4_doubleSpinBox->setEnabled(true);
+    ui->GhorbaniCoef5_doubleSpinBox->setEnabled(true);
+    ui->GhorbaniCoef6_doubleSpinBox->setEnabled(true);
+
+    ui->FIR_C_value_doubleSpinBox->setEnabled(true);
+    ui->FIR_alpha_doubleSpinBox->setEnabled(true);
+
+    ui->LinearGain_SpinBox->setEnabled(true);
+    ui->IBO_SpinBox->setEnabled(true);
+    ui->PAModel_ComboBox->setEnabled(true);
+    ui->StaticNonlin_comboBox->setEnabled(true);
+
+    ui->MP_K_spinBox->setEnabled(true);
+    ui->MP_P_spinBox->setEnabled(true);
 }
 
 void MainWindow::onGraphsListItemChanged(QListWidgetItem* current, QListWidgetItem*) {

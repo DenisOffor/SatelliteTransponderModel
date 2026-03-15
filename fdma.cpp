@@ -81,7 +81,7 @@ FdmaResult FDMA::generate(
 }
 
 std::vector<std::vector<std::complex<double>>> FDMA::demodulate(
-    const std::vector<std::complex<double>>& rxSignal,
+    const std::vector<std::complex<double>>& rxSignal, std::vector<Symbols>& symbols,
     const FdmaParams& p, const ScParams& sc_p)
 {
     std::vector<std::vector<std::complex<double>>> res;
@@ -104,7 +104,7 @@ std::vector<std::vector<std::complex<double>>> FDMA::demodulate(
         scp.SC_filter_length = sc_p.SC_filter_length;
         scp.SC_FilterType = sc_p.SC_FilterType;
 
-        auto scDemod = sc.demodulateSignal(rxSignal, scp, scp);
+        auto scDemod = sc.demodulateSignal(rxSignal, symbols[k].tr_sym_clean, scp, scp);
 
         res.push_back(scDemod);
     }

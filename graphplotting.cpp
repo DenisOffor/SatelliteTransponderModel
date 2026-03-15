@@ -180,6 +180,12 @@ void GraphPlotting::PlotPSDPlots(const std::vector<std::vector<double>>& PSDs, c
         plotsOfPSD[3]->graph(1)->setData(qfreqs[0], qPSDs[1]);
         plotsOfPSD[3]->graph(0)->rescaleAxes();
         plotsOfPSD[3]->replot();
+
+
+        plotsOfPSD[4]->graph(0)->setData(qfreqs[0], qPSDs[2]);
+        plotsOfPSD[4]->graph(1)->setData(qfreqs[0], qPSDs[3]);
+        plotsOfPSD[4]->graph(0)->rescaleAxes();
+        plotsOfPSD[4]->replot();
     }
 }
 
@@ -375,8 +381,14 @@ void GraphPlotting::InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets)
         plotsOfPSD[i]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
         if(i >= 3) {
             plotsOfPSD[i]->addGraph();
-            plotsOfPSD[i]->graph(0)->setName("Перед PA");
-            plotsOfPSD[i]->graph(1)->setName("После PA");
+            if(i == 3) {
+                plotsOfPSD[i]->graph(0)->setName("Перед PA");
+                plotsOfPSD[i]->graph(1)->setName("После PA");
+            }
+            if(i == 4) {
+                plotsOfPSD[i]->graph(0)->setName("PA no DPD");
+                plotsOfPSD[i]->graph(1)->setName("PA with DPD");
+            }
             plotsOfPSD[i]->legend->setVisible(true);
             plotsOfPSD[i]->graph(1)->setPen(QPen(Qt::red));
             plotsOfPSD[i]->graph(1)->setLineStyle(QCPGraph::lsLine);

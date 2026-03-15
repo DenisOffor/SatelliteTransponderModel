@@ -228,7 +228,7 @@ void SC::addAwgn(ScResult &x, double SNR_dB)
 }
 
 std::vector<std::complex<double>> SC::demodulateSignal(
-    const std::vector<std::complex<double>>& tx_signal,
+    const std::vector<std::complex<double>>& tx_signal, const std::vector<std::complex<double>> &sym_clean,
     const ScParams& p,
     ScParams& updatedParams)
 {
@@ -298,20 +298,23 @@ std::vector<std::complex<double>> SC::demodulateSignal(
     // Нормализация мощности
     // -------------------------------------------------
 
-    double power = 0;
-
-    for(const auto& v : received)
-        power += std::norm(v);
-
-    if(received.size() > 0)
-        power /= received.size();
-
-    if(power > 0)
+    if (!sym_clean.empty() &&
+        sym_clean.size() == received.size())
     {
-        double scale = std::sqrt(power);
+        std::complex<double> num(0.0, 0.0);
+        std::complex<double> den(0.0, 0.0);
 
-        for(auto& v : received)
-            v /= scale;
+        for (int i = 0; i < received.size(); ++i) {
+            num += std::conj(received[i]) * sym_clean[i];
+            den += std::conj(received[i]) * received[i];
+        }
+
+        if (std::abs(den) > 1e-15) {
+            std::complex<double> a = num / den;
+
+            for (auto &s : received)
+                s *= a;
+        }
     }
 
     return received;

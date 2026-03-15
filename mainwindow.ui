@@ -32,7 +32,7 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_9">
+   <layout class="QVBoxLayout" name="verticalLayout_95">
     <item>
      <widget class="QSplitter" name="splitter">
       <property name="sizePolicy">
@@ -44,115 +44,196 @@
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
-      <widget class="QTreeWidget" name="pipelineTree">
+      <widget class="QGroupBox" name="Menu_groupBox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="minimumSize">
-        <size>
-         <width>200</width>
-         <height>400</height>
-        </size>
+       <property name="title">
+        <string/>
        </property>
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <family>Times New Roman</family>
-         <pointsize>14</pointsize>
-        </font>
-       </property>
-       <property name="headerHidden">
+       <property name="flat">
         <bool>true</bool>
        </property>
-       <property name="expandsOnDoubleClick">
-        <bool>true</bool>
-       </property>
-       <attribute name="headerVisible">
-        <bool>false</bool>
-       </attribute>
-       <column>
-        <property name="text">
-         <string>1</string>
+       <layout class="QVBoxLayout" name="verticalLayout_94">
+        <property name="spacing">
+         <number>3</number>
         </property>
-       </column>
-       <item>
-        <property name="text">
-         <string>Source</string>
+        <property name="leftMargin">
+         <number>3</number>
         </property>
-        <item>
-         <property name="text">
-          <string>Modulation</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>SignalType</string>
-         </property>
-        </item>
-       </item>
-       <item>
-        <property name="text">
-         <string>Processing</string>
+        <property name="topMargin">
+         <number>3</number>
+        </property>
+        <property name="rightMargin">
+         <number>3</number>
+        </property>
+        <property name="bottomMargin">
+         <number>3</number>
         </property>
         <item>
-         <property name="text">
-          <string>Predistorter</string>
-         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_9">
+          <property name="sizeConstraint">
+           <enum>QLayout::SizeConstraint::SetNoConstraint</enum>
+          </property>
+          <item>
+           <widget class="QTreeWidget" name="pipelineTree">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>400</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Times New Roman</family>
+              <pointsize>14</pointsize>
+             </font>
+            </property>
+            <property name="headerHidden">
+             <bool>true</bool>
+            </property>
+            <property name="expandsOnDoubleClick">
+             <bool>true</bool>
+            </property>
+            <attribute name="headerVisible">
+             <bool>false</bool>
+            </attribute>
+            <column>
+             <property name="text">
+              <string>1</string>
+             </property>
+            </column>
+            <item>
+             <property name="text">
+              <string>Source</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Modulation</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>SignalType</string>
+              </property>
+             </item>
+            </item>
+            <item>
+             <property name="text">
+              <string>Processing</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>Predistorter</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Power Amplifier</string>
+              </property>
+             </item>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="Maintain_GroupBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="title">
+             <string/>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignBottom|Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft</set>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_98">
+             <item>
+              <layout class="QVBoxLayout" name="verticalLayout_97">
+               <item>
+                <widget class="QGroupBox" name="groupBox_3">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="title">
+                  <string/>
+                 </property>
+                 <property name="flat">
+                  <bool>true</bool>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_96">
+                  <property name="spacing">
+                   <number>3</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>3</number>
+                  </property>
+                  <item>
+                   <widget class="QProgressBar" name="progressBar">
+                    <property name="maximum">
+                     <number>0</number>
+                    </property>
+                    <property name="value">
+                     <number>-1</number>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignBottom|Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft</set>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="groupBox_9">
+                 <property name="title">
+                  <string/>
+                 </property>
+                 <property name="flat">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
         </item>
-        <item>
-         <property name="text">
-          <string>PreAmplifier</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Power Amplifier</string>
-         </property>
-        </item>
-       </item>
-       <item>
-        <property name="text">
-         <string>Evaluation</string>
-        </property>
-        <item>
-         <property name="text">
-          <string>Metrics</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>EVM/ACLR/BER</string>
-         </property>
-        </item>
-       </item>
-       <item>
-        <property name="text">
-         <string>Visualization</string>
-        </property>
-        <item>
-         <property name="text">
-          <string>Spectrum</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Constellation</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>TimeDomain</string>
-         </property>
-        </item>
-       </item>
+       </layout>
       </widget>
       <widget class="QStackedWidget" name="settingsStack">
        <property name="sizePolicy">
@@ -174,7 +255,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -1544,6 +1625,9 @@
                    <property name="maximum">
                     <number>25</number>
                    </property>
+                   <property name="value">
+                    <number>1</number>
+                   </property>
                   </widget>
                  </item>
                 </layout>
@@ -2683,6 +2767,9 @@
                  <property name="maximum">
                   <number>10</number>
                  </property>
+                 <property name="singleStep">
+                  <number>2</number>
+                 </property>
                  <property name="value">
                   <number>3</number>
                  </property>
@@ -2704,6 +2791,9 @@
                  </property>
                  <property name="maximum">
                   <number>15</number>
+                 </property>
+                 <property name="singleStep">
+                  <number>2</number>
                  </property>
                  <property name="value">
                   <number>5</number>
@@ -2857,7 +2947,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1226</width>
-                 <height>708</height>
+                 <height>693</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_51">
@@ -3463,7 +3553,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>703</height>
+                 <height>139</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -3755,6 +3845,12 @@
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="font">
+                <font>
+                 <family>Times New Roman</family>
+                 <pointsize>14</pointsize>
+                </font>
+               </property>
                <property name="title">
                 <string>BER no DPD</string>
                </property>
@@ -3775,7 +3871,17 @@
                  <number>3</number>
                 </property>
                 <item>
-                 <widget class="QDoubleSpinBox" name="BER_noDPD_doubleSpinBox"/>
+                 <widget class="QDoubleSpinBox" name="BER_noDPD_doubleSpinBox">
+                  <property name="font">
+                   <font>
+                    <family>Times New Roman</family>
+                    <pointsize>14</pointsize>
+                   </font>
+                  </property>
+                  <property name="buttonSymbols">
+                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -3787,6 +3893,12 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Times New Roman</family>
+                 <pointsize>14</pointsize>
+                </font>
                </property>
                <property name="title">
                 <string>BER with DPD</string>
@@ -3808,18 +3920,34 @@
                  <number>3</number>
                 </property>
                 <item>
-                 <widget class="QDoubleSpinBox" name="BER_withDPD_doubleSpinBox"/>
+                 <widget class="QDoubleSpinBox" name="BER_withDPD_doubleSpinBox">
+                  <property name="font">
+                   <font>
+                    <family>Times New Roman</family>
+                    <pointsize>14</pointsize>
+                   </font>
+                  </property>
+                  <property name="buttonSymbols">
+                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
              </item>
              <item>
-              <widget class="QGroupBox" name="EMV_noDPD_groupBox">
+              <widget class="QGroupBox" name="EVM_noDPD_groupBox">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Times New Roman</family>
+                 <pointsize>14</pointsize>
+                </font>
                </property>
                <property name="title">
                 <string>EVM no DPD</string>
@@ -3841,7 +3969,23 @@
                  <number>3</number>
                 </property>
                 <item>
-                 <widget class="QDoubleSpinBox" name="EMV_noDPD_doubleSpinBox"/>
+                 <widget class="QDoubleSpinBox" name="EVM_noDPD_doubleSpinBox">
+                  <property name="font">
+                   <font>
+                    <family>Times New Roman</family>
+                    <pointsize>14</pointsize>
+                   </font>
+                  </property>
+                  <property name="buttonSymbols">
+                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                  </property>
+                  <property name="minimum">
+                   <double>-100.000000000000000</double>
+                  </property>
+                  <property name="maximum">
+                   <double>100.000000000000000</double>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -3853,6 +3997,12 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Times New Roman</family>
+                 <pointsize>14</pointsize>
+                </font>
                </property>
                <property name="title">
                 <string>EVM with DPD</string>
@@ -3874,7 +4024,23 @@
                  <number>3</number>
                 </property>
                 <item>
-                 <widget class="QDoubleSpinBox" name="EVM_withDPD_doubleSpinBox"/>
+                 <widget class="QDoubleSpinBox" name="EVM_withDPD_doubleSpinBox">
+                  <property name="font">
+                   <font>
+                    <family>Times New Roman</family>
+                    <pointsize>14</pointsize>
+                   </font>
+                  </property>
+                  <property name="buttonSymbols">
+                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                  </property>
+                  <property name="minimum">
+                   <double>-100.000000000000000</double>
+                  </property>
+                  <property name="maximum">
+                   <double>100.000000000000000</double>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -3886,6 +4052,12 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Times New Roman</family>
+                 <pointsize>14</pointsize>
+                </font>
                </property>
                <property name="title">
                 <string>ACLR no DPD</string>
@@ -3907,7 +4079,17 @@
                  <number>3</number>
                 </property>
                 <item>
-                 <widget class="QDoubleSpinBox" name="ACLR_noDPD_doubleSpinBox"/>
+                 <widget class="QDoubleSpinBox" name="ACLR_noDPD_doubleSpinBox">
+                  <property name="font">
+                   <font>
+                    <family>Times New Roman</family>
+                    <pointsize>14</pointsize>
+                   </font>
+                  </property>
+                  <property name="buttonSymbols">
+                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -3919,6 +4101,12 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <family>Times New Roman</family>
+                 <pointsize>14</pointsize>
+                </font>
                </property>
                <property name="title">
                 <string>ACLR with DPD</string>
@@ -3940,7 +4128,17 @@
                  <number>3</number>
                 </property>
                 <item>
-                 <widget class="QDoubleSpinBox" name="ACLR_witnDPD_doubleSpinBox"/>
+                 <widget class="QDoubleSpinBox" name="ACLR_witnDPD_doubleSpinBox">
+                  <property name="font">
+                   <font>
+                    <family>Times New Roman</family>
+                    <pointsize>14</pointsize>
+                   </font>
+                  </property>
+                  <property name="buttonSymbols">
+                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
