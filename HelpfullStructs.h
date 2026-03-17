@@ -129,7 +129,7 @@ struct Source {
     std::vector<double> FIRCoeffs;
     QString StaticNonlinModel;
 
-    int MP_K;
+    int MP_M;
     int MP_P;
 };
 

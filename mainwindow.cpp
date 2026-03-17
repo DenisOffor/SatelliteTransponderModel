@@ -176,8 +176,8 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->PAModel_ComboBox) {UISource.PAModel = ui->PAModel_ComboBox->currentText();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; CurrentRecalcNeeds.TimePlotsRescale = true;}
 
-    if(senderObj == ui->MP_K_spinBox) { UISource.MP_K = ui->MP_K_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->MP_P_spinBox) { UISource.MP_K = ui->MP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->MP_M_spinBox) { UISource.MP_M = ui->MP_M_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->MP_P_spinBox) { UISource.MP_M = ui->MP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
 
     if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc)
         CurrentRecalcNeeds.DPDRecalc = true;
@@ -239,7 +239,7 @@ void MainWindow::FirstDataUpdate()
     UISource.PAModel = ui->PAModel_ComboBox->currentText();
     UISource.StaticNonlinModel = ui->StaticNonlin_comboBox->currentText();
 
-    UISource.MP_K = ui->MP_K_spinBox->value();
+    UISource.MP_M = ui->MP_M_spinBox->value();
     UISource.MP_P = ui->MP_P_spinBox->value();
 
     CurrentRecalcNeeds.init();
@@ -510,7 +510,7 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->FIR_alpha_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->StaticNonlin_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
 
-    connect(ui->MP_K_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    connect(ui->MP_M_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->MP_P_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
 }
 
@@ -579,7 +579,7 @@ void MainWindow::LockParChange()
     ui->PAModel_ComboBox->setEnabled(false);
     ui->StaticNonlin_comboBox->setEnabled(false);
 
-    ui->MP_K_spinBox->setEnabled(false);
+    ui->MP_M_spinBox->setEnabled(false);
     ui->MP_P_spinBox->setEnabled(false);
 }
 
@@ -632,7 +632,7 @@ void MainWindow::UnLockParChange()
     ui->PAModel_ComboBox->setEnabled(true);
     ui->StaticNonlin_comboBox->setEnabled(true);
 
-    ui->MP_K_spinBox->setEnabled(true);
+    ui->MP_M_spinBox->setEnabled(true);
     ui->MP_P_spinBox->setEnabled(true);
 }
 

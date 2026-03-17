@@ -1,6 +1,6 @@
 #include "signalprocessing.h"
 
-SignalProcessing::SignalProcessing() : myFdma(mySC), mydpd(3, 5) {
+SignalProcessing::SignalProcessing() : myFdma(mySC), mydpd() {
     PACurve = new PaCurve(200);
     // Input power in dB and linear
     double dB_start = -25;
@@ -253,10 +253,7 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     TrainRes.pa_sig = TrainRes.tx_sig;
     MyPAModels.SalehModel(TrainRes.pa_sig, MySource.SalehCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
 
-    mydpd.setMemory(MySource.MP_P);
-    mydpd.setOrder(MySource.MP_K);
-
-    mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig);
+    mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource.MP_P, MySource.MP_M);
 
     MySource.oversampling = overs;
     CurrentRecalcNeeds.PARecalc = true;
@@ -364,7 +361,7 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
 {
     if(!CurRes.pa_sig.empty()) {
         CurRes.pa_sig = CurRes.tx_sig;
-        CurRes.pa_plus_dpd_sig = mydpd.apply(CurRes.tx_sig);
+        CurRes.pa_plus_dpd_sig = mydpd.applyPreDistortion(CurRes.tx_sig, MySource.MP_P, MySource.MP_M);
         if(source.PAModel == "Saleh") {
             MyPAModels.SalehModel(CurRes.pa_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
             MyPAModels.SalehModel(CurRes.pa_plus_dpd_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
@@ -622,7 +619,7 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource.FIRCoeffs = UISource.FIRCoeffs;
     MySource.StaticNonlinModel = UISource.StaticNonlinModel;
 
-    MySource.MP_K = UISource.MP_K;
+    MySource.MP_M = UISource.MP_M;
     MySource.MP_P = UISource.MP_P;
 }
 
