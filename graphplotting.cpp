@@ -14,6 +14,7 @@ GraphPlotting::~GraphPlotting() {
         delete plotsOfConstellations[i];
         delete plotsOfTimeDomain[i];
         delete plotsOfPSD[i];
+        delete plotsOfDPD[i];
     }
 }
 
@@ -31,12 +32,13 @@ void GraphPlotting::PaCurvePlot()
 }
 
 void GraphPlotting::init(std::vector<QWidget*> SetupGraphWidgets, std::vector<QWidget*> ConstellationsGraphWidgets,
-                         std::vector<QWidget*> TimeDomainGraphWidgets, std::vector<QWidget*> PSDGraphWidgets) {
+                         std::vector<QWidget*> TimeDomainGraphWidgets, std::vector<QWidget*> PSDGraphWidgets, std::vector<QWidget*> DPDLearnGraphWidgets) {
     InitializeIdealSymConstPlot(SetupGraphWidgets[0]);
     InitializePaCurvePlot(SetupGraphWidgets[1]);
     InitializeConstellationsPlotting(ConstellationsGraphWidgets);
     InitializeTimeDomainPlotting(TimeDomainGraphWidgets);
     InitializePSDPlotting(PSDGraphWidgets);
+    InitializeDPDLearnPlotting(DPDLearnGraphWidgets);
     setupGraphActions();
 }
 
@@ -294,6 +296,72 @@ void GraphPlotting::PlotScatterPaCurve(GlobalResults &res)
     plotPaCurve->replot();
 }
 
+void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
+{
+    QVector<double> x, y;
+    QVector<double> Phi;
+
+    for(int i = 0; i < res.tx_sig.size(); i += 3) {
+        x.append(std::abs(res.tx_sig[i]));
+        y.append(std::abs(res.pa_sig[i]));
+        //Phi.append(std::arg(res.pa_sig[i]) - std::arg(res.tx_sig[i]) * 180 / 3.14);
+    }
+    plotsOfDPD[1]->graph(0)->setData(x, y);
+    //plotsOfDPD[1]->graph(1)->setData(x, Phi);
+    plotsOfDPD[1]->graph(0)->rescaleAxes();
+    //plotsOfDPD[1]->yAxis2->setRange(0, 45);
+    auto yRange = plotsOfDPD[1]->yAxis->range();
+    double padding = (yRange.upper - yRange.lower) * 0.05;
+    plotsOfDPD[1]->yAxis->setRange(yRange.lower, yRange.upper + padding);
+    plotsOfDPD[1]->replot();
+
+    x.clear(); y.clear(); Phi.clear();
+    for(int i = 0; i < res.tx_sig.size(); i += 3) {
+        x.append(std::abs(res.tx_sig[i]));
+        y.append(std::abs(res.tx_sig[i]));
+        //Phi.append(std::arg(res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i]) * 180 / 3.14);
+    }
+    plotsOfDPD[0]->graph(0)->setData(x, y);
+    //plotsOfDPD[3]->graph(1)->setData(x, Phi);
+    plotsOfDPD[0]->graph(0)->rescaleAxes();
+    //plotsOfDPD[3]->yAxis2->setRange(0, 45);
+    yRange = plotsOfDPD[0]->yAxis->range();
+    padding = (yRange.upper - yRange.lower) * 0.05;
+    plotsOfDPD[0]->yAxis->setRange(yRange.lower, yRange.upper + padding);
+    plotsOfDPD[0]->replot();
+
+    x.clear(); y.clear(); Phi.clear();
+    for(int i = 0; i < res.tx_sig.size(); i += 3) {
+        x.append(std::abs(res.tx_sig[i]));
+        y.append(std::abs(res.tx_plus_dpd_sig[i]));
+        //Phi.append(std::arg(res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i]) * 180 / 3.14);
+    }
+    plotsOfDPD[3]->graph(0)->setData(x, y);
+    //plotsOfDPD[3]->graph(1)->setData(x, Phi);
+    plotsOfDPD[3]->graph(0)->rescaleAxes();
+    //plotsOfDPD[3]->yAxis2->setRange(0, 45);
+    yRange = plotsOfDPD[3]->yAxis->range();
+    padding = (yRange.upper - yRange.lower) * 0.05;
+    plotsOfDPD[3]->yAxis->setRange(yRange.lower, yRange.upper + padding);
+    plotsOfDPD[3]->replot();
+
+
+    x.clear(); y.clear(); Phi.clear();
+    for(int i = 0; i < res.tx_sig.size(); i += 3) {
+        x.append(std::abs(res.tx_sig[i]));
+        y.append(std::abs(res.pa_plus_dpd_sig[i]));
+        //Phi.append(std::arg(res.pa_plus_dpd_sig[i]) - std::arg(res.tx_sig[i]) * 180 / 3.14);
+    }
+    plotsOfDPD[4]->graph(0)->setData(x, y);
+    //plotsOfDPD[4]->graph(1)->setData(x, Phi);
+    plotsOfDPD[4]->graph(0)->rescaleAxes();
+    //plotsOfDPD[4]->yAxis2->setRange(0, 45);
+    yRange = plotsOfDPD[4]->yAxis->range();
+    padding = (yRange.upper - yRange.lower) * 0.05;
+    plotsOfDPD[4]->yAxis->setRange(yRange.lower, yRange.upper + padding);
+    plotsOfDPD[4]->replot();
+}
+
 void GraphPlotting::InitializePaCurvePlot(QWidget* GraphWidget) {
     plotPaCurve = new QCustomPlot(GraphWidget);
     QVBoxLayout* layout = new QVBoxLayout(GraphWidget);
@@ -406,6 +474,30 @@ void GraphPlotting::InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets)
     }
 }
 
+void GraphPlotting::InitializeDPDLearnPlotting(std::vector<QWidget *> DPDLearnGraphWidgets)
+{
+    for(int i = 0; i < 6; i++) {
+        plotsOfDPD[i] = new QCustomPlot(DPDLearnGraphWidgets[i]);
+        QVBoxLayout* layout = new QVBoxLayout(DPDLearnGraphWidgets[i]);
+        layout->setContentsMargins(3, 3, 3, 3);
+        plotsOfDPD[i]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        DPDLearnGraphWidgets[i]->layout()->addWidget(plotsOfDPD[i]);
+        plotsOfDPD[i]->addGraph();
+        plotsOfDPD[i]->graph(0)->setLineStyle(QCPGraph::lsNone);
+        plotsOfDPD[i]->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::black, 3));
+        plotsOfDPD[i]->addGraph();
+        plotsOfDPD[i]->graph(1)->setLineStyle(QCPGraph::lsNone);
+        plotsOfDPD[i]->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::blue, 3));
+        plotsOfDPD[i]->graph(1)->setValueAxis(plotsOfDPD[i]->yAxis2);
+        plotsOfDPD[i]->xAxis->setLabel("P_вх, Вт");
+        plotsOfDPD[i]->yAxis->setLabel("P_вых, Вт");
+        plotsOfDPD[i]->yAxis2->setVisible(true);
+        plotsOfDPD[i]->yAxis2->setLabel("Фвых, град");
+        plotsOfDPD[i]->replot();
+        connect(plotsOfDPD[i], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
+    }
+}
+
 void GraphPlotting::InitializeConstellationsPlotting(std::vector<QWidget *> ConstellationsGraphWidgets)
 {
     for(int i = 0; i < 6; i++) {
@@ -432,7 +524,7 @@ void GraphPlotting::InitializeConstellationsPlotting(std::vector<QWidget *> Cons
 void GraphPlotting::setupGraphActions()
 {
     PaCurveGraphActions.common = IdealSymConstGraphActions.common = SymConstGraphActions.common
-    = TimeDomainGraphActions.common = PSDGraphActions.common =
+    = TimeDomainGraphActions.common = PSDGraphActions.common = DPDGraphActions.common =
     {
         new QAction("Сохранить как...", this),
         new QAction("Копировать", this)
@@ -450,6 +542,7 @@ void GraphPlotting::setupGraphActions()
     m_graphActions["IdealSymConst"] = IdealSymConstGraphActions;
     m_graphActions["TimeDomain"] = TimeDomainGraphActions;
     m_graphActions["PSD"] = PSDGraphActions;
+    m_graphActions["DPD Learning"] = DPDGraphActions;
 }
 
 void GraphPlotting::updateMenuForGraphType(QMenu &menu, const QString &graphType)
@@ -509,6 +602,8 @@ void GraphPlotting::onPlotClick(QMouseEvent *event)
             || senderObj == plotsOfPSD[3] || senderObj == plotsOfPSD[4] || senderObj == plotsOfPSD[5]) currentType = "PSD";
         if(senderObj == plotsOfTimeDomain[0] || senderObj == plotsOfTimeDomain[1] || senderObj == plotsOfTimeDomain[2]
             || senderObj == plotsOfTimeDomain[3] || senderObj == plotsOfTimeDomain[4] || senderObj == plotsOfTimeDomain[5]) currentType = "TimeDomain";
+        if(senderObj == plotsOfDPD[0] || senderObj == plotsOfDPD[1] || senderObj == plotsOfDPD[2]
+            || senderObj == plotsOfDPD[3] || senderObj == plotsOfDPD[4] || senderObj == plotsOfDPD[5]) currentType = "DPD Learning";
 
         updateMenuForGraphType(menu, currentType);
 

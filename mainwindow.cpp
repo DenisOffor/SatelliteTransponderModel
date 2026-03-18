@@ -36,7 +36,15 @@ MainWindow::MainWindow(QWidget *parent)
     PSDGraphWidgets.push_back(ui->PSDPageGraph5_Widget);
     PSDGraphWidgets.push_back(ui->PSDPageGraph6_Widget);
 
-    Graphs.init(SetupGraphWidgets, ConstellationsGraphWidgets, TimeDomainGraphWidgets, PSDGraphWidgets);
+    std::vector<QWidget*> DPDLearningGraphWidgets;
+    DPDLearningGraphWidgets.push_back(ui->DPDLearnPageGraph1_Widget);
+    DPDLearningGraphWidgets.push_back(ui->DPDLearnPageGraph2_Widget);
+    DPDLearningGraphWidgets.push_back(ui->DPDLearnPageGraph3_Widget);
+    DPDLearningGraphWidgets.push_back(ui->DPDLearnPageGraph4_Widget);
+    DPDLearningGraphWidgets.push_back(ui->DPDLearnPageGraph5_Widget);
+    DPDLearningGraphWidgets.push_back(ui->DPDLearnPageGraph6_Widget);
+
+    Graphs.init(SetupGraphWidgets, ConstellationsGraphWidgets, TimeDomainGraphWidgets, PSDGraphWidgets, DPDLearningGraphWidgets);
 
     //Connecting chosen signal type with settings of this signal and setting starting page
     connect(ui->SignalTypeComboBox, &QComboBox::currentTextChanged, this, &MainWindow::SignalTypeComboBoxTextChanged);
@@ -269,6 +277,9 @@ void MainWindow::handleResult()
 
     if(text == "    PSD    ")
         Graphs.PlotPSDPlots(MySigProc.getPSDs(), MySigProc.getFreq());
+
+    if(text == "    DPD learning    ")
+        Graphs.PlotScatterDPDLearn(MySigProc.getTimeSignal());
 
     qDebug() << "Graphs time:" << timer.elapsed() << "ms";
     qDebug() << "\n";

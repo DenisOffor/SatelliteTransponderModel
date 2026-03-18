@@ -171,6 +171,7 @@ struct NeedToRecalc{
 
 struct GlobalResults {
     std::vector<std::complex<double>> tx_sig;
+    std::vector<std::complex<double>> tx_plus_dpd_sig;
     std::vector<std::complex<double>> pa_sig;
     std::vector<std::complex<double>> pa_plus_dpd_sig;
     std::vector<std::complex<double>> rec_sig;
@@ -185,6 +186,7 @@ struct GlobalResults {
 
     void resize(int size) {
         tx_sig.resize(size);
+        tx_plus_dpd_sig.resize(size);
         pa_sig.resize(size);
         pa_plus_dpd_sig.resize(size);
         rec_sig.resize(size);

@@ -18,6 +18,28 @@ std::vector<std::complex<double>> DPD::normalizeSignal(const std::vector<std::co
     return sig_norm;
 }
 
+std::vector<std::complex<double>> DPD::normalizeSignalRMS(
+    const std::vector<std::complex<double>>& tx)
+{
+    if (tx.empty())
+        return {};
+
+    double sum = 0.0;
+    for (const auto& s : tx)
+        sum += std::norm(s);   // |x|^2
+
+    double rms = std::sqrt(sum / tx.size());
+
+    if (rms == 0.0)
+        return tx;
+
+    std::vector<std::complex<double>> tx_norm(tx.size());
+    for (int i = 0; i < tx.size(); ++i)
+        tx_norm[i] = tx[i] / rms;
+
+    return tx_norm;
+}
+
 // Обучение DPD
 void DPD::train(const std::vector<std::complex<double>> &pa_input,
                 const std::vector<std::complex<double>> &pa_output,
@@ -25,8 +47,8 @@ void DPD::train(const std::vector<std::complex<double>> &pa_input,
 {
     using namespace Eigen;
 
-    auto pa_input_norm  = normalizeSignal(pa_input);
-    auto pa_output_norm = normalizeSignal(pa_output);
+    auto pa_input_norm  = normalizeSignalRMS(pa_input);
+    auto pa_output_norm = normalizeSignalRMS(pa_output);
 
     size_t N = pa_output_norm.size();
     size_t K = P * M;  // количество колонок Φ
@@ -71,8 +93,9 @@ std::vector<std::complex<double>> DPD::applyPreDistortion(
 
     // Сначала нормируем входной сигнал тем же scale, что был на обучении
     std::vector<std::complex<double>> input_norm(N);
-    for (size_t n = 0; n < N; ++n)
-        input_norm[n] = input_signal[n] / scale;
+    // for (size_t n = 0; n < N; ++n)
+    //     input_norm[n] = input_signal[n] / scale;
+    input_norm = normalizeSignalRMS(input_signal);
 
     // Первые M-1 отсчётов копируем
     for (size_t i = 0; i < M-1; ++i)
@@ -94,8 +117,8 @@ std::vector<std::complex<double>> DPD::applyPreDistortion(
     }
 
     // Восстанавливаем исходный уровень сигнала
-    for (size_t n = 0; n < N; ++n)
-        x_pre[n] *= scale;
+    //for (size_t n = 0; n < N; ++n)
+    //    x_pre[n] *= scale;
 
     return x_pre;
 }

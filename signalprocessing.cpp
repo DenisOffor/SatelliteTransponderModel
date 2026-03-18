@@ -361,7 +361,9 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
 {
     if(!CurRes.pa_sig.empty()) {
         CurRes.pa_sig = CurRes.tx_sig;
-        CurRes.pa_plus_dpd_sig = mydpd.applyPreDistortion(CurRes.tx_sig, MySource.MP_P, MySource.MP_M);
+        CurRes.tx_plus_dpd_sig = mydpd.applyPreDistortion(CurRes.tx_sig, MySource.MP_P, MySource.MP_M);
+        CurRes.tx_plus_dpd_sig = MyMetricsEval.normalizeSignal(CurRes.tx_plus_dpd_sig);
+        CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
         if(source.PAModel == "Saleh") {
             MyPAModels.SalehModel(CurRes.pa_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
             MyPAModels.SalehModel(CurRes.pa_plus_dpd_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);

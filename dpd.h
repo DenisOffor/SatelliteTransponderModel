@@ -19,6 +19,7 @@ private:
     std::vector<std::complex<double>> coeffs; // коэффициенты DPD
     double scale = 1.0;                       // внутренний масштаб
     std::vector<std::complex<double>> normalizeSignal(const std::vector<std::complex<double>> &sig);
+    std::vector<std::complex<double>> normalizeSignalRMS(const std::vector<std::complex<double>>& tx);
 };
 
 #endif // DPD_H
