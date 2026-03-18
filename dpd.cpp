@@ -1,124 +1,120 @@
 #include "dpd.h"
+#include <cmath>
 
-// Нормализация сигнала, сохраняем scale внутри класса
-std::vector<std::complex<double>> DPD::normalizeSignal(const std::vector<std::complex<double>> &sig)
+// ======================
+// Вспомогательная функция
+// ======================
+double DPD::computeRMS(const std::vector<std::complex<double>>& x)
 {
-    size_t N = sig.size();
-    std::vector<std::complex<double>> sig_norm(N);
-
-    double max_val = 0.0;
-    for (size_t n = 0; n < N; ++n)
-        if (std::abs(sig[n]) > max_val) max_val = std::abs(sig[n]);
-
-    scale = (max_val > 0.0) ? max_val : 1.0;
-
-    for (size_t n = 0; n < N; ++n)
-        sig_norm[n] = sig[n] / scale;
-
-    return sig_norm;
-}
-
-std::vector<std::complex<double>> DPD::normalizeSignalRMS(
-    const std::vector<std::complex<double>>& tx)
-{
-    if (tx.empty())
-        return {};
+    if (x.empty()) return 1.0;
 
     double sum = 0.0;
-    for (const auto& s : tx)
-        sum += std::norm(s);   // |x|^2
+    for (const auto& s : x)
+        sum += std::norm(s);
 
-    double rms = std::sqrt(sum / tx.size());
-
-    if (rms == 0.0)
-        return tx;
-
-    std::vector<std::complex<double>> tx_norm(tx.size());
-    for (int i = 0; i < tx.size(); ++i)
-        tx_norm[i] = tx[i] / rms;
-
-    return tx_norm;
+    return std::sqrt(sum / x.size());
 }
 
-// Обучение DPD
+// ======================
+// TRAIN (Indirect Learning)
+// ======================
 void DPD::train(const std::vector<std::complex<double>> &pa_input,
                 const std::vector<std::complex<double>> &pa_output,
                 int P, int M)
 {
     using namespace Eigen;
 
-    auto pa_input_norm  = normalizeSignalRMS(pa_input);
-    auto pa_output_norm = normalizeSignalRMS(pa_output);
+    size_t N = pa_output.size();
+    size_t K = P * M;
+    size_t rows = N - M + 1;
 
-    size_t N = pa_output_norm.size();
-    size_t K = P * M;  // количество колонок Φ
-    size_t rows = N - M + 1; // строки Φ, начинаем с n=M-1
+    // 🔴 ОДИН scale для всего
+    train_scale = computeRMS(pa_input);
+
+    std::vector<std::complex<double>> x_norm(N);
+    std::vector<std::complex<double>> y_norm(N);
+
+    for (size_t i = 0; i < N; ++i) {
+        x_norm[i] = pa_input[i]  / train_scale;
+        y_norm[i] = pa_output[i] / train_scale;
+    }
 
     MatrixXcd Phi(rows, K);
     VectorXcd x(rows);
 
-    // Формируем Φ и x
+    // Формирование матрицы
     for (size_t n = M-1; n < N; ++n) {
         size_t row = n - (M-1);
-        x(row) = pa_input_norm[n];  // целевой сигнал (вход PA)
+
+        x(row) = x_norm[n];  // ЦЕЛЬ: восстановить вход PA
 
         size_t col = 0;
+
         for (int m = 0; m < M; ++m) {
-            std::complex<double> y = pa_output_norm[n - m];
-            std::complex<double> y_pow = 1.0;
+            std::complex<double> y = y_norm[n - m];
+
             for (int p = 1; p <= P; ++p) {
-                y_pow = std::pow(std::abs(y), 2*(p-1)) * y;
-                Phi(row, col++) = y_pow;
+                std::complex<double> basis =
+                    std::pow(std::abs(y), 2*(p-1)) * y;
+
+                Phi(row, col++) = basis;
             }
         }
     }
 
-    // МНК: a = (Φᴴ Φ)^-1 Φᴴ x
+    // 🔧 МНК (с минимальной стабилизацией)
     MatrixXcd PhiH = Phi.adjoint();
-    MatrixXcd A = (PhiH * Phi).inverse() * (PhiH * x);
+    MatrixXcd A = (PhiH * Phi + 1e-8 * MatrixXcd::Identity(K, K)).ldlt().solve(PhiH * x);
 
     coeffs.resize(K);
     for (size_t k = 0; k < K; ++k)
         coeffs[k] = A(k);
 }
 
-// Применение предыскажения
+// ======================
+// APPLY DPD
+// ======================
 std::vector<std::complex<double>> DPD::applyPreDistortion(
     const std::vector<std::complex<double>> &input_signal,
     int P, int M)
 {
     size_t N = input_signal.size();
-    size_t K = P * M;
-    std::vector<std::complex<double>> x_pre(N, std::complex<double>(0,0));
+    std::vector<std::complex<double>> x_pre(N, {0.0, 0.0});
 
-    // Сначала нормируем входной сигнал тем же scale, что был на обучении
+    // ✅ Используем ТОТ ЖЕ scale, что в train
     std::vector<std::complex<double>> input_norm(N);
-    // for (size_t n = 0; n < N; ++n)
-    //     input_norm[n] = input_signal[n] / scale;
-    input_norm = normalizeSignalRMS(input_signal);
+    for (size_t i = 0; i < N; ++i)
+        input_norm[i] = input_signal[i];
 
-    // Первые M-1 отсчётов копируем
-    for (size_t i = 0; i < M-1; ++i)
+    // первые отсчёты без изменений
+    for (size_t i = 0; i < M-1 && i < N; ++i)
         x_pre[i] = input_norm[i];
 
-    // Основной цикл с полиномом памяти
+    // основной цикл
     for (size_t n = M-1; n < N; ++n) {
+
         std::complex<double> sum = 0.0;
         size_t col = 0;
+
         for (int m = 0; m < M; ++m) {
+
             std::complex<double> y = input_norm[n - m];
-            std::complex<double> y_pow = 1.0;
+
             for (int p = 1; p <= P; ++p) {
-                y_pow = std::pow(std::abs(y), 2*(p-1)) * y;
-                sum += coeffs[col++] * y_pow;
+
+                std::complex<double> basis =
+                    std::pow(std::abs(y), 2*(p-1)) * y;
+
+                sum += coeffs[col++] * basis;
             }
         }
+
         x_pre[n] = sum;
     }
 
-    // Восстанавливаем исходный уровень сигнала
-    //for (size_t n = 0; n < N; ++n)
-    //    x_pre[n] *= scale;
+    // ✅ ВОССТАНАВЛИВАЕМ масштаб
+    //for (size_t i = 0; i < N; ++i)
+        //x_pre[i] *= train_scale;
 
     return x_pre;
 }
