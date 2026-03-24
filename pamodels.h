@@ -11,9 +11,10 @@ public:
     void GhorbaniModel(std::vector<std::complex<double>>& sig, std::vector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB);
     void WienerModel(std::vector<std::complex<double>>& sig, QString Static_model, std::vector<double>& Coeffs,
                      std::vector<double>& FIR_Coeffs, int& linear_gain_dB, int& IBO_dB);
-    void apply_IBO(std::vector<std::complex<double>>& tx, double IBO_dB, double A_sat);
     double find_Asat_Ghorbani(const std::vector<double>& c, double gain_linear);
     void ApplyFIRWithMemory(std::vector<std::complex<double>>& signal, const std::vector<double>& FIR_Coefs, int numTaps);
+    void ScaleToRMS_forPA(Source& source, GlobalResults& CurRes);
+    void scaleToRMS(std::vector<std::complex<double>>& x, double target_rms);
 };
 
 #endif // PAMODELS_H

@@ -245,17 +245,59 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     std::vector<Symbols> TrainSymbols;
 
     GlobalResults TrainRes;
-    int overs = MySource.oversampling;
-    MySource.oversampling = 1;
     GeneratePacksOfSymbols(TrainSymbols, MySource, temp);
     TransmitSignalProcessing(MySource, TrainSymbols, temp, TrainRes);
 
-    TrainRes.pa_sig = TrainRes.tx_sig;
-    MyPAModels.SalehModel(TrainRes.pa_sig, MySource.SalehCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+    MyPAModels.ScaleToRMS_forPA(MySource, TrainRes);
 
-    mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource.MP_P, MySource.MP_M);
+    if(MySource.PAModel == "Saleh")
+        MyPAModels.SalehModel(TrainRes.pa_sig, MySource.SalehCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+    else if (MySource.PAModel == "Rapp")
+        MyPAModels.RappModel(TrainRes.pa_sig, MySource.RappCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+    else if (MySource.PAModel == "Ghorbani")
+        MyPAModels.GhorbaniModel(TrainRes.pa_sig, MySource.GhorbaniCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+    else if (MySource.PAModel == "Wiener") {
+        if(MySource.StaticNonlinModel == "Saleh")
+            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.StaticNonlinModel,
+                                   MySource.SalehCoeffs, MySource.FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if(MySource.StaticNonlinModel == "Rapp")
+            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.StaticNonlinModel,
+                                   MySource.RappCoeffs, MySource.FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if(MySource.StaticNonlinModel == "Ghorbani")
+            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.StaticNonlinModel,
+                                   MySource.GhorbaniCoeffs, MySource.FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+    }
 
-    MySource.oversampling = overs;
+    auto PA_noscale = [&](const std::vector<std::complex<double>>& in) {
+        auto tmp = in;
+
+        if (MySource.PAModel == "Saleh")
+            MyPAModels.SalehModel(tmp, MySource.SalehCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if (MySource.PAModel == "Rapp")
+            MyPAModels.RappModel(tmp, MySource.RappCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if (MySource.PAModel == "Ghorbani")
+            MyPAModels.GhorbaniModel(tmp, MySource.GhorbaniCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if (MySource.PAModel == "Wiener") {
+            if (MySource.StaticNonlinModel == "Saleh")
+                MyPAModels.WienerModel(tmp, MySource.StaticNonlinModel,
+                                       MySource.SalehCoeffs, MySource.FIRCoeffs,
+                                       MySource.linear_gain_dB, MySource.IBO_dB);
+            else if (MySource.StaticNonlinModel == "Rapp")
+                MyPAModels.WienerModel(tmp, MySource.StaticNonlinModel,
+                                       MySource.RappCoeffs, MySource.FIRCoeffs,
+                                       MySource.linear_gain_dB, MySource.IBO_dB);
+            else if (MySource.StaticNonlinModel == "Ghorbani")
+                MyPAModels.WienerModel(tmp, MySource.StaticNonlinModel,
+                                       MySource.GhorbaniCoeffs, MySource.FIRCoeffs,
+                                       MySource.linear_gain_dB, MySource.IBO_dB);
+        }
+
+        return tmp;
+    };
+
+    //mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource.MP_P, MySource.MP_M);
+    //mydpd.trainIterative(TrainRes.tx_sig, PA_noscale, MySource.MP_P, MySource.MP_M, 3);
+
     CurrentRecalcNeeds.PARecalc = true;
 }
 
@@ -360,10 +402,9 @@ void SignalProcessing::TransmitSignalProcessing(Source& source, std::vector<Symb
 void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcNeeds, GlobalResults& CurRes)
 {
     if(!CurRes.pa_sig.empty()) {
-        CurRes.pa_sig = CurRes.tx_sig;
-        CurRes.tx_plus_dpd_sig = mydpd.applyPreDistortion(CurRes.tx_sig, MySource.MP_P, MySource.MP_M);
-        CurRes.tx_plus_dpd_sig = MyMetricsEval.normalizeSignal(CurRes.tx_plus_dpd_sig);
+        MyPAModels.ScaleToRMS_forPA(source, CurRes);
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
+
         if(source.PAModel == "Saleh") {
             MyPAModels.SalehModel(CurRes.pa_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
             MyPAModels.SalehModel(CurRes.pa_plus_dpd_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
@@ -649,11 +690,4 @@ PaCurve &SignalProcessing::getPaCurve()
 {
     return *PACurve;
 }
-
-
-
-
-
-
-
 

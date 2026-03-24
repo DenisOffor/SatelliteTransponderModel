@@ -178,7 +178,7 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->StaticNonlin_comboBox) {UISource.StaticNonlinModel = ui->StaticNonlin_comboBox->currentText();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; }
     if(senderObj == ui->LinearGain_SpinBox) { UISource.linear_gain_dB = ui->LinearGain_SpinBox->value();
-        CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true;}
+        CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; CurrentRecalcNeeds.TimePlotsRescale = true;}
     if(senderObj == ui->IBO_SpinBox) { UISource.IBO_dB = ui->IBO_SpinBox->value();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true;}
     if(senderObj == ui->PAModel_ComboBox) {UISource.PAModel = ui->PAModel_ComboBox->currentText();

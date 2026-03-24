@@ -11,10 +11,7 @@ void PAModels::SalehModel(std::vector<std::complex<double>>& sig,
     std::vector<double> amplitude_out(sig.size());
     std::vector<double> phase_out(sig.size());
 
-    double gain_linear = qPow(10, linear_gain_dB / 10.0);
-
-    double A_sat = 1.0 / std::sqrt(Coeffs[1]);
-    apply_IBO(sig, IBO_dB, A_sat);
+    double gain_linear = qPow(10, linear_gain_dB / 20.0);
 
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
@@ -40,10 +37,8 @@ void PAModels::RappModel(std::vector<std::complex<double>>& sig, std::vector<dou
     std::vector<double> amplitude_out(sig.size());
     std::vector<double> phase_out(sig.size());
 
-    double gain_linear = qPow(10, linear_gain_dB / 10.0);
+    double gain_linear = qPow(10, linear_gain_dB / 20.0);
 
-    double A_sat = Coeffs[0];
-    apply_IBO(sig, IBO_dB, A_sat);
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);
@@ -64,10 +59,7 @@ void PAModels::GhorbaniModel(std::vector<std::complex<double>>& sig, std::vector
     std::vector<double> amplitude_out(sig.size());
     std::vector<double> phase_out(sig.size());
 
-    double gain_linear = qPow(10, linear_gain_dB / 10.0);
-    double A_sat = find_Asat_Ghorbani(Coeffs, gain_linear);
-    apply_IBO(sig, IBO_dB, A_sat);
-    double A_rms = 0.0;
+    double gain_linear = qPow(10, linear_gain_dB / 20.0);
 
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
@@ -98,35 +90,6 @@ void PAModels::WienerModel(std::vector<std::complex<double>>& sig, QString Stati
         GhorbaniModel(sig, Coeffs, linear_gain_dB, IBO_dB);
 
     ApplyFIRWithMemory(sig, FIR_Coeffs, 5);  // 3 - лучше сделать параметром
-}
-
-void PAModels::apply_IBO(std::vector<std::complex<double>>& tx,
-                         double IBO_dB,
-                         double A_sat)
-{
-    if (tx.empty())
-        return;
-
-    double sum = 0.0;
-    for (const auto& s : tx)
-        sum += std::norm(s);
-
-    double rms = std::sqrt(sum / tx.size());
-
-    if (rms == 0.0)
-        return;
-
-    // Входная мощность относительно насыщения
-    double P_sat = A_sat * A_sat;
-
-    double P_in_target = P_sat / std::pow(10.0, IBO_dB / 10.0);
-
-    double A_rms_target = std::sqrt(P_in_target);
-
-    double scale = A_rms_target / rms;
-
-    for (auto& s : tx)
-        s *= scale;
 }
 
 double PAModels::find_Asat_Ghorbani(const std::vector<double>& c,
@@ -198,5 +161,41 @@ void PAModels::ApplyFIRWithMemory(std::vector<std::complex<double>>& signal, con
 
     // Копируем результат обратно
     signal = std::move(output);
+}
+
+void PAModels::ScaleToRMS_forPA(Source& source, GlobalResults& CurRes)
+{
+    double A_sat;
+    double target_rms;
+    CurRes.pa_sig = CurRes.tx_sig;
+    if (source.PAModel == "Saleh")
+        A_sat = 1.0 / std::sqrt(source.SalehCoeffs[1]);
+    else if(source.PAModel == "Rapp")
+        A_sat = source.RappCoeffs[0];
+    else if(source.PAModel == "Ghorbani")
+        A_sat = find_Asat_Ghorbani(source.GhorbaniCoeffs, qPow(10, source.linear_gain_dB / 20.0));
+    else if(source.PAModel == "Wiener") {
+        if (source.StaticNonlinModel == "Saleh")
+            A_sat = 1.0 / std::sqrt(source.SalehCoeffs[1]);
+        else if(source.StaticNonlinModel == "Rapp")
+            A_sat = source.RappCoeffs[0];
+        else if(source.StaticNonlinModel == "Ghorbani")
+            A_sat = find_Asat_Ghorbani(source.GhorbaniCoeffs, qPow(10, source.linear_gain_dB / 20.0));
+    }
+    target_rms = A_sat / std::pow(10.0, source.IBO_dB / 20.0);
+
+    scaleToRMS(CurRes.tx_sig, target_rms);
+    scaleToRMS(CurRes.pa_sig, target_rms);
+}
+
+void PAModels::scaleToRMS(std::vector<std::complex<double>>& x, double target_rms)
+{
+    double sum = 0.0;
+    for (const auto& s : x) sum += std::norm(s);
+    double rms = std::sqrt(sum / x.size());
+    if (rms == 0.0) return;
+
+    double k = target_rms / rms;
+    for (auto& s : x) s *= k;
 }
 

@@ -255,7 +255,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>4</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -432,7 +432,7 @@
                <number>100</number>
               </property>
               <property name="value">
-               <number>40</number>
+               <number>100</number>
               </property>
              </widget>
             </item>
@@ -1688,8 +1688,14 @@
                      <pointsize>14</pointsize>
                     </font>
                    </property>
+                   <property name="minimum">
+                    <number>10</number>
+                   </property>
                    <property name="maximum">
                     <number>30</number>
+                   </property>
+                   <property name="value">
+                    <number>10</number>
                    </property>
                   </widget>
                  </item>
@@ -3818,7 +3824,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1242</width>
-                 <height>677</height>
+                 <height>147</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_113">

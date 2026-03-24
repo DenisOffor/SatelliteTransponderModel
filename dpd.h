@@ -4,23 +4,15 @@
 #include <vector>
 #include <complex>
 #include <Eigen/Dense>
+#include <QDebug>
+
+using namespace Eigen;
 
 class DPD {
 public:
-    void train(const std::vector<std::complex<double>> &pa_input,
-               const std::vector<std::complex<double>> &pa_output,
-               int P, int M);
-
-    std::vector<std::complex<double>> applyPreDistortion(
-        const std::vector<std::complex<double>> &input_signal,
-        int P, int M);
 
 private:
-    double computeRMS(const std::vector<std::complex<double>>& x);
-    std::vector<std::complex<double>> coeffs; // коэффициенты DPD
-    double train_scale = 1.0;                       // внутренний масштаб
-    std::vector<std::complex<double>> normalizeSignal(const std::vector<std::complex<double>> &sig);
-    std::vector<std::complex<double>> normalizeSignalRMS(const std::vector<std::complex<double>>& tx);
+    VectorXd DPDsolve_least_squares(const MatrixXd& A, const VectorXd& b);
 };
 
 #endif // DPD_H
