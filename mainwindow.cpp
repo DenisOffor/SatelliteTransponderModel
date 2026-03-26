@@ -186,6 +186,9 @@ void MainWindow::DataUpdate()
 
     if(senderObj == ui->MP_M_spinBox) { UISource.MP_M = ui->MP_M_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->MP_P_spinBox) { UISource.MP_M = ui->MP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->NormalizationType_ComboBox) { UISource.NormalizationType = ui->NormalizationType_ComboBox->currentText();
+        CurrentRecalcNeeds.DPDRecalc = true; }
+
 
     if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc)
         CurrentRecalcNeeds.DPDRecalc = true;
@@ -249,6 +252,7 @@ void MainWindow::FirstDataUpdate()
 
     UISource.MP_M = ui->MP_M_spinBox->value();
     UISource.MP_P = ui->MP_P_spinBox->value();
+    UISource.NormalizationType = ui->NormalizationType_ComboBox->currentText();
 
     CurrentRecalcNeeds.init();
     MySigProc.DataUpdate(UISource);
@@ -288,6 +292,12 @@ void MainWindow::handleResult()
     ui->BER_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_withDPD);
     ui->EVM_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_noDPD);
     ui->EVM_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_withDPD);
+}
+
+void MainWindow::cycleBtnClicked()
+{
+    ui->Cycle_pushButton->is
+    //ui->Cycle_pushButton->
 }
 
 void MainWindow::onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem*)
@@ -523,6 +533,9 @@ void MainWindow::SetupMainLogicWork()
 
     connect(ui->MP_M_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->MP_P_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    connect(ui->NormalizationType_ComboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
+
+    connect(ui->Cycle_pushButton, &QPushButton::clicked, this, &MainWindow::cycleBtnClicked);
 }
 
 void MainWindow::SetupWorker()

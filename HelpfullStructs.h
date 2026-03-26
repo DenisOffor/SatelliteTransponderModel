@@ -131,6 +131,7 @@ struct Source {
 
     int MP_M;
     int MP_P;
+    QString NormalizationType;
 };
 
 struct NeedToRecalc{

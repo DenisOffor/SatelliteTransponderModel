@@ -295,7 +295,7 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
         return tmp;
     };
 
-    mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource.MP_P, MySource.MP_M);
+    mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource);
     //mydpd.trainIterative(TrainRes.tx_sig, PA_noscale, MySource.MP_P, MySource.MP_M, 3);
 
     CurrentRecalcNeeds.PARecalc = true;
@@ -404,7 +404,7 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
     if(!CurRes.pa_sig.empty()) {
         MyPAModels.ScaleToRMS_forPA(source, CurRes);
         CurRes.tx_plus_dpd_sig = CurRes.tx_sig;
-        CurRes.tx_plus_dpd_sig = mydpd.applyMP(CurRes.tx_plus_dpd_sig, source.MP_P, source.MP_M);
+        CurRes.tx_plus_dpd_sig = mydpd.applyMP(CurRes.tx_plus_dpd_sig, source);
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
 
         if(source.PAModel == "Saleh") {
@@ -666,6 +666,7 @@ void SignalProcessing::DataUpdate(Source &UISource)
 
     MySource.MP_M = UISource.MP_M;
     MySource.MP_P = UISource.MP_P;
+    MySource.NormalizationType = UISource.NormalizationType;
 }
 
 Symbols &SignalProcessing::getSymbols()

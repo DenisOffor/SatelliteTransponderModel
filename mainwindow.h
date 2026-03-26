@@ -58,6 +58,7 @@ private:
 
 private slots:
     void handleResult();
+    void cycleBtnClicked();
 signals:
     void startSimulation(SignalProcessing* sig, NeedToRecalc recalc);
 };

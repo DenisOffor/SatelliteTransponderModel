@@ -224,6 +224,15 @@
                  <property name="flat">
                   <bool>true</bool>
                  </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_100">
+                  <item>
+                   <widget class="QPushButton" name="Cycle_pushButton">
+                    <property name="text">
+                     <string>PushButton</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
                 </widget>
                </item>
               </layout>
@@ -255,7 +264,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -2760,11 +2769,88 @@
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_85">
             <item>
+             <widget class="QGroupBox" name="NormalizationType_GroupBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="font">
+               <font>
+                <family>Times New Roman</family>
+                <pointsize>14</pointsize>
+               </font>
+              </property>
+              <property name="title">
+               <string>Тип нормализации после УМ</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_99">
+               <property name="spacing">
+                <number>3</number>
+               </property>
+               <property name="leftMargin">
+                <number>3</number>
+               </property>
+               <property name="topMargin">
+                <number>3</number>
+               </property>
+               <property name="rightMargin">
+                <number>3</number>
+               </property>
+               <property name="bottomMargin">
+                <number>3</number>
+               </property>
+               <item>
+                <widget class="QComboBox" name="NormalizationType_ComboBox">
+                 <item>
+                  <property name="text">
+                   <string>Peak normalization</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>RMS normalization</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
              <widget class="QGroupBox" name="groupBox_6">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="font">
+               <font>
+                <family>Times New Roman</family>
+                <pointsize>14</pointsize>
+               </font>
+              </property>
               <property name="title">
                <string>M coeff</string>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_86">
+               <property name="spacing">
+                <number>3</number>
+               </property>
+               <property name="leftMargin">
+                <number>3</number>
+               </property>
+               <property name="topMargin">
+                <number>3</number>
+               </property>
+               <property name="rightMargin">
+                <number>3</number>
+               </property>
+               <property name="bottomMargin">
+                <number>3</number>
+               </property>
                <item>
                 <widget class="QSpinBox" name="MP_M_spinBox">
                  <property name="minimum">
@@ -2786,10 +2872,37 @@
             </item>
             <item>
              <widget class="QGroupBox" name="groupBox_7">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="font">
+               <font>
+                <family>Times New Roman</family>
+                <pointsize>14</pointsize>
+               </font>
+              </property>
               <property name="title">
                <string>P coeff</string>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_87">
+               <property name="spacing">
+                <number>3</number>
+               </property>
+               <property name="leftMargin">
+                <number>3</number>
+               </property>
+               <property name="topMargin">
+                <number>3</number>
+               </property>
+               <property name="rightMargin">
+                <number>3</number>
+               </property>
+               <property name="bottomMargin">
+                <number>3</number>
+               </property>
                <item>
                 <widget class="QSpinBox" name="MP_P_spinBox">
                  <property name="minimum">
