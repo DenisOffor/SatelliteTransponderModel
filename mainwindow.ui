@@ -227,6 +227,12 @@
                  <layout class="QVBoxLayout" name="verticalLayout_100">
                   <item>
                    <widget class="QPushButton" name="Cycle_pushButton">
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
                     <property name="text">
                      <string>PushButton</string>
                     </property>
@@ -264,7 +270,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>4</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -484,10 +490,23 @@
             <item>
              <widget class="QWidget" name="SymConstGroupBoxWidget" native="true">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>400</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox_10">
+              <property name="title">
+               <string>GroupBox</string>
               </property>
              </widget>
             </item>
@@ -4267,6 +4286,9 @@
                     <pointsize>14</pointsize>
                    </font>
                   </property>
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
                   <property name="buttonSymbols">
                    <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                   </property>
@@ -4316,6 +4338,9 @@
                     <pointsize>14</pointsize>
                    </font>
                   </property>
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
                   <property name="buttonSymbols">
                    <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                   </property>
@@ -4364,6 +4389,9 @@
                     <family>Times New Roman</family>
                     <pointsize>14</pointsize>
                    </font>
+                  </property>
+                  <property name="readOnly">
+                   <bool>true</bool>
                   </property>
                   <property name="buttonSymbols">
                    <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
@@ -4420,6 +4448,9 @@
                     <pointsize>14</pointsize>
                    </font>
                   </property>
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
                   <property name="buttonSymbols">
                    <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                   </property>
@@ -4475,6 +4506,9 @@
                     <pointsize>14</pointsize>
                    </font>
                   </property>
+                  <property name="readOnly">
+                   <bool>true</bool>
+                  </property>
                   <property name="buttonSymbols">
                    <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
                   </property>
@@ -4523,6 +4557,9 @@
                     <family>Times New Roman</family>
                     <pointsize>14</pointsize>
                    </font>
+                  </property>
+                  <property name="readOnly">
+                   <bool>true</bool>
                   </property>
                   <property name="buttonSymbols">
                    <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>

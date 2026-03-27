@@ -62,6 +62,7 @@ MainWindow::MainWindow(QWidget *parent)
     SetupSelectedGraphsListWidget();
     SetupMainLogicWork();
     CurrentRecalcNeeds.init();
+    SetupCyclePushBtn();
     SetupWorker();
     FirstDataUpdate();
 }
@@ -72,6 +73,7 @@ MainWindow::~MainWindow()
     thread->wait();
     delete thread;
     delete worker;
+    delete timer;
     delete ui;
 }
 
@@ -261,7 +263,8 @@ void MainWindow::FirstDataUpdate()
 
 void MainWindow::handleResult()
 {
-    UnLockParChange();
+    if(!timer->isActive())
+        UnLockParChange();
     QElapsedTimer timer;
     timer.start();
 
@@ -296,8 +299,20 @@ void MainWindow::handleResult()
 
 void MainWindow::cycleBtnClicked()
 {
-    ui->Cycle_pushButton->is
-    //ui->Cycle_pushButton->
+    if(ui->Cycle_pushButton->isChecked()) {
+        LockParChange();
+        timer->start(300);
+    } else {
+        UnLockParChange();
+        timer->stop();
+    }
+}
+
+void MainWindow::CycleModeSlot()
+{
+    CurrentRecalcNeeds.RecalcSymbols = true;
+    CurrentRecalcNeeds.DPDRecalc = false;
+    MakeMainCalcAndPlot();
 }
 
 void MainWindow::onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem*)
@@ -534,8 +549,6 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->MP_M_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->MP_P_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->NormalizationType_ComboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
-
-    connect(ui->Cycle_pushButton, &QPushButton::clicked, this, &MainWindow::cycleBtnClicked);
 }
 
 void MainWindow::SetupWorker()
@@ -552,6 +565,15 @@ void MainWindow::SetupWorker()
             this, &MainWindow::handleResult);
 
     thread->start();
+}
+
+void MainWindow::SetupCyclePushBtn()
+{
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &MainWindow::CycleModeSlot);
+
+    connect(ui->Cycle_pushButton, &QPushButton::clicked, this, &MainWindow::cycleBtnClicked);
+    ui->Cycle_pushButton->setCheckable(true);
 }
 
 void MainWindow::LockParChange()

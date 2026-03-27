@@ -17,15 +17,19 @@ void DPD::train(const std::vector<std::complex<double>> &pa_input,
         Grms = computeGrms(pa_input, pa_output);
         pa_output_norm = normalizeByGain(pa_output, Grms);
     }
+    QElapsedTimer timer;
+    timer.start();
 
     VectorXcd a = DPDsolve_least_squares(
         make_MP_mat(pa_output_norm, P, M),
         make_goal(pa_input, M)
         );
+    qDebug() << "LS train time:" << timer.elapsed() << "ms";
 
     coeffs.resize(M * (P + 1) / 2);
     for (int i = 0; i < M * ((P + 1) / 2); ++i)
         coeffs[i] = a(i);
+
 }
 
 double DPD::computePeakGain(const std::vector<std::complex<double>>& pa_input,
@@ -85,20 +89,29 @@ double DPD::computeGrms(const std::vector<std::complex<double>>& pa_input,
 
 MatrixXcd DPD::make_MP_mat(const std::vector<std::complex<double>>& x, const int P, const int M)
 {
-    // y = Phi(x...)*a
-    // исключили первые M-1 отсчетов, чтобы не уходить в x[-1] и тд, то есть отрицательные отсчеты
-    int N = x.size();
-    int rows = N - M + 1;
-    int cols = M * (P + 1) / 2;
+    const int N = static_cast<int>(x.size());
+    const int rows = N - M + 1;
+    const int cols = M * ((P + 1) / 2);
+    const int L = (P + 1) / 2;
+
     MatrixXcd Phi_LS(rows, cols);
 
-    for(int n = M - 1; n < N; ++n) {
-        size_t cur_row = n - M + 1;
-        size_t col_idx = 0;
+    for (int n = M - 1; n < N; ++n) {
+        const int cur_row = n - M + 1;
+        int col_idx = 0;
 
-        for(int p = 1; p <= P; p += 2)
-            for(int m = 0; m < M; ++m)
-                Phi_LS(cur_row, col_idx++) = x[n - m] * std::pow(std::abs(x[n - m]), p - 1);
+        for (int p_idx = 0; p_idx < L; ++p_idx) {
+            for (int m = 0; m < M; ++m) {
+                const std::complex<double> s = x[n - m];
+                const double a2 = std::norm(s);
+
+                std::complex<double> term = s;
+                for (int k = 0; k < p_idx; ++k)
+                    term *= a2;
+
+                Phi_LS(cur_row, col_idx++) = term;
+            }
+        }
     }
 
     return Phi_LS;

@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include <QDebug>
 #include "HelpfullStructs.h"
+#include "QElapsedTimer"
 
 using namespace Eigen;
 

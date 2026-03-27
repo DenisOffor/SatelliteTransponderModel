@@ -7,6 +7,7 @@
 #include <QScreen>
 #include <QDebug>
 #include <QThread>
+#include <QTimer>
 #include "worker.h"
 #include "graphplotting.h"
 #include "signalprocessing.h"
@@ -43,6 +44,7 @@ private:
     NeedToRecalc CurrentRecalcNeeds;
     QThread* thread;
     Worker* worker;
+    QTimer *timer;
 
     void setupAdaptiveWindow();
     void setupSplitter();
@@ -53,12 +55,14 @@ private:
     void SetupSelectedGraphsListWidget();
     void SetupMainLogicWork();
     void SetupWorker();
+    void SetupCyclePushBtn();
     void LockParChange();
     void UnLockParChange();
 
 private slots:
     void handleResult();
     void cycleBtnClicked();
+    void CycleModeSlot();
 signals:
     void startSimulation(SignalProcessing* sig, NeedToRecalc recalc);
 };
