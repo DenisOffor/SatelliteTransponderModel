@@ -404,7 +404,10 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
     if(!CurRes.pa_sig.empty()) {
         MyPAModels.ScaleToRMS_forPA(source, CurRes);
         CurRes.tx_plus_dpd_sig = CurRes.tx_sig;
-        CurRes.tx_plus_dpd_sig = mydpd.applyMP(CurRes.tx_plus_dpd_sig, source);
+        if(source.PredistorterType == "MP")
+            CurRes.tx_plus_dpd_sig = mydpd.applyMP(CurRes.tx_plus_dpd_sig, source);
+        else if(source.PredistorterType == "GMP")
+            CurRes.tx_plus_dpd_sig = mydpd.applyGMP(CurRes.tx_plus_dpd_sig, source);
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
 
         if(source.PAModel == "Saleh") {
@@ -666,13 +669,14 @@ void SignalProcessing::DataUpdate(Source &UISource)
 
     MySource.MP_M = UISource.MP_M;
     MySource.MP_P = UISource.MP_P;
-    MySource.MP_NormalizationType = UISource.MP_NormalizationType;
 
     MySource.GMP_M = UISource.GMP_M;
     MySource.GMP_P = UISource.GMP_P;
     MySource.GMP_L_lag = UISource.GMP_L_lag;
     MySource.GMP_L_lead = UISource.GMP_L_lead;
-    MySource.GMP_NormalizationType = UISource.GMP_NormalizationType;
+
+    MySource.NormalizationType = UISource.NormalizationType;
+    MySource.PredistorterType = UISource.PredistorterType;
 }
 
 Symbols &SignalProcessing::getSymbols()

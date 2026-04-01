@@ -131,13 +131,14 @@ struct Source {
 
     int MP_M;
     int MP_P;
-    QString MP_NormalizationType;
 
     int GMP_M;
     int GMP_P;
     int GMP_L_lag;
     int GMP_L_lead;
-    QString GMP_NormalizationType;
+
+    QString NormalizationType;
+    QString PredistorterType;
 };
 
 struct NeedToRecalc{

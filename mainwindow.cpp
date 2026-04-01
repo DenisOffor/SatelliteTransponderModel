@@ -189,14 +189,15 @@ void MainWindow::DataUpdate()
 
     if(senderObj == ui->MP_M_spinBox) { UISource.MP_M = ui->MP_M_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->MP_P_spinBox) { UISource.MP_M = ui->MP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->MP_NormalizationType_ComboBox) { UISource.MP_NormalizationType = ui->MP_NormalizationType_ComboBox->currentText();
-        CurrentRecalcNeeds.DPDRecalc = true; }
 
     if(senderObj == ui->GMP_M_spinBox) { UISource.GMP_M = ui->GMP_M_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->GMP_P_spinBox) { UISource.GMP_M = ui->GMP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->GMP_L_lag_spinBox) { UISource.GMP_L_lag = ui->GMP_L_lag_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->GMP_L_lead_spinBox) { UISource.GMP_L_lead = ui->GMP_L_lead_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->GMP_NormalizationType_ComboBox) { UISource.GMP_NormalizationType = ui->GMP_NormalizationType_ComboBox->currentText();
+
+    if(senderObj == ui->NormalizationType_ComboBox) { UISource.NormalizationType = ui->NormalizationType_ComboBox->currentText();
+        CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->PredistorterType_comboBox) { UISource.PredistorterType = ui->PredistorterType_comboBox->currentText();
         CurrentRecalcNeeds.DPDRecalc = true; }
 
     if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc)
@@ -261,13 +262,14 @@ void MainWindow::FirstDataUpdate()
 
     UISource.MP_M = ui->MP_M_spinBox->value();
     UISource.MP_P = ui->MP_P_spinBox->value();
-    UISource.MP_NormalizationType = ui->MP_NormalizationType_ComboBox->currentText();
 
     UISource.GMP_M = ui->GMP_M_spinBox->value();
-    UISource.GMP_P = ui->MP_P_spinBox->value();
-    UISource.GMP_P = ui->GMP_L_lag_spinBox->value();
-    UISource.GMP_P = ui->GMP_L_lead_spinBox->value();
-    UISource.GMP_NormalizationType = ui->GMP_NormalizationType_ComboBox->currentText();
+    UISource.GMP_P = ui->GMP_P_spinBox->value();
+    UISource.GMP_L_lag = ui->GMP_L_lag_spinBox->value();
+    UISource.GMP_L_lead = ui->GMP_L_lead_spinBox->value();
+
+    UISource.NormalizationType = ui->NormalizationType_ComboBox->currentText();
+    UISource.PredistorterType = ui->PredistorterType_comboBox->currentText();
 
     CurrentRecalcNeeds.init();
     MySigProc.DataUpdate(UISource);
@@ -575,7 +577,14 @@ void MainWindow::SetupMainLogicWork()
 
     connect(ui->MP_M_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->MP_P_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+
+    connect(ui->GMP_M_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    connect(ui->GMP_P_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    connect(ui->GMP_L_lag_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    connect(ui->GMP_L_lead_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+
     connect(ui->NormalizationType_ComboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
+    connect(ui->PredistorterType_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
 }
 
 void MainWindow::SetupWorker()

@@ -270,7 +270,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -2832,6 +2832,41 @@
           </widget>
          </item>
          <item>
+          <widget class="QGroupBox" name="NormalizationType_groupBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>Times New Roman</family>
+             <pointsize>14</pointsize>
+            </font>
+           </property>
+           <property name="title">
+            <string>Тип нормализации после УМ</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_103">
+            <item>
+             <widget class="QComboBox" name="NormalizationType_ComboBox">
+              <item>
+               <property name="text">
+                <string>Peak normalization</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>RMS normalization</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QGroupBox" name="PredPagesType_groupBox">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -2900,6 +2935,9 @@
                   <property name="title">
                    <string/>
                   </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
                   <layout class="QVBoxLayout" name="verticalLayout_105">
                    <property name="spacing">
                     <number>3</number>
@@ -2916,56 +2954,6 @@
                    <property name="bottomMargin">
                     <number>3</number>
                    </property>
-                   <item>
-                    <widget class="QGroupBox" name="MP_NormalizationType_GroupBox">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="font">
-                      <font>
-                       <family>Times New Roman</family>
-                       <pointsize>14</pointsize>
-                      </font>
-                     </property>
-                     <property name="title">
-                      <string>Тип нормализации после УМ</string>
-                     </property>
-                     <layout class="QVBoxLayout" name="verticalLayout_114">
-                      <property name="spacing">
-                       <number>3</number>
-                      </property>
-                      <property name="leftMargin">
-                       <number>3</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>3</number>
-                      </property>
-                      <property name="rightMargin">
-                       <number>3</number>
-                      </property>
-                      <property name="bottomMargin">
-                       <number>3</number>
-                      </property>
-                      <item>
-                       <widget class="QComboBox" name="MP_NormalizationType_ComboBox">
-                        <item>
-                         <property name="text">
-                          <string>Peak normalization</string>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>RMS normalization</string>
-                         </property>
-                        </item>
-                       </widget>
-                      </item>
-                     </layout>
-                    </widget>
-                   </item>
                    <item>
                     <widget class="QGroupBox" name="MP_M_groupBox">
                      <property name="sizePolicy">
@@ -3126,56 +3114,6 @@
                     <number>3</number>
                    </property>
                    <item>
-                    <widget class="QGroupBox" name="GMP_NormalizationType_GroupBox">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="font">
-                      <font>
-                       <family>Times New Roman</family>
-                       <pointsize>14</pointsize>
-                      </font>
-                     </property>
-                     <property name="title">
-                      <string>Тип нормализации после УМ</string>
-                     </property>
-                     <layout class="QVBoxLayout" name="verticalLayout_118">
-                      <property name="spacing">
-                       <number>3</number>
-                      </property>
-                      <property name="leftMargin">
-                       <number>3</number>
-                      </property>
-                      <property name="topMargin">
-                       <number>3</number>
-                      </property>
-                      <property name="rightMargin">
-                       <number>3</number>
-                      </property>
-                      <property name="bottomMargin">
-                       <number>3</number>
-                      </property>
-                      <item>
-                       <widget class="QComboBox" name="GMP_NormalizationType_ComboBox">
-                        <item>
-                         <property name="text">
-                          <string>Peak normalization</string>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
-                          <string>RMS normalization</string>
-                         </property>
-                        </item>
-                       </widget>
-                      </item>
-                     </layout>
-                    </widget>
-                   </item>
-                   <item>
                     <widget class="QGroupBox" name="GMP_M_groupBox">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -3307,7 +3245,14 @@
                        <number>3</number>
                       </property>
                       <item>
-                       <widget class="QSpinBox" name="GMP_L_lag_spinBox"/>
+                       <widget class="QSpinBox" name="GMP_L_lag_spinBox">
+                        <property name="maximum">
+                         <number>15</number>
+                        </property>
+                        <property name="value">
+                         <number>2</number>
+                        </property>
+                       </widget>
                       </item>
                      </layout>
                     </widget>
@@ -3340,7 +3285,14 @@
                        <number>3</number>
                       </property>
                       <item>
-                       <widget class="QSpinBox" name="GMP_L_lead_spinBox"/>
+                       <widget class="QSpinBox" name="GMP_L_lead_spinBox">
+                        <property name="maximum">
+                         <number>15</number>
+                        </property>
+                        <property name="value">
+                         <number>2</number>
+                        </property>
+                       </widget>
                       </item>
                      </layout>
                     </widget>
@@ -3358,7 +3310,10 @@
          <item>
           <widget class="QGroupBox" name="groupBox_5">
            <property name="title">
-            <string>GroupBox</string>
+            <string/>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

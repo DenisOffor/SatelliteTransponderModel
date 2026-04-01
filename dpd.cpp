@@ -1,35 +1,66 @@
 #include "dpd.h"
 #include <cmath>
 
-void DPD::train(const std::vector<std::complex<double>> &pa_input,
-                const std::vector<std::complex<double> > &pa_output, const Source& source)
+void DPD::train(const std::vector<std::complex<double>>& pa_input,
+                const std::vector<std::complex<double>>& pa_output,
+                const Source& source)
 {
-    int P = source.MP_P;
-    int M = source.MP_M;
+    int P = 0;
+    int M = 0;
+
+    if (source.PredistorterType == "MP") {
+        P = source.MP_P;
+        M = source.MP_M;
+    }
+    else if (source.PredistorterType == "GMP") {
+        P = source.GMP_P;
+        M = source.GMP_M;
+    }
+    const int num_orders = (P + 1) / 2;
 
     std::vector<std::complex<double>> pa_output_norm;
-    if(source.MP_NormalizationType == "Peak normalization") {
+    if (source.NormalizationType == "Peak normalization") {
         Gpeak = computePeakGain(pa_input, pa_output);
         pa_output_norm = normalizeByGain(pa_output, Gpeak);
     }
-    else if(source.MP_NormalizationType == "RMS normalization") {
+    else if (source.NormalizationType == "RMS normalization") {
         Gpeak = computePeakGain(pa_input, pa_output);
         Grms = computeGrms(pa_input, pa_output);
         pa_output_norm = normalizeByGain(pa_output, Grms);
     }
+    else {
+        pa_output_norm = pa_output;
+    }
+
     QElapsedTimer timer;
     timer.start();
 
-    VectorXcd a = DPDsolve_least_squares(
-        make_MP_mat(pa_output_norm, P, M),
-        make_goal(pa_input, M)
-        );
+    VectorXcd a;
+    int num_coeffs = 0;
+
+    if (source.PredistorterType == "MP") {
+        a = DPDsolve_least_squares(
+            make_MP_mat(pa_output_norm, P, M),
+            make_goal(pa_input, source)
+            );
+
+        num_coeffs = M * num_orders;
+    }
+    else if (source.PredistorterType == "GMP") {
+        a = DPDsolve_least_squares(
+            make_GMP_mat(pa_output_norm, P, M,
+                         source.GMP_L_lag, source.GMP_L_lead),
+            make_goal(pa_input, source)
+            );
+
+        num_coeffs = M * (1 + source.GMP_L_lag + source.GMP_L_lead) * num_orders;
+    }
+
     qDebug() << "LS train time:" << timer.elapsed() << "ms";
 
-    coeffs.resize(M * (P + 1) / 2);
-    for (int i = 0; i < M * ((P + 1) / 2); ++i)
+    coeffs.resize(num_coeffs);
+    for (int i = 0; i < num_coeffs; ++i)
         coeffs[i] = a(i);
-
 }
 
 double DPD::computePeakGain(const std::vector<std::complex<double>>& pa_input,
@@ -89,85 +120,78 @@ double DPD::computeGrms(const std::vector<std::complex<double>>& pa_input,
 
 MatrixXcd DPD::make_MP_mat(const std::vector<std::complex<double>>& x, const int P, const int M)
 {
-    const int N = static_cast<int>(x.size());
-    const int rows = N - M + 1;
-    const int cols = M * ((P + 1) / 2);
-    const int L = (P + 1) / 2;
-
-    MatrixXcd Phi_LS(rows, cols);
-
-    for (int n = M - 1; n < N; ++n) {
-        const int cur_row = n - M + 1;
-        int col_idx = 0;
-
-        for (int p_idx = 0; p_idx < L; ++p_idx) {
-            for (int m = 0; m < M; ++m) {
-                const std::complex<double> s = x[n - m];
-                const double a2 = std::norm(s);
-
-                std::complex<double> term = s;
-                for (int k = 0; k < p_idx; ++k)
-                    term *= a2;
-
-                Phi_LS(cur_row, col_idx++) = term;
-            }
-        }
-    }
-
-    return Phi_LS;
-}
-
-MatrixXcd DPD::make_GMP_mat(const std::vector<std::complex<double>>& x, const int P, const int M, const int L)
-{
     // y = Phi(x...)*a
     // исключили первые M-1 отсчетов, чтобы не уходить в x[-1] и тд, то есть отрицательные отсчеты
     int N = x.size();
     int rows = N - M + 1;
-    int cols = M * (1 + 2 * L) * (P + 1) / 2;
+    int cols = M * (P + 1) / 2;
     MatrixXcd Phi_LS(rows, cols);
 
-    for (int n = M - 1 + L; n < N - L; ++n) {
-        int cur_row = n - (M - 1 + L);
-        int col_idx = 0;
+    for(int n = M - 1; n < N; ++n) {
+        size_t cur_row = n - M + 1;
+        size_t col_idx = 0;
 
-        // 1) aligned
-        for (int p = 1; p <= P; p += 2) {
-            for (int m = 0; m < M; ++m) {
-                Phi_LS(cur_row, col_idx++) =
-                    x[n - m] * std::pow(std::abs(x[n - m]), p - 1);
-            }
-        }
-
-        // 2) lagging
-        for (int p = 1; p <= P; p += 2) {
-            for (int m = 0; m < M; ++m) {
-                for (int l = 1; l <= L; ++l) {
-                    Phi_LS(cur_row, col_idx++) =
-                        x[n - m] * std::pow(std::abs(x[n - m - l]), p - 1);
-                }
-            }
-        }
-
-        // 3) leading
-        for (int p = 1; p <= P; p += 2) {
-            for (int m = 0; m < M; ++m) {
-                for (int l = 1; l <= L; ++l) {
-                    Phi_LS(cur_row, col_idx++) =
-                        x[n - m] * std::pow(std::abs(x[n - m + l]), p - 1);
-                }
-            }
-        }
+        for(int p = 1; p <= P; p += 2)
+            for(int m = 0; m < M; ++m)
+                Phi_LS(cur_row, col_idx++) = x[n - m] * std::pow(std::abs(x[n - m]), p - 1);
     }
 
     return Phi_LS;
 }
 
-VectorXcd DPD::make_goal(const std::vector<std::complex<double>>& y, const int M) {
+MatrixXcd DPD::make_GMP_mat(const std::vector<std::complex<double>>& x,
+                            const int P, const int M,
+                            const int L_lag, const int L_lead)
+{
+    int N = x.size();
+    int rows = N - M - L_lag - L_lead + 1;
+    int cols = M * (1 + L_lag + L_lead) * ((P + 1) / 2);
+    MatrixXcd Phi_LS(rows, cols);
+
+    for (int n = M - 1 + L_lag; n < N - L_lead; ++n) {
+        int cur_row = n - (M - 1 + L_lag);
+        int col_idx = 0;
+
+        // aligned
+        for (int p = 1; p <= P; p += 2)
+            for (int m = 0; m < M; ++m)
+                Phi_LS(cur_row, col_idx++) =
+                    x[n - m] * std::pow(std::abs(x[n - m]), p - 1);
+
+        // lagging
+        for (int p = 1; p <= P; p += 2)
+            for (int m = 0; m < M; ++m)
+                for (int l = 1; l <= L_lag; ++l)
+                    Phi_LS(cur_row, col_idx++) =
+                        x[n - m] * std::pow(std::abs(x[n - m - l]), p - 1);
+
+        // leading
+        for (int p = 1; p <= P; p += 2)
+            for (int m = 0; m < M; ++m)
+                for (int l = 1; l <= L_lead; ++l)
+                    Phi_LS(cur_row, col_idx++) =
+                        x[n - m] * std::pow(std::abs(x[n - m + l]), p - 1);
+    }
+
+    return Phi_LS;
+}
+
+VectorXcd DPD::make_goal(const std::vector<std::complex<double>>& y, const Source& source) {
     int N = y.size();
-    VectorXcd y_LS(N - M + 1);
+    int n_start = 0;
+    int n_end = 0;
+    if(source.PredistorterType == "MP") {
+        n_start = source.MP_M - 1;
+        n_end = N - 1;
+    }
+    else if (source.PredistorterType == "GMP") {
+        n_start = source.MP_M - 1 + source.GMP_L_lag;
+        n_end = N - 1 - source.GMP_L_lead;
+    }
+    VectorXcd y_LS(n_end - n_start + 1);
 
     size_t num_el = 0;
-    for(int n = M - 1; n < N; ++n)
+    for(int n = n_start; n <= n_end; ++n)
         y_LS(num_el++) = y[n];
 
     return y_LS;
@@ -213,17 +237,18 @@ std::vector<std::complex<double>> DPD::applyGMP(
 {
     int P = source.GMP_P;
     int M = source.GMP_M;
-    int L = source.GMP_L;
+    int L_lag = source.GMP_L_lag;
+    int L_lead = source.GMP_L_lead;
     std::vector<std::complex<double>> x_pre(sig.size(), std::complex<double>(0.0, 0.0));
 
     double norm_coef = 1.0;
     if(source.NormalizationType == "RMS normalization")
         norm_coef = Gpeak/Grms;
 
-    for (int i = 0; i < M - 1 + L && i < static_cast<int>(sig.size()); ++i)
+    for (int i = 0; i < M - 1 + L_lag && i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
 
-    for (int n = M - 1 + L; n < static_cast<int>(sig.size()) - L; ++n) {
+    for (int n = M - 1 + L_lag; n < static_cast<int>(sig.size()) - L_lead; ++n) {
         int idx = 0;
         x_pre[n] = std::complex<double>(0.0, 0.0);
 
@@ -239,7 +264,7 @@ std::vector<std::complex<double>> DPD::applyGMP(
         // 2) lagging
         for (int p = 1; p <= P; p += 2) {
             for (int m = 0; m < M; ++m) {
-                for (int l = 1; l <= L; ++l) {
+                for (int l = 1; l <= L_lag; ++l) {
                     x_pre[n] += coeffs[idx++] *
                                 sig[n - m] * norm_coef *
                                 std::pow(std::abs(sig[n - m - l] * norm_coef), p - 1);
@@ -250,7 +275,7 @@ std::vector<std::complex<double>> DPD::applyGMP(
         // 3) leading
         for (int p = 1; p <= P; p += 2) {
             for (int m = 0; m < M; ++m) {
-                for (int l = 1; l <= L; ++l) {
+                for (int l = 1; l <= L_lead; ++l) {
                     x_pre[n] += coeffs[idx++] *
                                 sig[n - m] * norm_coef *
                                 std::pow(std::abs(sig[n - m + l] * norm_coef), p - 1);
@@ -259,7 +284,7 @@ std::vector<std::complex<double>> DPD::applyGMP(
         }
     }
 
-    for (int i = std::max(0, static_cast<int>(sig.size()) - L);
+    for (int i = std::max(0, static_cast<int>(sig.size()) - L_lead);
          i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
 

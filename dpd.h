@@ -29,8 +29,8 @@ private:
     double computeRMS(const std::vector<std::complex<double>>& sig);
     VectorXcd DPDsolve_least_squares(const MatrixXcd& A, const VectorXcd& b);
     MatrixXcd make_MP_mat(const std::vector<std::complex<double>>& x, const int P, const int M);
-    MatrixXcd make_GMP_mat(const std::vector<std::complex<double>>& x, const int P, const int M, const int L);
-    VectorXcd make_goal(const  std::vector<std::complex<double>>& y, const int M);
+    MatrixXcd make_GMP_mat(const std::vector<std::complex<double>>& x, const int P, const int M, const int L_lag, const int L_lead);
+    VectorXcd make_goal(const  std::vector<std::complex<double>>& y, const Source& source);
 };
 
 #endif // DPD_H
