@@ -29,6 +29,7 @@ public slots:
     void onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem*);
     void SignalTypeComboBoxTextChanged(const QString& comboxString);
     void PaModelTypeComboBoxTextChanged(const QString& comboxString);
+    void DPDTypeComboBoxTextChange(const QString& comboxString);
     void onGraphsListItemChanged(QListWidgetItem* current, QListWidgetItem*);
     void PaCurvePlot();
     void MakeMainCalcAndPlot();
@@ -51,6 +52,7 @@ private:
     void setupLabels();
     void setupMainPipelineTree();
     void SetupSelectedGraphsListWidget();
+    void SetupSelectedDPDType();
     void SetupMainLogicWork();
     void SetupWorker();
     void LockParChange();

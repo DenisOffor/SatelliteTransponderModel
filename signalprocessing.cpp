@@ -666,7 +666,13 @@ void SignalProcessing::DataUpdate(Source &UISource)
 
     MySource.MP_M = UISource.MP_M;
     MySource.MP_P = UISource.MP_P;
-    MySource.NormalizationType = UISource.NormalizationType;
+    MySource.MP_NormalizationType = UISource.MP_NormalizationType;
+
+    MySource.GMP_M = UISource.GMP_M;
+    MySource.GMP_P = UISource.GMP_P;
+    MySource.GMP_L_lag = UISource.GMP_L_lag;
+    MySource.GMP_L_lead = UISource.GMP_L_lead;
+    MySource.GMP_NormalizationType = UISource.GMP_NormalizationType;
 }
 
 Symbols &SignalProcessing::getSymbols()
