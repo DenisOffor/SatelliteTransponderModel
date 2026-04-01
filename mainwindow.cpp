@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupPaCurveToolButton();
     setupPACurvePlotting();
     SetupSelectedGraphsListWidget();
+    SetupSelectedDPDType();
     SetupMainLogicWork();
     CurrentRecalcNeeds.init();
     SetupCyclePushBtn();
@@ -188,9 +189,15 @@ void MainWindow::DataUpdate()
 
     if(senderObj == ui->MP_M_spinBox) { UISource.MP_M = ui->MP_M_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->MP_P_spinBox) { UISource.MP_M = ui->MP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->NormalizationType_ComboBox) { UISource.NormalizationType = ui->NormalizationType_ComboBox->currentText();
+    if(senderObj == ui->MP_NormalizationType_ComboBox) { UISource.MP_NormalizationType = ui->MP_NormalizationType_ComboBox->currentText();
         CurrentRecalcNeeds.DPDRecalc = true; }
 
+    if(senderObj == ui->GMP_M_spinBox) { UISource.GMP_M = ui->GMP_M_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->GMP_P_spinBox) { UISource.GMP_M = ui->GMP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->GMP_L_lag_spinBox) { UISource.GMP_L_lag = ui->GMP_L_lag_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->GMP_L_lead_spinBox) { UISource.GMP_L_lead = ui->GMP_L_lead_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->GMP_NormalizationType_ComboBox) { UISource.GMP_NormalizationType = ui->GMP_NormalizationType_ComboBox->currentText();
+        CurrentRecalcNeeds.DPDRecalc = true; }
 
     if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc)
         CurrentRecalcNeeds.DPDRecalc = true;
@@ -254,7 +261,13 @@ void MainWindow::FirstDataUpdate()
 
     UISource.MP_M = ui->MP_M_spinBox->value();
     UISource.MP_P = ui->MP_P_spinBox->value();
-    UISource.NormalizationType = ui->NormalizationType_ComboBox->currentText();
+    UISource.MP_NormalizationType = ui->MP_NormalizationType_ComboBox->currentText();
+
+    UISource.GMP_M = ui->GMP_M_spinBox->value();
+    UISource.GMP_P = ui->MP_P_spinBox->value();
+    UISource.GMP_P = ui->GMP_L_lag_spinBox->value();
+    UISource.GMP_P = ui->GMP_L_lead_spinBox->value();
+    UISource.GMP_NormalizationType = ui->GMP_NormalizationType_ComboBox->currentText();
 
     CurrentRecalcNeeds.init();
     MySigProc.DataUpdate(UISource);
@@ -359,6 +372,14 @@ void MainWindow::PaModelTypeComboBoxTextChanged(const QString& comboxString)
         ui->PaSettings_StackedWidget->setCurrentWidget(ui->Ghorbani_model_settings);
     else if (comboxString == "Wiener")
         ui->PaSettings_StackedWidget->setCurrentWidget(ui->Wiener_moodel_settings);
+}
+
+void MainWindow::DPDTypeComboBoxTextChange(const QString &comboxString)
+{
+    if (comboxString == "MP")
+        ui->PredPagesType_stackedWidget->setCurrentWidget(ui->MP_Page);
+    else if (comboxString == "GMP")
+        ui->PredPagesType_stackedWidget->setCurrentWidget(ui->GMP_Page);
 }
 
 //SETUP WINDOW///////////////////////////////////////////
@@ -502,6 +523,12 @@ void MainWindow::SetupSelectedGraphsListWidget()
     ui->SelectedGraphs_ListWidget->setCurrentRow(0);
     ui->GraphsListstackedWidget->setCurrentWidget(ui->ConstellationGraphsPage);
     connect(ui->SelectedGraphs_ListWidget, &QListWidget::currentItemChanged, this, &MainWindow::handleResult);
+}
+
+void MainWindow::SetupSelectedDPDType()
+{
+    connect(ui->PredistorterType_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::DPDTypeComboBoxTextChange);
+    ui->PredPagesType_stackedWidget->setCurrentWidget(ui->MP_Page);
 }
 
 void MainWindow::SetupMainLogicWork()

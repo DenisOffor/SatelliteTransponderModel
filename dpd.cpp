@@ -8,11 +8,11 @@ void DPD::train(const std::vector<std::complex<double>> &pa_input,
     int M = source.MP_M;
 
     std::vector<std::complex<double>> pa_output_norm;
-    if(source.NormalizationType == "Peak normalization") {
+    if(source.MP_NormalizationType == "Peak normalization") {
         Gpeak = computePeakGain(pa_input, pa_output);
         pa_output_norm = normalizeByGain(pa_output, Gpeak);
     }
-    else if(source.NormalizationType == "RMS normalization") {
+    else if(source.MP_NormalizationType == "RMS normalization") {
         Gpeak = computePeakGain(pa_input, pa_output);
         Grms = computeGrms(pa_input, pa_output);
         pa_output_norm = normalizeByGain(pa_output, Grms);
@@ -117,6 +117,51 @@ MatrixXcd DPD::make_MP_mat(const std::vector<std::complex<double>>& x, const int
     return Phi_LS;
 }
 
+MatrixXcd DPD::make_GMP_mat(const std::vector<std::complex<double>>& x, const int P, const int M, const int L)
+{
+    // y = Phi(x...)*a
+    // исключили первые M-1 отсчетов, чтобы не уходить в x[-1] и тд, то есть отрицательные отсчеты
+    int N = x.size();
+    int rows = N - M + 1;
+    int cols = M * (1 + 2 * L) * (P + 1) / 2;
+    MatrixXcd Phi_LS(rows, cols);
+
+    for (int n = M - 1 + L; n < N - L; ++n) {
+        int cur_row = n - (M - 1 + L);
+        int col_idx = 0;
+
+        // 1) aligned
+        for (int p = 1; p <= P; p += 2) {
+            for (int m = 0; m < M; ++m) {
+                Phi_LS(cur_row, col_idx++) =
+                    x[n - m] * std::pow(std::abs(x[n - m]), p - 1);
+            }
+        }
+
+        // 2) lagging
+        for (int p = 1; p <= P; p += 2) {
+            for (int m = 0; m < M; ++m) {
+                for (int l = 1; l <= L; ++l) {
+                    Phi_LS(cur_row, col_idx++) =
+                        x[n - m] * std::pow(std::abs(x[n - m - l]), p - 1);
+                }
+            }
+        }
+
+        // 3) leading
+        for (int p = 1; p <= P; p += 2) {
+            for (int m = 0; m < M; ++m) {
+                for (int l = 1; l <= L; ++l) {
+                    Phi_LS(cur_row, col_idx++) =
+                        x[n - m] * std::pow(std::abs(x[n - m + l]), p - 1);
+                }
+            }
+        }
+    }
+
+    return Phi_LS;
+}
+
 VectorXcd DPD::make_goal(const std::vector<std::complex<double>>& y, const int M) {
     int N = y.size();
     VectorXcd y_LS(N - M + 1);
@@ -159,6 +204,64 @@ std::vector<std::complex<double>> DPD::applyMP(
             }
         }
     }
+
+    return x_pre;
+}
+
+std::vector<std::complex<double>> DPD::applyGMP(
+    const std::vector<std::complex<double>>& sig, const Source& source)
+{
+    int P = source.GMP_P;
+    int M = source.GMP_M;
+    int L = source.GMP_L;
+    std::vector<std::complex<double>> x_pre(sig.size(), std::complex<double>(0.0, 0.0));
+
+    double norm_coef = 1.0;
+    if(source.NormalizationType == "RMS normalization")
+        norm_coef = Gpeak/Grms;
+
+    for (int i = 0; i < M - 1 + L && i < static_cast<int>(sig.size()); ++i)
+        x_pre[i] = sig[i] * norm_coef;
+
+    for (int n = M - 1 + L; n < static_cast<int>(sig.size()) - L; ++n) {
+        int idx = 0;
+        x_pre[n] = std::complex<double>(0.0, 0.0);
+
+        // 1) aligned
+        for (int p = 1; p <= P; p += 2) {
+            for (int m = 0; m < M; ++m) {
+                x_pre[n] += coeffs[idx++] *
+                            sig[n - m] * norm_coef *
+                            std::pow(std::abs(sig[n - m] * norm_coef), p - 1);
+            }
+        }
+
+        // 2) lagging
+        for (int p = 1; p <= P; p += 2) {
+            for (int m = 0; m < M; ++m) {
+                for (int l = 1; l <= L; ++l) {
+                    x_pre[n] += coeffs[idx++] *
+                                sig[n - m] * norm_coef *
+                                std::pow(std::abs(sig[n - m - l] * norm_coef), p - 1);
+                }
+            }
+        }
+
+        // 3) leading
+        for (int p = 1; p <= P; p += 2) {
+            for (int m = 0; m < M; ++m) {
+                for (int l = 1; l <= L; ++l) {
+                    x_pre[n] += coeffs[idx++] *
+                                sig[n - m] * norm_coef *
+                                std::pow(std::abs(sig[n - m + l] * norm_coef), p - 1);
+                }
+            }
+        }
+    }
+
+    for (int i = std::max(0, static_cast<int>(sig.size()) - L);
+         i < static_cast<int>(sig.size()); ++i)
+        x_pre[i] = sig[i] * norm_coef;
 
     return x_pre;
 }
