@@ -65,9 +65,6 @@ OfdmResult OFDM::makeOfdm(const std::vector<std::complex<double> > &symbols, con
         //    }
     }
 
-    if(p.SNR_dB > 0)
-        addAwgn(res, p.SNR_dB);
-
     return res;
 }
 
@@ -226,33 +223,6 @@ std::vector<std::complex<double> > OFDM::ofdm_subcarrier_demapping(const std::ve
     return data;
 }
 
-void OFDM::addAwgn(OfdmResult &x, double SNR_dB)
-{
-    // Считаем мощность сигнала
-    double power = 0;
-    for(const auto& v : x.tx)
-        power += std::norm(v);  // norm = real^2 + imag^2
-    power /= x.tx.size();
-
-    // Считаем дисперсию шума
-    double snr = std::pow(10.0, SNR_dB / 10.0);
-    double noiseVar = power / snr;
-    double noiseStd = std::sqrt(noiseVar / 2);  // /2 потому что шум комплексный (I и Q компоненты)
-
-    // Генератор шума
-    static std::default_random_engine gen(std::random_device{}());  // static чтоб каждый раз не создавать
-    std::normal_distribution<double> dist(0.0, noiseStd);
-
-    // Добавляем шум
-    x.currentNoise.resize(x.tx.size());
-    for(int i = 0; i < x.tx.size(); ++i) {
-        double noiseI = dist(gen);  // действительная часть
-        double noiseQ = dist(gen);  // мнимая часть
-        x.currentNoise[i] = std::complex<double>(noiseI, noiseQ);
-        x.tx[i] += x.currentNoise[i];
-    }
-}
-
 void OFDM::changeFc(OfdmResult &x, OfdmParams& p)
 {
     double invFs = 1.0 / (p.fs * p.oversampling);
@@ -289,34 +259,4 @@ void OFDM::changeFc(OfdmResult &x, OfdmParams& p)
     }
 
     x.fc = p.fc;
-}
-
-void OFDM::changeAwgn(OfdmResult &x, OfdmParams &p)
-{
-    for(int i = 0; i < x.tx.size(); ++i)
-        x.tx[i] -= x.currentNoise[i];
-
-    // Считаем мощность сигнала
-    double power = 0;
-    for(const auto& v : x.tx)
-        power += std::norm(v);  // norm = real^2 + imag^2
-    power /= x.tx.size();
-
-    // Считаем дисперсию шума
-    double snr = std::pow(10.0, p.SNR_dB / 10.0);
-    double noiseVar = power / snr;
-    double noiseStd = std::sqrt(noiseVar / 2);  // /2 потому что шум комплексный (I и Q компоненты)
-
-    // Генератор шума
-    static std::default_random_engine gen(std::random_device{}());  // static чтоб каждый раз не создавать
-    std::normal_distribution<double> dist(0.0, noiseStd);
-
-    // Добавляем шум
-
-    for(int i = 0; i < x.tx.size(); ++i) {
-        double noiseI = dist(gen);  // действительная часть
-        double noiseQ = dist(gen);  // мнимая часть
-        x.currentNoise[i] = std::complex<double>(noiseI, noiseQ);
-        x.tx[i] += x.currentNoise[i];
-    }
 }

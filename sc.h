@@ -40,7 +40,6 @@ public:
         const std::vector<std::complex<double>>& tx_signal, const std::vector<std::complex<double>> &sym_clean,
         const ScParams& p,
         ScParams& updatedParams);
-    void changeAwgn(ScResult &x, ScParams &p);
 
 private:
     std::vector<std::complex<double>> upsample(
@@ -59,8 +58,6 @@ private:
         const std::vector<std::complex<double>>& x,
         const std::vector<double>& h,
         int sps);
-
-    void addAwgn(ScResult &x, double SNR_dB);
 };
 
 #endif // SC_H

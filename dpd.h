@@ -20,6 +20,7 @@ public:
 private:
     double Gpeak;
     double Grms;
+
     double computePeakGain(const std::vector<std::complex<double>>& pa_input,
                                 const std::vector<std::complex<double>>& pa_output);
     std::vector<std::complex<double>> normalizeByGain(const std::vector<std::complex<double>>& pa_output,

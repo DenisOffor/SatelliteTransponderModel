@@ -37,7 +37,6 @@ public:
         const std::vector<std::complex<double>> &sym_clean,
         const OfdmParams& p);
     void changeFc(OfdmResult &x, OfdmParams& p);
-    void changeAwgn(OfdmResult &x, OfdmParams& p);
 private:
     std::vector<std::vector<std::complex<double>>> ofdmSubcarrierMapping(
         const std::vector<std::complex<double>>& dataSymbols,
@@ -45,7 +44,6 @@ private:
     std::vector<std::complex<double>> ofdm_subcarrier_demapping(
         const std::vector<std::vector<std::complex<double>>>& X,
         const int Nfft, const int GB_DC, const int GB_Nyq, const int NumSym);
-    void addAwgn(OfdmResult &x, double SNR_dB);
 };
 
 #endif // OFDM_H

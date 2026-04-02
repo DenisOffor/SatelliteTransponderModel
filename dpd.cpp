@@ -185,7 +185,7 @@ VectorXcd DPD::make_goal(const std::vector<std::complex<double>>& y, const Sourc
         n_end = N;
     }
     else if (source.PredistorterType == "GMP") {
-        n_start = source.MP_M - 1 + source.GMP_L_lag;
+        n_start = source.GMP_M - 1 + source.GMP_L_lag;
         n_end = N - source.GMP_L_lead;
     }
     VectorXcd y_LS(n_end - n_start);

@@ -43,11 +43,9 @@ public:
     std::vector<std::vector<std::complex<double>>> demodulate(
     const std::vector<std::complex<double>>& rxSignal, std::vector<Symbols>& symbols,
         const FdmaParams& p, const ScParams& sc_p);
-    void changeAwgn(FdmaResult &x, FdmaParams &p);
 
 private:
     SC& sc;
-    void addAwgn(FdmaResult &x, double SNR_dB);
 };
 
 #endif // FDMA_H

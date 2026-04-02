@@ -56,8 +56,22 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
     MyMetricsEval.comparePSD(CurrentRes.pa_sig, CurrentRes.pa_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[2], PSDs[3]);
     qDebug() << "PSD time:" << timer.elapsed() << "ms";
 
-    std::tie(CurrentRes.BER_noDPD, CurrentRes.BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
-    std::tie(CurrentRes.EVM_noDPD, CurrentRes.EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
+    static int num_iter = 1;
+    if(CurrentRecalcNeeds.CycleMode == true) {
+        double BER_noDPD, BER_withDPD, EVM_noDPD, EVM_withDPD;
+        std::tie(BER_noDPD, BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
+        std::tie(EVM_noDPD, EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
+
+        CurrentRes.BER_noDPD = (CurrentRes.BER_noDPD * MySource.NumSym + BER_noDPD * MySource.NumSym) / ((++num_iter) * MySource.NumSym);
+        CurrentRes.BER_withDPD = (CurrentRes.BER_withDPD * MySource.NumSym + BER_withDPD * MySource.NumSym) / (num_iter * MySource.NumSym);;
+        CurrentRes.EVM_noDPD = (CurrentRes.EVM_noDPD * (num_iter - 1) + EVM_noDPD) / num_iter;
+        CurrentRes.EVM_withDPD = (CurrentRes.EVM_withDPD * (num_iter - 1)  + EVM_withDPD) / num_iter;
+    }
+    else if(CurrentRecalcNeeds.CycleMode == false) {
+        num_iter = 1;
+        std::tie(CurrentRes.BER_noDPD, CurrentRes.BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
+        std::tie(CurrentRes.EVM_noDPD, CurrentRes.EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
+    }
 }
 
 void SignalProcessing::GeneratePacksOfSymbols(std::vector<Symbols>& Symbols, Source& source, NeedToRecalc& CurrentRecalcNeeds)
@@ -243,7 +257,8 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     temp.RecalcNoiseSym = false;
 
     std::vector<Symbols> TrainSymbols;
-
+    int sym = MySource.NumSym;
+    MySource.NumSym = 1000;
     GlobalResults TrainRes;
     GeneratePacksOfSymbols(TrainSymbols, MySource, temp);
     TransmitSignalProcessing(MySource, TrainSymbols, temp, TrainRes);
@@ -297,7 +312,7 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
 
     mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource);
     //mydpd.trainIterative(TrainRes.tx_sig, PA_noscale, MySource.MP_P, MySource.MP_M, 3);
-
+    MySource.NumSym = sym;
     CurrentRecalcNeeds.PARecalc = true;
 }
 
@@ -362,11 +377,7 @@ void SignalProcessing::TransmitSignalProcessing(Source& source, std::vector<Symb
 {
     if(source.SigType == "OFDM") {
         OfdmParams ofdm_parms = GetOfdmParams(source);
-        if(CurrentRecalcNeeds.RecalcNoiseSig)
-            myOfdm.changeAwgn(CurrentOfdmResults, ofdm_parms);
-        else {
-            CurrentOfdmResults = myOfdm.makeOfdm(symbols[0].tr_sym_noisy, ofdm_parms);
-        }
+        CurrentOfdmResults = myOfdm.makeOfdm(symbols[0].tr_sym_clean, ofdm_parms);
         CurRes.clear();
         CurRes.resize(CurrentOfdmResults.tx.size());
         CurRes.tx_sig = CurrentOfdmResults.tx;
@@ -375,10 +386,7 @@ void SignalProcessing::TransmitSignalProcessing(Source& source, std::vector<Symb
     else if(source.SigType == "FDMA") {
         FdmaParams fdma_parms = GetFDMAParams(source);
         ScParams sc_params = GetSCParams(source);
-        if(CurrentRecalcNeeds.RecalcNoiseSig)
-            myFdma.changeAwgn(CurrentFdmaResults, fdma_parms);
-        else
-            CurrentFdmaResults = myFdma.generate(symbols, fdma_parms, sc_params);
+        CurrentFdmaResults = myFdma.generate(symbols, fdma_parms, sc_params);
         CurRes.clear();
         CurRes.resize(CurrentFdmaResults.tx.size());
         CurRes.tx_sig = CurrentFdmaResults.tx;
@@ -386,11 +394,7 @@ void SignalProcessing::TransmitSignalProcessing(Source& source, std::vector<Symb
     }
     else if(source.SigType == "SC") {
         ScParams sc_params = GetSCParams(source);
-        if(CurrentRecalcNeeds.RecalcNoiseSig && !CurrentRecalcNeeds.FullRecalc)
-            mySC.changeAwgn(CurrentSCResults, sc_params);
-        else {
-            CurrentSCResults = mySC.makeSc(symbols[0].tr_sym_noisy, sc_params);
-        }
+        CurrentSCResults = mySC.makeSc(symbols[0].tr_sym_clean, sc_params);
         CurRes.clear();
         CurRes.resize(CurrentSCResults.tx.size());
         CurRes.tx_sig = CurrentSCResults.tx;
@@ -442,6 +446,8 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
                                        source.GhorbaniCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
             }
         }
+        addAwgn(CurRes.pa_sig, source.SNRSig);
+        addAwgn(CurRes.pa_plus_dpd_sig, source.SNRSig);
     }
 }
 
@@ -677,6 +683,31 @@ void SignalProcessing::DataUpdate(Source &UISource)
 
     MySource.NormalizationType = UISource.NormalizationType;
     MySource.PredistorterType = UISource.PredistorterType;
+}
+
+void SignalProcessing::addAwgn(std::vector<std::complex<double>> &x, double SNR_dB)
+{
+    // Считаем мощность сигнала
+    double power = 0;
+    for(const auto& v : x)
+        power += std::norm(v);  // norm = real^2 + imag^2
+    power /= x.size();
+
+    // Считаем дисперсию шума
+    double snr = std::pow(10.0, SNR_dB / 10.0);
+    double noiseVar = power / snr;
+    double noiseStd = std::sqrt(noiseVar / 2);  // /2 потому что шум комплексный (I и Q компоненты)
+
+    // Генератор шума
+    static std::default_random_engine gen(std::random_device{}());  // static чтоб каждый раз не создавать
+    std::normal_distribution<double> dist(0.0, noiseStd);
+
+    // Добавляем шум
+    for(int i = 0; i < x.size(); ++i) {
+        double noiseI = dist(gen);  // действительная часть
+        double noiseQ = dist(gen);  // мнимая часть
+        x[i] += std::complex<double>(noiseI, noiseQ);
+    }
 }
 
 Symbols &SignalProcessing::getSymbols()

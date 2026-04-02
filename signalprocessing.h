@@ -47,6 +47,7 @@ private:
     void Demodulate(Symbols& symbols, const std::vector<std::complex<double>>& constellation);
     void InitializeConstellations();
     void RecalcDPD(NeedToRecalc& CurrentRecalcNeeds);
+    void addAwgn(std::vector<std::complex<double>> &x, double SNR_dB);
     std::vector<std::complex<double>>& getCurrentConstellation(Source& source);
 public:
     SignalProcessing();

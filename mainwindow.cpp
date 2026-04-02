@@ -307,7 +307,11 @@ void MainWindow::handleResult()
     qDebug() << "\n";
 
     ui->BER_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_noDPD);
+    ui->BER_noDPD_label->setText(QString::number(MySigProc.getTimeSignal().BER_noDPD, 'e', 2));
+
     ui->BER_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_withDPD);
+    ui->BER_withDPD_label->setText(QString::number(MySigProc.getTimeSignal().BER_withDPD, 'e', 2));
+
     ui->EVM_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_noDPD);
     ui->EVM_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_withDPD);
 }
@@ -316,10 +320,12 @@ void MainWindow::cycleBtnClicked()
 {
     if(ui->Cycle_pushButton->isChecked()) {
         LockParChange();
-        timer->start(300);
+        timer->start(400);
+        CurrentRecalcNeeds.CycleMode = true;
     } else {
         UnLockParChange();
         timer->stop();
+        CurrentRecalcNeeds.CycleMode = false;
     }
 }
 
@@ -423,6 +429,7 @@ void MainWindow::setupSplitter()
 void MainWindow::setupLabels()
 {
     ui->progressBar->setEnabled(false);
+    ui->progressBar->setVisible(false);
     ui->progressBar->setRange(0,0);
     ui->progressBar->setStyleSheet(
         "QProgressBar {"
@@ -615,6 +622,7 @@ void MainWindow::SetupCyclePushBtn()
 void MainWindow::LockParChange()
 {
     ui->progressBar->setEnabled(true);
+    ui->progressBar->setVisible(true);
 
     ui->ModTypeComboBox->setEnabled(false);
     ui->SNRSymSpinBox->setEnabled(false);
@@ -663,11 +671,20 @@ void MainWindow::LockParChange()
 
     ui->MP_M_spinBox->setEnabled(false);
     ui->MP_P_spinBox->setEnabled(false);
+
+    ui->GMP_M_spinBox->setEnabled(false);
+    ui->GMP_P_spinBox->setEnabled(false);
+    ui->GMP_L_lag_spinBox->setEnabled(false);
+    ui->GMP_L_lead_spinBox->setEnabled(false);
+
+    ui->NormalizationType_ComboBox->setEnabled(false);
+    ui->PredistorterType_comboBox->setEnabled(false);
 }
 
 void MainWindow::UnLockParChange()
 {
     ui->progressBar->setEnabled(false);
+    ui->progressBar->setVisible(false);
 
     ui->ModTypeComboBox->setEnabled(true);
     ui->SNRSymSpinBox->setEnabled(true);
@@ -716,6 +733,14 @@ void MainWindow::UnLockParChange()
 
     ui->MP_M_spinBox->setEnabled(true);
     ui->MP_P_spinBox->setEnabled(true);
+
+    ui->GMP_M_spinBox->setEnabled(true);
+    ui->GMP_P_spinBox->setEnabled(true);
+    ui->GMP_L_lag_spinBox->setEnabled(true);
+    ui->GMP_L_lead_spinBox->setEnabled(true);
+
+    ui->NormalizationType_ComboBox->setEnabled(true);
+    ui->PredistorterType_comboBox->setEnabled(true);
 }
 
 void MainWindow::onGraphsListItemChanged(QListWidgetItem* current, QListWidgetItem*) {

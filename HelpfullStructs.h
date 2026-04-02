@@ -151,6 +151,7 @@ struct NeedToRecalc{
     bool TimePlotsRescale;
     bool PaCurveReplot;
     bool DPDRecalc;
+    bool CycleMode;
 
     void init() {
         RecalcSymbols = true;
@@ -162,6 +163,7 @@ struct NeedToRecalc{
         TimePlotsRescale = true;
         PaCurveReplot = true;
         DPDRecalc = true;
+        CycleMode = false;
     }
 
     void clear() {
@@ -174,6 +176,7 @@ struct NeedToRecalc{
         TimePlotsRescale = false;
         PaCurveReplot = false;
         DPDRecalc = false;
+        CycleMode = false;
     }
 };
 
@@ -198,6 +201,7 @@ struct GlobalResults {
         pa_sig.resize(size);
         pa_plus_dpd_sig.resize(size);
         rec_sig.resize(size);
+        time.clear();
     }
 
     void clear() {
@@ -205,6 +209,7 @@ struct GlobalResults {
         pa_sig.clear();
         pa_plus_dpd_sig.clear();
         rec_sig.clear();
+        time.clear();
     }
 };
 

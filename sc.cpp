@@ -75,9 +75,6 @@ ScResult SC::makeSc(const std::vector<std::complex<double>>& inputSymbols,
         }
     }
 
-    if(p.SNR_dB > 0)
-        addAwgn(res, p.SNR_dB);
-
     return res;
 }
 
@@ -199,32 +196,6 @@ std::vector<std::complex<double>> SC::filterSignal(
     }
 
     return y;
-}
-
-void SC::addAwgn(ScResult &x, double SNR_dB)
-{
-    double power = 0;
-    for(const auto& v : x.tx)
-        power += std::norm(v);
-    power /= x.tx.size();
-
-    double snr = std::pow(10.0, SNR_dB/10.0);
-    double noiseVar = power / snr;
-    double noiseStd = std::sqrt(noiseVar/2);
-
-    static std::default_random_engine gen(std::random_device{}());
-    std::normal_distribution<double> dist(0.0, noiseStd);
-
-    x.currentNoise.resize(x.tx.size());
-
-    for(int i=0;i<x.tx.size();++i)
-    {
-        double ni = dist(gen);
-        double nq = dist(gen);
-
-        x.currentNoise[i] = {ni, nq};
-        x.tx[i] += x.currentNoise[i];
-    }
 }
 
 std::vector<std::complex<double>> SC::demodulateSignal(
@@ -349,34 +320,4 @@ std::vector<std::complex<double>> SC::matchedFilterDecimate(
     }
 
     return out;
-}
-
-void SC::changeAwgn(ScResult &x, ScParams &p)
-{
-    for(int i = 0; i < x.tx.size(); ++i)
-        x.tx[i] -= x.currentNoise[i];
-
-    // Считаем мощность сигнала
-    double power = 0;
-    for(const auto& v : x.tx)
-        power += std::norm(v);  // norm = real^2 + imag^2
-    power /= x.tx.size();
-
-    // Считаем дисперсию шума
-    double snr = std::pow(10.0, p.SNR_dB / 10.0);
-    double noiseVar = power / snr;
-    double noiseStd = std::sqrt(noiseVar / 2);  // /2 потому что шум комплексный (I и Q компоненты)
-
-    // Генератор шума
-    static std::default_random_engine gen(std::random_device{}());  // static чтоб каждый раз не создавать
-    std::normal_distribution<double> dist(0.0, noiseStd);
-
-    // Добавляем шум
-
-    for(int i = 0; i < x.tx.size(); ++i) {
-        double noiseI = dist(gen);  // действительная часть
-        double noiseQ = dist(gen);  // мнимая часть
-        x.currentNoise[i] = std::complex<double>(noiseI, noiseQ);
-        x.tx[i] += x.currentNoise[i];
-    }
 }
