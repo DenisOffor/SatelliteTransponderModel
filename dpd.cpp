@@ -28,9 +28,6 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
         Grms = computeGrms(pa_input, pa_output);
         pa_output_norm = normalizeByGain(pa_output, Grms);
     }
-    else {
-        pa_output_norm = pa_output;
-    }
 
     QElapsedTimer timer;
     timer.start();
@@ -126,6 +123,7 @@ MatrixXcd DPD::make_MP_mat(const std::vector<std::complex<double>>& x, const int
     int rows = N - M + 1;
     int cols = M * (P + 1) / 2;
     MatrixXcd Phi_LS(rows, cols);
+    qDebug() << "MP mat: " << rows << "x" << cols;
 
     for(int n = M - 1; n < N; ++n) {
         size_t cur_row = n - M + 1;
@@ -147,6 +145,8 @@ MatrixXcd DPD::make_GMP_mat(const std::vector<std::complex<double>>& x,
     int rows = N - M - L_lag - L_lead + 1;
     int cols = M * (1 + L_lag + L_lead) * ((P + 1) / 2);
     MatrixXcd Phi_LS(rows, cols);
+
+    qDebug() << "GMP mat:" << rows << "x" << cols;
 
     for (int n = M - 1 + L_lag; n < N - L_lead; ++n) {
         int cur_row = n - (M - 1 + L_lag);
@@ -182,16 +182,16 @@ VectorXcd DPD::make_goal(const std::vector<std::complex<double>>& y, const Sourc
     int n_end = 0;
     if(source.PredistorterType == "MP") {
         n_start = source.MP_M - 1;
-        n_end = N - 1;
+        n_end = N;
     }
     else if (source.PredistorterType == "GMP") {
         n_start = source.MP_M - 1 + source.GMP_L_lag;
-        n_end = N - 1 - source.GMP_L_lead;
+        n_end = N - source.GMP_L_lead;
     }
-    VectorXcd y_LS(n_end - n_start + 1);
+    VectorXcd y_LS(n_end - n_start);
 
     size_t num_el = 0;
-    for(int n = n_start; n <= n_end; ++n)
+    for(int n = n_start; n < n_end; ++n)
         y_LS(num_el++) = y[n];
 
     return y_LS;
