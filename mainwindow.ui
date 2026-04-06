@@ -270,7 +270,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -400,11 +400,14 @@
             </property>
             <item>
              <widget class="QSpinBox" name="NumSymSpinBox">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="maximum">
-               <number>800</number>
+               <number>1000</number>
               </property>
               <property name="value">
-               <number>800</number>
+               <number>1000</number>
               </property>
              </widget>
             </item>
@@ -3308,6 +3311,19 @@
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="DPDRecalc_pushButton">
+           <property name="font">
+            <font>
+             <family>Times New Roman</family>
+             <pointsize>14</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Рассчитать DPD</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QGroupBox" name="groupBox_5">
            <property name="title">
             <string/>
@@ -4050,7 +4066,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>139</height>
+                 <height>665</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -4110,7 +4126,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>Спектр после УМ</string>
+                     <string>Спектр после DPD</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_60">
                      <property name="spacing">

@@ -114,7 +114,7 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->SNRSymSpinBox) { UISource.SNRSymdB = ui->SNRSymSpinBox->value(); CurrentRecalcNeeds.RecalcNoiseSym = true; }
     if(senderObj == ui->NumSymSpinBox) { UISource.NumSym = ui->NumSymSpinBox->value(); CurrentRecalcNeeds.FullRecalc = true; }
     if(senderObj == ui->SignalTypeComboBox) { UISource.SigType = ui->SignalTypeComboBox->currentText();
-        CurrentRecalcNeeds.FullRecalc = true; CurrentRecalcNeeds.TimePlotsRescale = true; CurrentRecalcNeeds.DPDRecalc = true; }
+        CurrentRecalcNeeds.FullRecalc = true; CurrentRecalcNeeds.TimePlotsRescale = true; /*CurrentRecalcNeeds.DPDRecalc = true; */}
 
     if(senderObj == ui->SC_fc_SpinBox) { UISource.SC_f_carrier = ui->SC_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->SC_SymRate_SpinBox) { UISource.SC_symrate = ui->SC_SymRate_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
@@ -187,21 +187,21 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->PAModel_ComboBox) {UISource.PAModel = ui->PAModel_ComboBox->currentText();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; CurrentRecalcNeeds.TimePlotsRescale = true;}
 
-    if(senderObj == ui->MP_M_spinBox) { UISource.MP_M = ui->MP_M_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->MP_P_spinBox) { UISource.MP_M = ui->MP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->MP_M_spinBox) { UISource.MP_M = ui->MP_M_spinBox->value(); /*CurrentRecalcNeeds.DPDRecalc = true;*/ }
+    if(senderObj == ui->MP_P_spinBox) { UISource.MP_M = ui->MP_P_spinBox->value(); /*CurrentRecalcNeeds.DPDRecalc = true;*/ }
 
-    if(senderObj == ui->GMP_M_spinBox) { UISource.GMP_M = ui->GMP_M_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->GMP_P_spinBox) { UISource.GMP_M = ui->GMP_P_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->GMP_L_lag_spinBox) { UISource.GMP_L_lag = ui->GMP_L_lag_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->GMP_L_lead_spinBox) { UISource.GMP_L_lead = ui->GMP_L_lead_spinBox->value(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->GMP_M_spinBox) { UISource.GMP_M = ui->GMP_M_spinBox->value(); /*CurrentRecalcNeeds.DPDRecalc = true;*/ }
+    if(senderObj == ui->GMP_P_spinBox) { UISource.GMP_M = ui->GMP_P_spinBox->value(); /*CurrentRecalcNeeds.DPDRecalc = true;*/ }
+    if(senderObj == ui->GMP_L_lag_spinBox) { UISource.GMP_L_lag = ui->GMP_L_lag_spinBox->value(); /*CurrentRecalcNeeds.DPDRecalc = true;*/ }
+    if(senderObj == ui->GMP_L_lead_spinBox) { UISource.GMP_L_lead = ui->GMP_L_lead_spinBox->value(); /*CurrentRecalcNeeds.DPDRecalc = true;*/ }
 
     if(senderObj == ui->NormalizationType_ComboBox) { UISource.NormalizationType = ui->NormalizationType_ComboBox->currentText();
-        CurrentRecalcNeeds.DPDRecalc = true; }
+        /*CurrentRecalcNeeds.DPDRecalc = true; */}
     if(senderObj == ui->PredistorterType_comboBox) { UISource.PredistorterType = ui->PredistorterType_comboBox->currentText();
-        CurrentRecalcNeeds.DPDRecalc = true; }
+        /*CurrentRecalcNeeds.DPDRecalc = true; */}
 
-    if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc)
-        CurrentRecalcNeeds.DPDRecalc = true;
+    //if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc)
+    //    CurrentRecalcNeeds.DPDRecalc = true;
 
     qDebug() << "Сигнал получен от:" << senderObj->metaObject()->className();
     MySigProc.DataUpdate(UISource);
@@ -273,6 +273,7 @@ void MainWindow::FirstDataUpdate()
 
     CurrentRecalcNeeds.init();
     MySigProc.DataUpdate(UISource);
+    emit ui->DPDRecalc_pushButton->pressed();
     MakeMainCalcAndPlot();
 }
 
@@ -320,13 +321,25 @@ void MainWindow::cycleBtnClicked()
 {
     if(ui->Cycle_pushButton->isChecked()) {
         LockParChange();
-        timer->start(400);
+        timer->start(100);
         CurrentRecalcNeeds.CycleMode = true;
+        UISource.NumSym = 200;
+        MySigProc.DataUpdate(UISource);
     } else {
         UnLockParChange();
         timer->stop();
         CurrentRecalcNeeds.CycleMode = false;
+        CurrentRecalcNeeds.FullRecalc = true;
+        UISource.NumSym = 1000;
+        MySigProc.DataUpdate(UISource);
+        MakeMainCalcAndPlot();
     }
+}
+
+void MainWindow::DPDRecalcBtnClicked()
+{
+    CurrentRecalcNeeds.DPDRecalc = true;
+    MakeMainCalcAndPlot();
 }
 
 void MainWindow::CycleModeSlot()
@@ -418,7 +431,7 @@ void MainWindow::setupSplitter()
 {
     // Устанавливаем пропорции разделителя: 30% дерево, 70% остальное
     QList<int> sizes;
-    sizes << width() * 0.12 << width() * 0.28 << width() * 0.6;
+    sizes << width() * 0.09 << width() * 0.24 << width() * 0.67;
     ui->splitter->setSizes(sizes);
 
     ui->splitter->setStretchFactor(0, 1);  // pipelineTree
@@ -592,6 +605,7 @@ void MainWindow::SetupMainLogicWork()
 
     connect(ui->NormalizationType_ComboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
     connect(ui->PredistorterType_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
+    connect(ui->DPDRecalc_pushButton, &QPushButton::clicked, this, &MainWindow::DPDRecalcBtnClicked);  // &this->MySigProc
 }
 
 void MainWindow::SetupWorker()

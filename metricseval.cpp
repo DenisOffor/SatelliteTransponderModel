@@ -26,23 +26,53 @@ std::vector<std::complex<double>> MetricsEval::normalizeSignal(
     return tx_norm;
 }
 
-void MetricsEval::comparePSD(
+// void MetricsEval::comparePSD(
+//     const std::vector<std::complex<double>>& tx,
+//     const std::vector<std::complex<double>>& rx,
+//     double Fs,
+//     double oversample,
+//     std::vector<double>& freq,
+//     std::vector<double>& psd_tx,
+//     std::vector<double>& psd_rx)
+// {
+//     if(sig_buff.size() > WINDOW_SISE * 2) {
+//         sig_buff.clear();
+//     }
+
+//     for(int i = 0; i < tx.size())
+
+
+//     freq.clear();
+//     psd_rx.clear();
+//     psd_tx.clear();
+//     auto tx_norm = normalizeSignal(tx);
+//     auto rx_norm = normalizeSignal(rx);
+
+//     computePSDWelch(tx_norm, Fs, oversample, freq, psd_tx);
+//     computePSDWelch(rx_norm, Fs, oversample, freq, psd_rx);
+// }
+
+void MetricsEval::computePSD(
     const std::vector<std::complex<double>>& tx,
-    const std::vector<std::complex<double>>& rx,
     double Fs,
     double oversample,
     std::vector<double>& freq,
-    std::vector<double>& psd_tx,
-    std::vector<double>& psd_rx)
+    std::vector<double>& psd_tx)
 {
-    freq.clear();
-    psd_rx.clear();
-    psd_tx.clear();
-    auto tx_norm = normalizeSignal(tx);
-    auto rx_norm = normalizeSignal(rx);
+    if(sig_buff.size() > WINDOW_SISE * 2)
+        sig_buff.clear();
 
+    for(int i = 0; i < tx.size(); ++i)
+        sig_buff.push_back(tx[i]);
+
+    if(sig_buff.size() < WINDOW_SISE * 2)
+        return;
+
+
+    freq.clear();
+    psd_tx.clear();
+    auto tx_norm = normalizeSignal(sig_buff);
     computePSDWelch(tx_norm, Fs, oversample, freq, psd_tx);
-    computePSDWelch(rx_norm, Fs, oversample, freq, psd_rx);
 }
 
 QPair<double, double> MetricsEval::Calc_BER(std::vector<Symbols> &symbols)

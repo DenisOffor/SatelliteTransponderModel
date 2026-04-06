@@ -172,7 +172,7 @@ void GraphPlotting::PlotPSDPlots(const std::vector<std::vector<double>>& PSDs, c
 
     if(!PSDs.empty() && !freqs.empty()) {
         plotsOfPSD[0]->graph(0)->setData(qfreqs[0], qPSDs[0]);
-        plotsOfPSD[1]->graph(0)->setData(qfreqs[0], qPSDs[1]);
+        plotsOfPSD[1]->graph(0)->setData(qfreqs[0], qPSDs[2]);
         plotsOfPSD[0]->graph(0)->rescaleAxes();
         plotsOfPSD[1]->graph(0)->rescaleAxes();
         plotsOfPSD[0]->replot();
@@ -184,10 +184,15 @@ void GraphPlotting::PlotPSDPlots(const std::vector<std::vector<double>>& PSDs, c
         plotsOfPSD[3]->replot();
 
 
-        plotsOfPSD[4]->graph(0)->setData(qfreqs[0], qPSDs[2]);
+        plotsOfPSD[4]->graph(0)->setData(qfreqs[0], qPSDs[1]);
         plotsOfPSD[4]->graph(1)->setData(qfreqs[0], qPSDs[3]);
         plotsOfPSD[4]->graph(0)->rescaleAxes();
         plotsOfPSD[4]->replot();
+
+        plotsOfPSD[5]->graph(0)->setData(qfreqs[0], qPSDs[0]);
+        plotsOfPSD[5]->graph(1)->setData(qfreqs[0], qPSDs[2]);
+        plotsOfPSD[5]->graph(0)->rescaleAxes();
+        plotsOfPSD[5]->replot();
     }
 }
 
@@ -456,6 +461,10 @@ void GraphPlotting::InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets)
             if(i == 4) {
                 plotsOfPSD[i]->graph(0)->setName("PA no DPD");
                 plotsOfPSD[i]->graph(1)->setName("PA with DPD");
+            }
+            if(i == 5) {
+                plotsOfPSD[i]->graph(0)->setName("tx no DPD");
+                plotsOfPSD[i]->graph(1)->setName("tx with DPD");
             }
             plotsOfPSD[i]->legend->setVisible(true);
             plotsOfPSD[i]->graph(1)->setPen(QPen(Qt::red));

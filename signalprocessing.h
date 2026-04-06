@@ -46,7 +46,6 @@ private:
     int DemodulateSymbol(const std::complex<double>& r, const std::vector<std::complex<double>>& constellation);
     void Demodulate(Symbols& symbols, const std::vector<std::complex<double>>& constellation);
     void InitializeConstellations();
-    void RecalcDPD(NeedToRecalc& CurrentRecalcNeeds);
     void addAwgn(std::vector<std::complex<double>> &x, double SNR_dB);
     std::vector<std::complex<double>>& getCurrentConstellation(Source& source);
 public:
@@ -61,6 +60,7 @@ public:
     std::vector<std::vector<double>> getFreq();
     std::vector<std::vector<double>> getPSDs();
     PaCurve& getPaCurve();
+    void RecalcDPD(NeedToRecalc& CurrentRecalcNeeds);
 
 public slots:
     void MainLogicWork(NeedToRecalc CurrentRecalcNeeds);

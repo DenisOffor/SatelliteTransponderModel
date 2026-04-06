@@ -10,6 +10,7 @@ class MetricsEval
 private:
     FFT fftw8192;
     std::vector<double> window;
+    std::vector<std::complex<double>> sig_buff;
 public:
     MetricsEval();
     void computePSDWelch(const std::vector<std::complex<double>>& tx, double Fs, double oversample,
@@ -19,6 +20,12 @@ public:
     void comparePSD(const std::vector<std::complex<double>>& tx,
                     const std::vector<std::complex<double>>& rx, double Fs, double oversample,
                     std::vector<double>& freq, std::vector<double>& psd_tx, std::vector<double>& psd_rx);
+    void computePSD(
+        const std::vector<std::complex<double>>& tx,
+        double Fs,
+        double oversample,
+        std::vector<double>& freq,
+        std::vector<double>& psd_tx);
     QPair<double, double> Calc_BER(std::vector<Symbols>& symbols);
     QPair<double, double> Calc_EVM(const std::vector<Symbols>& frames);
 };

@@ -64,6 +64,7 @@ private:
 private slots:
     void handleResult();
     void cycleBtnClicked();
+    void DPDRecalcBtnClicked();
     void CycleModeSlot();
 signals:
     void startSimulation(SignalProcessing* sig, NeedToRecalc recalc);

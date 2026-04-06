@@ -52,8 +52,11 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
     qDebug() << "Rec time:" << timer.elapsed() << "ms";
 
     timer.restart();
-    MyMetricsEval.comparePSD(CurrentRes.tx_sig, CurrentRes.pa_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[0], PSDs[1]);
-    MyMetricsEval.comparePSD(CurrentRes.pa_sig, CurrentRes.pa_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[2], PSDs[3]);
+    MyMetricsEval.computePSD(CurrentRes.tx_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[0]);
+    MyMetricsEval.computePSD(CurrentRes.pa_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[1]);
+    MyMetricsEval.computePSD(CurrentRes.tx_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[2]);
+    MyMetricsEval.computePSD(CurrentRes.pa_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[3]);
+
     qDebug() << "PSD time:" << timer.elapsed() << "ms";
 
     static int num_iter = 1;
