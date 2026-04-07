@@ -408,7 +408,7 @@ void GraphPlotting::InitializeIdealSymConstPlot(QWidget *GraphWidget)
         QCPScatterStyle::ssCircle,
         Qt::transparent,    // Цвет заливки
         Qt::black,          // Цвет границы
-        6                   // Размер
+        10                   // Размер
         ));
     connect(plotIdealSymConst, &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
     PlotIdealSymConstellation("BPSK");

@@ -270,7 +270,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>4</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -369,52 +369,6 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="NumSymGroupBox">
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>80</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <family>Times New Roman</family>
-             <pointsize>14</pointsize>
-            </font>
-           </property>
-           <property name="title">
-            <string>Количество передаваемых символов</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_5">
-            <property name="leftMargin">
-             <number>3</number>
-            </property>
-            <property name="topMargin">
-             <number>3</number>
-            </property>
-            <property name="rightMargin">
-             <number>3</number>
-            </property>
-            <property name="bottomMargin">
-             <number>3</number>
-            </property>
-            <item>
-             <widget class="QSpinBox" name="NumSymSpinBox">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="maximum">
-               <number>1000</number>
-              </property>
-              <property name="value">
-               <number>1000</number>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
           <widget class="QGroupBox" name="SNRSymGroupBox">
            <property name="maximumSize">
             <size>
@@ -458,9 +412,52 @@
           </widget>
          </item>
          <item>
+          <widget class="QGroupBox" name="SymSNRCB_groupBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string/>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <property name="spacing">
+             <number>3</number>
+            </property>
+            <property name="leftMargin">
+             <number>3</number>
+            </property>
+            <property name="topMargin">
+             <number>3</number>
+            </property>
+            <property name="rightMargin">
+             <number>3</number>
+            </property>
+            <property name="bottomMargin">
+             <number>3</number>
+            </property>
+            <item>
+             <widget class="QCheckBox" name="SymSNR_checkBox">
+              <property name="font">
+               <font>
+                <family>Times New Roman</family>
+                <pointsize>14</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Шум в символах</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QGroupBox" name="SymConstGroupBox">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
@@ -493,7 +490,7 @@
             <item>
              <widget class="QWidget" name="SymConstGroupBoxWidget" native="true">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -506,14 +503,17 @@
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QGroupBox" name="groupBox_10">
-              <property name="title">
-               <string>GroupBox</string>
-              </property>
-             </widget>
-            </item>
            </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_4">
+           <property name="title">
+            <string/>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
         </layout>
@@ -4066,7 +4066,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>665</height>
+                 <height>139</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">

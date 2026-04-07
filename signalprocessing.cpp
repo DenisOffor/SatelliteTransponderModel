@@ -372,6 +372,7 @@ FdmaParams SignalProcessing::GetFDMAParams(Source& source)
     fdma_params.SNRSig = source.SNRSig;
     fdma_params.fs = source.fs;
     fdma_params.oversampling = source.oversampling;
+    fdma_params.EnableSNRSym = source.EnableSymSNR;
 
     return fdma_params;
 }
@@ -380,7 +381,8 @@ void SignalProcessing::TransmitSignalProcessing(Source& source, std::vector<Symb
 {
     if(source.SigType == "OFDM") {
         OfdmParams ofdm_parms = GetOfdmParams(source);
-        CurrentOfdmResults = myOfdm.makeOfdm(symbols[0].tr_sym_clean, ofdm_parms);
+        if(source.EnableSymSNR) CurrentOfdmResults = myOfdm.makeOfdm(symbols[0].tr_sym_noisy, ofdm_parms);
+        else CurrentOfdmResults = myOfdm.makeOfdm(symbols[0].tr_sym_clean, ofdm_parms);
         CurRes.clear();
         CurRes.resize(CurrentOfdmResults.tx.size());
         CurRes.tx_sig = CurrentOfdmResults.tx;
@@ -397,7 +399,8 @@ void SignalProcessing::TransmitSignalProcessing(Source& source, std::vector<Symb
     }
     else if(source.SigType == "SC") {
         ScParams sc_params = GetSCParams(source);
-        CurrentSCResults = mySC.makeSc(symbols[0].tr_sym_clean, sc_params);
+        if(source.EnableSymSNR) CurrentSCResults = mySC.makeSc(symbols[0].tr_sym_noisy, sc_params);
+        else CurrentSCResults = mySC.makeSc(symbols[0].tr_sym_clean, sc_params);
         CurRes.clear();
         CurRes.resize(CurrentSCResults.tx.size());
         CurRes.tx_sig = CurrentSCResults.tx;
@@ -642,8 +645,9 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource.SNRSymdB = UISource.SNRSymdB;
     MySource.NumSym = UISource.NumSym;
     MySource.M = UISource.M;
-    MySource.SigType = UISource.SigType;
+    MySource.EnableSymSNR = UISource.EnableSymSNR;
 
+    MySource.SigType = UISource.SigType;
     MySource.SC_f_carrier = UISource.SC_f_carrier;
     MySource.SC_symrate = UISource.SC_symrate;
     MySource.SC_rolloff = UISource.SC_rolloff;

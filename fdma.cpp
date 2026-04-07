@@ -34,7 +34,9 @@ FdmaResult FDMA::generate(
         scp.SC_filter_length = sc_p.SC_filter_length;
         scp.SC_FilterType = sc_p.SC_FilterType;
 
-        auto scRes = sc.makeSc(symbolsPerCarrier[k].tr_sym_clean, scp);
+        ScResult scRes;
+        if(p.EnableSNRSym) scRes = sc.makeSc(symbolsPerCarrier[k].tr_sym_noisy, scp);
+        else scRes = sc.makeSc(symbolsPerCarrier[k].tr_sym_clean, scp);
 
         maxLen = std::max(maxLen, scRes.tx.size());
 

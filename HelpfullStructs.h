@@ -96,6 +96,7 @@ struct Source {
     int NumSym;
     int SNRSymdB;
     int M;
+    bool EnableSymSNR;
 
     QString SigType;
 

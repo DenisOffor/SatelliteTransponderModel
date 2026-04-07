@@ -16,6 +16,7 @@ struct FdmaParams
     int oversampling;
     int fs;
     int SNRSig;
+    bool EnableSNRSym;
 
     double rolloff = 0.35;
     int filterSpan = 6;

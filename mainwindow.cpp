@@ -112,7 +112,9 @@ void MainWindow::DataUpdate()
     CurrentRecalcNeeds.clear();
     if(senderObj == ui->ModTypeComboBox) { UISource.ModType = ui->ModTypeComboBox->currentText(); CurrentRecalcNeeds.FullRecalc = true; }
     if(senderObj == ui->SNRSymSpinBox) { UISource.SNRSymdB = ui->SNRSymSpinBox->value(); CurrentRecalcNeeds.RecalcNoiseSym = true; }
-    if(senderObj == ui->NumSymSpinBox) { UISource.NumSym = ui->NumSymSpinBox->value(); CurrentRecalcNeeds.FullRecalc = true; }
+    //if(senderObj == ui->NumSymSpinBox) { UISource.NumSym = ui->NumSymSpinBox->value(); CurrentRecalcNeeds.FullRecalc = true; }
+    if(senderObj == ui->SymSNR_checkBox) { UISource.EnableSymSNR = ui->SymSNR_checkBox->isChecked(); CurrentRecalcNeeds.FullRecalc = true; }
+
     if(senderObj == ui->SignalTypeComboBox) { UISource.SigType = ui->SignalTypeComboBox->currentText();
         CurrentRecalcNeeds.FullRecalc = true; CurrentRecalcNeeds.TimePlotsRescale = true; /*CurrentRecalcNeeds.DPDRecalc = true; */}
 
@@ -217,7 +219,9 @@ void MainWindow::FirstDataUpdate()
 
     UISource.ModType = ui->ModTypeComboBox->currentText();
     UISource.SNRSymdB = ui->SNRSymSpinBox->value();
-    UISource.NumSym = ui->NumSymSpinBox->value();
+    UISource.NumSym = 1000;
+    //UISource.NumSym = ui->NumSymSpinBox->value();
+    UISource.EnableSymSNR = ui->SymSNR_checkBox->isChecked();
     UISource.SigType = ui->SignalTypeComboBox->currentText();
     UISource.SC_f_carrier = ui->SC_fc_SpinBox->value();
     UISource.SC_symrate = ui->SC_SymRate_SpinBox->value();
@@ -556,8 +560,10 @@ void MainWindow::SetupSelectedDPDType()
 void MainWindow::SetupMainLogicWork()
 {
     connect(ui->ModTypeComboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
-    connect(ui->NumSymSpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    //connect(ui->NumSymSpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SNRSymSpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    connect(ui->SymSNR_checkBox, &QCheckBox::stateChanged, this, &MainWindow::DataUpdate);
+
     connect(ui->SC_fc_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SC_SymRate_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SC_Rolloff_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
@@ -640,7 +646,9 @@ void MainWindow::LockParChange()
 
     ui->ModTypeComboBox->setEnabled(false);
     ui->SNRSymSpinBox->setEnabled(false);
-    ui->NumSymSpinBox->setEnabled(false);
+    //ui->NumSymSpinBox->setEnabled(false);
+    ui->SymSNR_checkBox->setEnabled(false);
+
     ui->SignalTypeComboBox->setEnabled(false);
     ui->SC_fc_SpinBox->setEnabled(false);
     ui->SC_SymRate_SpinBox->setEnabled(false);
@@ -702,7 +710,9 @@ void MainWindow::UnLockParChange()
 
     ui->ModTypeComboBox->setEnabled(true);
     ui->SNRSymSpinBox->setEnabled(true);
-    ui->NumSymSpinBox->setEnabled(true);
+    //ui->NumSymSpinBox->setEnabled(true);
+    ui->SymSNR_checkBox->setEnabled(true);
+
     ui->SignalTypeComboBox->setEnabled(true);
     ui->SC_fc_SpinBox->setEnabled(true);
     ui->SC_SymRate_SpinBox->setEnabled(true);
