@@ -28,7 +28,7 @@ ScResult SC::makeSc(const std::vector<std::complex<double>>& inputSymbols,
         symbols.push_back(std::complex<double>(0,0));
 
     // ----- Полоса -----
-    res.bandwidth = (p.SC_FilterType.toLower() == "rrc") ?
+    res.bandwidth = (p.SC_FilterType.toLower() == "RRC") ?
                         Rs * (1.0 + p.SC_rolloff) :
                         Rs;
 

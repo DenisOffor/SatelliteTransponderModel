@@ -28,6 +28,11 @@ private:
     std::vector<std::vector<double>> freq;
     std::vector<std::vector<double>> PSDs;
 
+    std::vector<std::complex<double>> OFDM_tx_sig_buff;
+    std::vector<std::complex<double>> OFDM_tx_plus_DPD_sig_buff;
+    std::vector<std::complex<double>> OFDM_pa_sig_buff;
+    std::vector<std::complex<double>> OFDM_pa_plus_DPD_sig_buff;
+
     std::vector<std::complex<double>> BPSK_const;
     std::vector<std::complex<double>> QPSK_const;
     std::vector<std::complex<double>> QAM16_const;
@@ -40,7 +45,7 @@ private:
     FdmaParams GetFDMAParams(Source& source);
     void TransmitSignalProcessing(Source& source, std::vector<Symbols>& symbols, NeedToRecalc& CurrentRecalcNeeds, GlobalResults& CurRes);
     void PAProcessing(Source& source, NeedToRecalc& CurrentRecalcNeeds, GlobalResults& CurRes);
-    void ReceiveSignalProcessing(Source& source, std::vector<Symbols>& symbols, NeedToRecalc CurrentRecalcNeeds, GlobalResults& CurRes);
+    void ReceiveSignalProcessing(Source& source, std::vector<Symbols>& symbols, NeedToRecalc& CurrentRecalcNeeds, GlobalResults& CurRes);
     void SymsAddNoise(Source& source, std::vector<std::complex<double>>& symbols_clean,
                       std::vector<std::complex<double>>& symbols_noisy);
     int DemodulateSymbol(const std::complex<double>& r, const std::vector<std::complex<double>>& constellation);
@@ -56,10 +61,14 @@ public:
     void ApplyFIRWithMemory(std::vector<double>& amplitude, std::vector<double>& phase, const std::vector<double>& FIR_Coefs, int numTaps);
     void DataUpdate(Source& UISource);
     Symbols& getSymbols();
+    OfdmResult getOfdmRes();
+    ScResult getSCRes();
+    FdmaResult getFDMARes();
     GlobalResults& getTimeSignal();
-    std::vector<std::vector<double>> getFreq();
-    std::vector<std::vector<double>> getPSDs();
+    std::vector<std::vector<double>>& getFreq();
+    std::vector<std::vector<double>>& getPSDs();
     PaCurve& getPaCurve();
+    void clear_OFDM_buffs();
     void RecalcDPD(NeedToRecalc& CurrentRecalcNeeds);
 
 public slots:

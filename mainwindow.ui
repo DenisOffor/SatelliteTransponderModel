@@ -22,6 +22,12 @@
     <height>0</height>
    </size>
   </property>
+  <property name="font">
+   <font>
+    <family>Times New Roman</family>
+    <pointsize>14</pointsize>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
@@ -270,7 +276,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -519,20 +525,7 @@
         </layout>
        </widget>
        <widget class="QWidget" name="Metric_Page">
-        <layout class="QVBoxLayout" name="verticalLayout_81">
-         <item>
-          <widget class="QGroupBox" name="groupBox_2">
-           <property name="title">
-            <string>GroupBox</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_82">
-            <item>
-             <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
-            </item>
-           </layout>
-          </widget>
-         </item>
-        </layout>
+        <layout class="QVBoxLayout" name="verticalLayout_81"/>
        </widget>
        <widget class="QWidget" name="PagePA">
         <property name="sizePolicy">
@@ -615,6 +608,16 @@
                 <string>Wiener</string>
                </property>
               </item>
+              <item>
+               <property name="text">
+                <string>Hammerstein</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Wiener-Hammerstein</string>
+               </property>
+              </item>
              </widget>
             </item>
            </layout>
@@ -667,7 +670,7 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
-              <widget class="QWidget" name="Wiener_moodel_settings">
+              <widget class="QWidget" name="Wiener_model_settings">
                <layout class="QVBoxLayout" name="verticalLayout_77">
                 <property name="spacing">
                  <number>3</number>
@@ -685,7 +688,7 @@
                  <number>3</number>
                 </property>
                 <item>
-                 <widget class="QGroupBox" name="StaticNonlin_GroupBox">
+                 <widget class="QGroupBox" name="W_StaticNonlin_GroupBox">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -712,7 +715,7 @@
                     <number>3</number>
                    </property>
                    <item>
-                    <widget class="QComboBox" name="StaticNonlin_comboBox">
+                    <widget class="QComboBox" name="W_StaticNonlin_comboBox">
                      <item>
                       <property name="text">
                        <string>Saleh</string>
@@ -745,40 +748,34 @@
                    <string>Коэффициенты FIR (память)</string>
                   </property>
                   <layout class="QHBoxLayout" name="horizontalLayout_11">
-                   <item>
-                    <layout class="QVBoxLayout" name="verticalLayout_79">
-                     <item>
-                      <widget class="QLabel" name="FIR_C_label">
-                       <property name="text">
-                        <string>TextLabel</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QDoubleSpinBox" name="FIR_C_value_doubleSpinBox">
-                       <property name="singleStep">
-                        <double>0.100000000000000</double>
-                       </property>
-                       <property name="value">
-                        <double>1.000000000000000</double>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
+                   <property name="spacing">
+                    <number>3</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>3</number>
+                   </property>
                    <item>
                     <layout class="QVBoxLayout" name="verticalLayout_80">
                      <item>
-                      <widget class="QLabel" name="FIR_alpha_label">
+                      <widget class="QLabel" name="W_FIR_alpha_label">
                        <property name="text">
                         <string>TextLabel</string>
                        </property>
                       </widget>
                      </item>
                      <item>
-                      <widget class="QDoubleSpinBox" name="FIR_alpha_doubleSpinBox">
+                      <widget class="QDoubleSpinBox" name="W_FIR_alpha_doubleSpinBox">
                        <property name="minimum">
-                        <double>0.400000000000000</double>
+                        <double>0.100000000000000</double>
                        </property>
                        <property name="maximum">
                         <double>2.000000000000000</double>
@@ -797,7 +794,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="FIR_Coefs_label">
+                 <widget class="QLabel" name="W_FIR_Coefs_label">
                   <property name="text">
                    <string>TextLabel</string>
                   </property>
@@ -808,6 +805,283 @@
                 </item>
                </layout>
               </widget>
+              <widget class="QWidget" name="Hammerstein_model_settings">
+               <layout class="QVBoxLayout" name="verticalLayout_118">
+                <item>
+                 <widget class="QGroupBox" name="H_StaticNonlin_GroupBox">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="title">
+                   <string>Статическая нелинейность</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_82">
+                   <property name="spacing">
+                    <number>3</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>3</number>
+                   </property>
+                   <item>
+                    <widget class="QComboBox" name="H_StaticNonlin_comboBox">
+                     <item>
+                      <property name="text">
+                       <string>Saleh</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Rapp</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Ghorbani</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="FIRCoefs_GroupBox_2">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="title">
+                   <string>Коэффициенты FIR (память)</string>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_13">
+                   <property name="spacing">
+                    <number>3</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>3</number>
+                   </property>
+                   <item>
+                    <layout class="QVBoxLayout" name="verticalLayout_114">
+                     <item>
+                      <widget class="QLabel" name="H_FIR_alpha_label">
+                       <property name="text">
+                        <string>TextLabel</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QDoubleSpinBox" name="H_FIR_alpha_doubleSpinBox">
+                       <property name="minimum">
+                        <double>0.100000000000000</double>
+                       </property>
+                       <property name="maximum">
+                        <double>2.000000000000000</double>
+                       </property>
+                       <property name="singleStep">
+                        <double>0.010000000000000</double>
+                       </property>
+                       <property name="value">
+                        <double>0.850000000000000</double>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="H_FIR_Coefs_label">
+                  <property name="text">
+                   <string>TextLabel</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignmentFlag::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="WH_model_settings">
+               <layout class="QVBoxLayout" name="verticalLayout_124">
+                <property name="spacing">
+                 <number>3</number>
+                </property>
+                <property name="leftMargin">
+                 <number>3</number>
+                </property>
+                <property name="topMargin">
+                 <number>3</number>
+                </property>
+                <property name="rightMargin">
+                 <number>3</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>3</number>
+                </property>
+                <item>
+                 <widget class="QGroupBox" name="WH_StaticNonlin_GroupBox">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="title">
+                   <string>Статическая нелинейность</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_123">
+                   <property name="spacing">
+                    <number>3</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>3</number>
+                   </property>
+                   <item>
+                    <widget class="QComboBox" name="WH_StaticNonlin_comboBox">
+                     <item>
+                      <property name="text">
+                       <string>Saleh</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Rapp</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Ghorbani</string>
+                      </property>
+                     </item>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="WH_FIRCoefs_GroupBox">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="title">
+                   <string>Коэффициенты FIR (память)</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_121">
+                   <property name="spacing">
+                    <number>3</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>3</number>
+                   </property>
+                   <item>
+                    <layout class="QHBoxLayout" name="horizontalLayout_14">
+                     <item>
+                      <layout class="QVBoxLayout" name="verticalLayout_122">
+                       <item>
+                        <widget class="QLabel" name="WH_FIR_alpha1_label">
+                         <property name="text">
+                          <string>TextLabel</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QDoubleSpinBox" name="WH_FIR_alpha1_doubleSpinBox">
+                         <property name="minimum">
+                          <double>0.100000000000000</double>
+                         </property>
+                         <property name="maximum">
+                          <double>2.000000000000000</double>
+                         </property>
+                         <property name="singleStep">
+                          <double>0.010000000000000</double>
+                         </property>
+                         <property name="value">
+                          <double>0.850000000000000</double>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </item>
+                     <item>
+                      <layout class="QVBoxLayout" name="verticalLayout_126">
+                       <item>
+                        <widget class="QLabel" name="WH_FIR_alpha2_label">
+                         <property name="text">
+                          <string>TextLabel</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <widget class="QDoubleSpinBox" name="WH_FIR_alpha2_doubleSpinBox">
+                         <property name="minimum">
+                          <double>0.100000000000000</double>
+                         </property>
+                         <property name="maximum">
+                          <double>2.000000000000000</double>
+                         </property>
+                         <property name="singleStep">
+                          <double>0.010000000000000</double>
+                         </property>
+                         <property name="value">
+                          <double>0.850000000000000</double>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="MP_model_settings"/>
               <widget class="QWidget" name="Ghorbani_model_settings">
                <layout class="QVBoxLayout" name="verticalLayout_39">
                 <property name="leftMargin">
@@ -1917,7 +2191,7 @@
             <item>
              <widget class="QStackedWidget" name="PagesOfSigParametersStack">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -2606,13 +2880,13 @@
             <item>
              <widget class="QGroupBox" name="groupBox">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
               <property name="title">
-               <string/>
+               <string>Общие настройки</string>
               </property>
               <property name="flat">
                <bool>true</bool>
@@ -2780,10 +3054,61 @@
            </layout>
           </widget>
          </item>
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>TextLabel</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="PagePredistorter">
         <layout class="QVBoxLayout" name="verticalLayout_84">
+         <item>
+          <widget class="QGroupBox" name="IdentificationMethod_groupBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Метод идентификации</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_79">
+            <property name="spacing">
+             <number>3</number>
+            </property>
+            <property name="leftMargin">
+             <number>3</number>
+            </property>
+            <property name="topMargin">
+             <number>3</number>
+            </property>
+            <property name="rightMargin">
+             <number>3</number>
+            </property>
+            <property name="bottomMargin">
+             <number>3</number>
+            </property>
+            <item>
+             <widget class="QComboBox" name="IdentificationMethod_comboBox">
+              <item>
+               <property name="text">
+                <string>МНК</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Градиентный спуск</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
          <item>
           <widget class="QGroupBox" name="PredistorterType_groupBox">
            <property name="sizePolicy">
@@ -2799,7 +3124,7 @@
             </font>
            </property>
            <property name="title">
-            <string>DPD Type</string>
+            <string>Модель ЦПИ</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_85">
             <property name="spacing">
@@ -2972,7 +3297,7 @@
                       </font>
                      </property>
                      <property name="title">
-                      <string>M coeff</string>
+                      <string>Глубина памяти</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_115">
                       <property name="spacing">
@@ -3024,7 +3349,7 @@
                       </font>
                      </property>
                      <property name="title">
-                      <string>P coeff</string>
+                      <string>Порядок нелинейности</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_116">
                       <property name="spacing">
@@ -3131,7 +3456,7 @@
                       </font>
                      </property>
                      <property name="title">
-                      <string>M coeff</string>
+                      <string>Глубина памяти</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_119">
                       <property name="spacing">
@@ -3183,7 +3508,7 @@
                       </font>
                      </property>
                      <property name="title">
-                      <string>P coeff</string>
+                      <string>Порядок нелинейности</string>
                      </property>
                      <layout class="QVBoxLayout" name="verticalLayout_120">
                       <property name="spacing">
@@ -3311,7 +3636,27 @@
           </widget>
          </item>
          <item>
+          <widget class="QCheckBox" name="EvenP_checkBox">
+           <property name="text">
+            <string>Чётные порядки нелинейности</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="DPDAutoRecalc_checkBox">
+           <property name="text">
+            <string>Автоматический расчёт ЦПИ</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="DPDRecalc_pushButton">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="font">
             <font>
              <family>Times New Roman</family>
@@ -3319,17 +3664,14 @@
             </font>
            </property>
            <property name="text">
-            <string>Рассчитать DPD</string>
+            <string>Рассчитать ЦПИ</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_5">
-           <property name="title">
-            <string/>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>TextLabel</string>
            </property>
           </widget>
          </item>
@@ -3457,10 +3799,10 @@
               <widget class="QWidget" name="scrollAreaConstellationPageWidgetContents">
                <property name="geometry">
                 <rect>
-                 <x>0</x>
+                 <x>-341</x>
                  <y>0</y>
                  <width>1226</width>
-                 <height>665</height>
+                 <height>650</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_51">
@@ -4560,7 +4902,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string/>
+                     <string>Scatter после УМ сравнение</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_109">
                      <property name="leftMargin">
@@ -4793,6 +5135,13 @@
                   </property>
                  </widget>
                 </item>
+                <item>
+                 <widget class="QLabel" name="BB_label">
+                  <property name="text">
+                   <string>TextLabel</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
@@ -4975,7 +5324,7 @@
      <x>0</x>
      <y>0</y>
      <width>1502</width>
-     <height>25</height>
+     <height>30</height>
     </rect>
    </property>
    <property name="sizePolicy">

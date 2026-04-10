@@ -21,6 +21,7 @@ FdmaResult FDMA::generate(
     // Генерация каждой поднесущей
     // -------------------------------------------------
 
+    double sc_bb = 0;
     for(int k = 0; k < p.FDMA_num_subcarriers; ++k)
     {
         ScParams scp;
@@ -39,6 +40,7 @@ FdmaResult FDMA::generate(
         else scRes = sc.makeSc(symbolsPerCarrier[k].tr_sym_clean, scp);
 
         maxLen = std::max(maxLen, scRes.tx.size());
+        sc_bb = std::max(sc_bb, scRes.bandwidth);
 
         carrierSignals.push_back(scRes);
     }
@@ -72,7 +74,7 @@ FdmaResult FDMA::generate(
     // -------------------------------------------------
 
     res.totalBandwidth =
-        p.FDMA_num_subcarriers * p.FDMA_step_carrier;
+        (p.FDMA_num_subcarriers - 1) * p.FDMA_step_carrier + sc_bb;
 
     res.perCarrierResults = carrierSignals;
 

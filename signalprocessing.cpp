@@ -34,7 +34,6 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
         GeneratePacksOfSymbols(MySymbols, MySource, CurrentRecalcNeeds);
     qDebug() << "Sym time:" << timer.elapsed() << "ms";
 
-
     timer.restart();
     if(CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc || CurrentRecalcNeeds.RecalcNoiseSig)
         TransmitSignalProcessing(MySource, MySymbols, CurrentRecalcNeeds, CurrentRes);
@@ -47,34 +46,35 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
     qDebug() << "PA time:" << timer.elapsed() << "ms";
 
     timer.restart();
-    if(!CurrentRes.pa_sig.empty())
+    if(CurrentRecalcNeeds.RecRecalc)
         ReceiveSignalProcessing(MySource, MySymbols, CurrentRecalcNeeds, CurrentRes);
     qDebug() << "Rec time:" << timer.elapsed() << "ms";
 
     timer.restart();
-    MyMetricsEval.computePSD(CurrentRes.tx_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[0]);
-    MyMetricsEval.computePSD(CurrentRes.pa_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[1]);
-    MyMetricsEval.computePSD(CurrentRes.tx_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[2]);
-    MyMetricsEval.computePSD(CurrentRes.pa_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[3]);
+    if(CurrentRecalcNeeds.MetricsRecalc) {
+        MyMetricsEval.computePSD(CurrentRes.tx_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[0], OFDM_tx_sig_buff);
+        MyMetricsEval.computePSD(CurrentRes.pa_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[1], OFDM_tx_plus_DPD_sig_buff);
+        MyMetricsEval.computePSD(CurrentRes.tx_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[2], OFDM_pa_sig_buff);
+        MyMetricsEval.computePSD(CurrentRes.pa_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[3], OFDM_pa_plus_DPD_sig_buff);
 
-    qDebug() << "PSD time:" << timer.elapsed() << "ms";
+        static int num_iter = 1;
+        if(CurrentRecalcNeeds.CycleMode == true) {
+            double BER_noDPD, BER_withDPD, EVM_noDPD, EVM_withDPD;
+            std::tie(BER_noDPD, BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
+            std::tie(EVM_noDPD, EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
 
-    static int num_iter = 1;
-    if(CurrentRecalcNeeds.CycleMode == true) {
-        double BER_noDPD, BER_withDPD, EVM_noDPD, EVM_withDPD;
-        std::tie(BER_noDPD, BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
-        std::tie(EVM_noDPD, EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
-
-        CurrentRes.BER_noDPD = (CurrentRes.BER_noDPD * MySource.NumSym + BER_noDPD * MySource.NumSym) / ((++num_iter) * MySource.NumSym);
-        CurrentRes.BER_withDPD = (CurrentRes.BER_withDPD * MySource.NumSym + BER_withDPD * MySource.NumSym) / (num_iter * MySource.NumSym);;
-        CurrentRes.EVM_noDPD = (CurrentRes.EVM_noDPD * (num_iter - 1) + EVM_noDPD) / num_iter;
-        CurrentRes.EVM_withDPD = (CurrentRes.EVM_withDPD * (num_iter - 1)  + EVM_withDPD) / num_iter;
+            CurrentRes.BER_noDPD = (CurrentRes.BER_noDPD * MySource.NumSym + BER_noDPD * MySource.NumSym) / ((++num_iter) * MySource.NumSym);
+            CurrentRes.BER_withDPD = (CurrentRes.BER_withDPD * MySource.NumSym + BER_withDPD * MySource.NumSym) / (num_iter * MySource.NumSym);;
+            CurrentRes.EVM_noDPD = (CurrentRes.EVM_noDPD * (num_iter - 1) + EVM_noDPD) / num_iter;
+            CurrentRes.EVM_withDPD = (CurrentRes.EVM_withDPD * (num_iter - 1)  + EVM_withDPD) / num_iter;
+        }
+        else if(CurrentRecalcNeeds.CycleMode == false) {
+            num_iter = 1;
+            std::tie(CurrentRes.BER_noDPD, CurrentRes.BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
+            std::tie(CurrentRes.EVM_noDPD, CurrentRes.EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
+        }
     }
-    else if(CurrentRecalcNeeds.CycleMode == false) {
-        num_iter = 1;
-        std::tie(CurrentRes.BER_noDPD, CurrentRes.BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
-        std::tie(CurrentRes.EVM_noDPD, CurrentRes.EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
-    }
+    qDebug() << "Metrics time:" << timer.elapsed() << "ms";
 }
 
 void SignalProcessing::GeneratePacksOfSymbols(std::vector<Symbols>& Symbols, Source& source, NeedToRecalc& CurrentRecalcNeeds)
@@ -275,46 +275,40 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     else if (MySource.PAModel == "Ghorbani")
         MyPAModels.GhorbaniModel(TrainRes.pa_sig, MySource.GhorbaniCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
     else if (MySource.PAModel == "Wiener") {
-        if(MySource.StaticNonlinModel == "Saleh")
-            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.StaticNonlinModel,
-                                   MySource.SalehCoeffs, MySource.FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if(MySource.StaticNonlinModel == "Rapp")
-            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.StaticNonlinModel,
-                                   MySource.RappCoeffs, MySource.FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if(MySource.StaticNonlinModel == "Ghorbani")
-            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.StaticNonlinModel,
-                                   MySource.GhorbaniCoeffs, MySource.FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        if(MySource.W_StaticNonlinModel == "Saleh")
+            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.W_StaticNonlinModel,
+                                   MySource.SalehCoeffs, MySource.W_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if(MySource.W_StaticNonlinModel == "Rapp")
+            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.W_StaticNonlinModel,
+                                   MySource.RappCoeffs, MySource.W_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if(MySource.W_StaticNonlinModel == "Ghorbani")
+            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.W_StaticNonlinModel,
+                                   MySource.GhorbaniCoeffs, MySource.W_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+    }
+    else if (MySource.PAModel == "Hammerstein") {
+        if(MySource.H_StaticNonlinModel == "Saleh")
+            MyPAModels.HammersteinModel(TrainRes.pa_sig, MySource.H_StaticNonlinModel,
+                                   MySource.SalehCoeffs, MySource.H_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if(MySource.H_StaticNonlinModel == "Rapp")
+            MyPAModels.HammersteinModel(TrainRes.pa_sig, MySource.H_StaticNonlinModel,
+                                   MySource.RappCoeffs, MySource.H_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if(MySource.H_StaticNonlinModel == "Ghorbani")
+            MyPAModels.HammersteinModel(TrainRes.pa_sig, MySource.H_StaticNonlinModel,
+                                   MySource.GhorbaniCoeffs, MySource.H_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+    }
+    else if (MySource.PAModel == "Wiener-Hammerstein") {
+        if(MySource.WH_StaticNonlinModel == "Saleh")
+            MyPAModels.WHModel(TrainRes.pa_sig, MySource.WH_StaticNonlinModel,
+                                   MySource.SalehCoeffs, MySource.WH_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if(MySource.WH_StaticNonlinModel == "Rapp")
+            MyPAModels.WHModel(TrainRes.pa_sig, MySource.WH_StaticNonlinModel,
+                                   MySource.RappCoeffs, MySource.WH_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
+        else if(MySource.WH_StaticNonlinModel == "Ghorbani")
+            MyPAModels.WHModel(TrainRes.pa_sig, MySource.WH_StaticNonlinModel,
+                                   MySource.GhorbaniCoeffs, MySource.WH_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
     }
 
-    auto PA_noscale = [&](const std::vector<std::complex<double>>& in) {
-        auto tmp = in;
-
-        if (MySource.PAModel == "Saleh")
-            MyPAModels.SalehModel(tmp, MySource.SalehCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if (MySource.PAModel == "Rapp")
-            MyPAModels.RappModel(tmp, MySource.RappCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if (MySource.PAModel == "Ghorbani")
-            MyPAModels.GhorbaniModel(tmp, MySource.GhorbaniCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if (MySource.PAModel == "Wiener") {
-            if (MySource.StaticNonlinModel == "Saleh")
-                MyPAModels.WienerModel(tmp, MySource.StaticNonlinModel,
-                                       MySource.SalehCoeffs, MySource.FIRCoeffs,
-                                       MySource.linear_gain_dB, MySource.IBO_dB);
-            else if (MySource.StaticNonlinModel == "Rapp")
-                MyPAModels.WienerModel(tmp, MySource.StaticNonlinModel,
-                                       MySource.RappCoeffs, MySource.FIRCoeffs,
-                                       MySource.linear_gain_dB, MySource.IBO_dB);
-            else if (MySource.StaticNonlinModel == "Ghorbani")
-                MyPAModels.WienerModel(tmp, MySource.StaticNonlinModel,
-                                       MySource.GhorbaniCoeffs, MySource.FIRCoeffs,
-                                       MySource.linear_gain_dB, MySource.IBO_dB);
-        }
-
-        return tmp;
-    };
-
     mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource);
-    //mydpd.trainIterative(TrainRes.tx_sig, PA_noscale, MySource.MP_P, MySource.MP_M, 3);
     MySource.NumSym = sym;
     CurrentRecalcNeeds.PARecalc = true;
 }
@@ -433,31 +427,72 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
             MyPAModels.GhorbaniModel(CurRes.pa_plus_dpd_sig, source.GhorbaniCoeffs, source.linear_gain_dB, source.IBO_dB);
         }
         else if (source.PAModel == "Wiener") {
-            if(source.StaticNonlinModel == "Saleh") {
-                MyPAModels.WienerModel(CurRes.pa_sig, source.StaticNonlinModel,
-                                       source.SalehCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.StaticNonlinModel,
-                                       source.SalehCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+            if(source.W_StaticNonlinModel == "Saleh") {
+                MyPAModels.WienerModel(CurRes.pa_sig, source.W_StaticNonlinModel,
+                                       source.SalehCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.W_StaticNonlinModel,
+                                       source.SalehCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
             }
-            else if(source.StaticNonlinModel == "Rapp") {
-                MyPAModels.WienerModel(CurRes.pa_sig, source.StaticNonlinModel,
-                                       source.RappCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.StaticNonlinModel,
-                                       source.RappCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+            else if(source.W_StaticNonlinModel == "Rapp") {
+                MyPAModels.WienerModel(CurRes.pa_sig, source.W_StaticNonlinModel,
+                                       source.RappCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.W_StaticNonlinModel,
+                                       source.RappCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
             }
-            else if(source.StaticNonlinModel == "Ghorbani") {
-                MyPAModels.WienerModel(CurRes.pa_sig, source.StaticNonlinModel,
-                                       source.GhorbaniCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.StaticNonlinModel,
-                                       source.GhorbaniCoeffs, source.FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+            else if(source.W_StaticNonlinModel == "Ghorbani") {
+                MyPAModels.WienerModel(CurRes.pa_sig, source.W_StaticNonlinModel,
+                                       source.GhorbaniCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.W_StaticNonlinModel,
+                                       source.GhorbaniCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+            }
+        }
+        else if (source.PAModel == "Hammerstein") {
+            if(source.H_StaticNonlinModel == "Saleh") {
+                MyPAModels.HammersteinModel(CurRes.pa_sig, source.H_StaticNonlinModel,
+                                       source.SalehCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.HammersteinModel(CurRes.pa_plus_dpd_sig, source.H_StaticNonlinModel,
+                                       source.SalehCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+            }
+            else if(source.H_StaticNonlinModel == "Rapp") {
+                MyPAModels.HammersteinModel(CurRes.pa_sig, source.H_StaticNonlinModel,
+                                       source.RappCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.HammersteinModel(CurRes.pa_plus_dpd_sig, source.H_StaticNonlinModel,
+                                       source.RappCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+            }
+            else if(source.H_StaticNonlinModel == "Ghorbani") {
+                MyPAModels.HammersteinModel(CurRes.pa_sig, source.H_StaticNonlinModel,
+                                       source.GhorbaniCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.HammersteinModel(CurRes.pa_plus_dpd_sig, source.H_StaticNonlinModel,
+                                       source.GhorbaniCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+            }
+        }
+        else if (source.PAModel == "Wiener-Hammerstein") {
+            if(source.WH_StaticNonlinModel == "Saleh") {
+                MyPAModels.WHModel(CurRes.pa_sig, source.WH_StaticNonlinModel,
+                                       source.SalehCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.WHModel(CurRes.pa_plus_dpd_sig, source.WH_StaticNonlinModel,
+                                       source.SalehCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+            }
+            else if(source.WH_StaticNonlinModel == "Rapp") {
+                MyPAModels.WHModel(CurRes.pa_sig, source.WH_StaticNonlinModel,
+                                       source.RappCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.WHModel(CurRes.pa_plus_dpd_sig, source.WH_StaticNonlinModel,
+                                       source.RappCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+            }
+            else if(source.WH_StaticNonlinModel == "Ghorbani") {
+                MyPAModels.WHModel(CurRes.pa_sig, source.WH_StaticNonlinModel,
+                                       source.GhorbaniCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
+                MyPAModels.WHModel(CurRes.pa_plus_dpd_sig, source.WH_StaticNonlinModel,
+                                       source.GhorbaniCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
             }
         }
         addAwgn(CurRes.pa_sig, source.SNRSig);
         addAwgn(CurRes.pa_plus_dpd_sig, source.SNRSig);
+        CurrentRecalcNeeds.RecRecalc = true;
     }
 }
 
-void SignalProcessing::ReceiveSignalProcessing(Source& source, std::vector<Symbols>& symbols, NeedToRecalc CurrentRecalcNeeds, GlobalResults& CurRes)
+void SignalProcessing::ReceiveSignalProcessing(Source& source, std::vector<Symbols>& symbols, NeedToRecalc& CurrentRecalcNeeds, GlobalResults& CurRes)
 {
     OfdmParams ofdm_parms = GetOfdmParams(source);
     ScParams sc_params = GetSCParams(source);
@@ -481,6 +516,8 @@ void SignalProcessing::ReceiveSignalProcessing(Source& source, std::vector<Symbo
 
     for(int i = 0; i < symbols.size(); ++i)
         Demodulate(symbols[i], getCurrentConstellation(source));
+
+    CurrentRecalcNeeds.MetricsRecalc = true;
 }
 
 void SignalProcessing::CalcPaCurve()
@@ -488,7 +525,7 @@ void SignalProcessing::CalcPaCurve()
     bool FIR_enable;
     QString model_type = MySource.PAModel;
     if(model_type == "Wiener") {
-        model_type = MySource.StaticNonlinModel;
+        model_type = MySource.W_StaticNonlinModel;
         FIR_enable = true;
     }
 
@@ -580,10 +617,10 @@ void SignalProcessing::CalcPaCurve()
     PACurve->Working_point_linear_norm.y[0] = qPow(10.0, PACurve->Working_point_dB_norm.y[0] / 10.0);
 
     if(FIR_enable) {
-        ApplyFIRWithMemory(PACurve->P_out_abs.dB, PACurve->Phi, MySource.FIRCoeffs, 5);
-        ApplyFIRWithMemory(PACurve->P_out_abs.linear, PACurve->Phi, MySource.FIRCoeffs, 5);
-        ApplyFIRWithMemory(PACurve->P_out_norm.dB, PACurve->Phi, MySource.FIRCoeffs, 5);
-        ApplyFIRWithMemory(PACurve->P_out_norm.linear, PACurve->Phi, MySource.FIRCoeffs, 5);
+        ApplyFIRWithMemory(PACurve->P_out_abs.dB, PACurve->Phi, MySource.W_FIRCoeffs, 5);
+        ApplyFIRWithMemory(PACurve->P_out_abs.linear, PACurve->Phi, MySource.W_FIRCoeffs, 5);
+        ApplyFIRWithMemory(PACurve->P_out_norm.dB, PACurve->Phi, MySource.W_FIRCoeffs, 5);
+        ApplyFIRWithMemory(PACurve->P_out_norm.linear, PACurve->Phi, MySource.W_FIRCoeffs, 5);
     }   
 }
 
@@ -635,7 +672,7 @@ void SignalProcessing::ApplyFIRWithMemory(std::vector<double>& amplitude, std::v
     for (size_t n = 0; n < N; ++n)
     {
         amplitude[n] = std::abs(output[n]);
-        phase[n] = std::arg(output[n]);
+        phase[n] = 0; //std::arg(output[n]);
     }
 }
 
@@ -677,8 +714,12 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource.SalehCoeffs = UISource.SalehCoeffs;
     MySource.RappCoeffs = UISource.RappCoeffs;
     MySource.GhorbaniCoeffs = UISource.GhorbaniCoeffs;
-    MySource.FIRCoeffs = UISource.FIRCoeffs;
-    MySource.StaticNonlinModel = UISource.StaticNonlinModel;
+    MySource.W_FIRCoeffs = UISource.W_FIRCoeffs;
+    MySource.W_StaticNonlinModel = UISource.W_StaticNonlinModel;
+    MySource.H_FIRCoeffs = UISource.H_FIRCoeffs;
+    MySource.H_StaticNonlinModel = UISource.H_StaticNonlinModel;
+    MySource.WH_FIRCoeffs = UISource.WH_FIRCoeffs;
+    MySource.WH_StaticNonlinModel = UISource.WH_StaticNonlinModel;
 
     MySource.MP_M = UISource.MP_M;
     MySource.MP_P = UISource.MP_P;
@@ -690,6 +731,8 @@ void SignalProcessing::DataUpdate(Source &UISource)
 
     MySource.NormalizationType = UISource.NormalizationType;
     MySource.PredistorterType = UISource.PredistorterType;
+    MySource.DPDAutoRecalc = UISource.DPDAutoRecalc;
+    MySource.Enable_even_P = UISource.Enable_even_P;
 }
 
 void SignalProcessing::addAwgn(std::vector<std::complex<double>> &x, double SNR_dB)
@@ -722,17 +765,32 @@ Symbols &SignalProcessing::getSymbols()
         return MySymbols[0];
 }
 
+OfdmResult SignalProcessing::getOfdmRes()
+{
+    return CurrentOfdmResults;
+}
+
+ScResult SignalProcessing::getSCRes()
+{
+    return CurrentSCResults;
+}
+
+FdmaResult SignalProcessing::getFDMARes()
+{
+    return CurrentFdmaResults;
+}
+
 GlobalResults &SignalProcessing::getTimeSignal()
 {
         return CurrentRes;
 }
 
-std::vector<std::vector<double>> SignalProcessing::getFreq()
+std::vector<std::vector<double>>& SignalProcessing::getFreq()
 {
     return freq;
 }
 
-std::vector<std::vector<double>> SignalProcessing::getPSDs()
+std::vector<std::vector<double>>& SignalProcessing::getPSDs()
 {
     return PSDs;
 }
@@ -740,5 +798,13 @@ std::vector<std::vector<double>> SignalProcessing::getPSDs()
 PaCurve &SignalProcessing::getPaCurve()
 {
     return *PACurve;
+}
+
+void SignalProcessing::clear_OFDM_buffs()
+{
+    OFDM_tx_sig_buff.clear();
+    OFDM_tx_plus_DPD_sig_buff.clear();
+    OFDM_pa_sig_buff.clear();
+    OFDM_pa_plus_DPD_sig_buff.clear();
 }
 

@@ -27,7 +27,8 @@ OfdmResult OFDM::makeOfdm(const std::vector<std::complex<double> > &symbols, con
         }
     }
 
-    res.BB = double(Nactive) / p.Nfft * p.fs;
+    double Nactivetemp = p.Nfft - p.GB_Nyq * 2;
+    res.BB = Nactivetemp / p.Nfft * p.fs; // double(Nactive) / p.Nfft * p.fs;
 
     std::vector<std::complex<double>> yBB;
 

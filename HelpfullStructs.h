@@ -127,8 +127,12 @@ struct Source {
     std::vector<double> SalehCoeffs;
     std::vector<double> RappCoeffs;
     std::vector<double> GhorbaniCoeffs;
-    std::vector<double> FIRCoeffs;
-    QString StaticNonlinModel;
+    std::vector<double> W_FIRCoeffs;
+    std::vector<double> H_FIRCoeffs;
+    std::vector<double> WH_FIRCoeffs;
+    QString W_StaticNonlinModel;
+    QString H_StaticNonlinModel;
+    QString WH_StaticNonlinModel;
 
     int MP_M;
     int MP_P;
@@ -140,6 +144,8 @@ struct Source {
 
     QString NormalizationType;
     QString PredistorterType;
+    bool DPDAutoRecalc;
+    bool Enable_even_P;
 };
 
 struct NeedToRecalc{
@@ -149,6 +155,8 @@ struct NeedToRecalc{
     bool RecalcSig;
     bool FullRecalc;
     bool PARecalc;
+    bool RecRecalc;
+    bool MetricsRecalc;
     bool TimePlotsRescale;
     bool PaCurveReplot;
     bool DPDRecalc;
@@ -161,6 +169,8 @@ struct NeedToRecalc{
         RecalcSig = true;
         FullRecalc = true;
         PARecalc = true;
+        RecRecalc = true;
+        MetricsRecalc = true;
         TimePlotsRescale = true;
         PaCurveReplot = true;
         DPDRecalc = true;
@@ -174,6 +184,8 @@ struct NeedToRecalc{
         RecalcSig = false;
         FullRecalc = false;
         PARecalc = false;
+        RecRecalc = false;
+        MetricsRecalc = false;
         TimePlotsRescale = false;
         PaCurveReplot = false;
         DPDRecalc = false;

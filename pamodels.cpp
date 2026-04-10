@@ -89,7 +89,35 @@ void PAModels::WienerModel(std::vector<std::complex<double>>& sig, QString Stati
     else if (Static_model == "Ghorbani")
         GhorbaniModel(sig, Coeffs, linear_gain_dB, IBO_dB);
 
-    ApplyFIRWithMemory(sig, FIR_Coeffs, 5);  // 3 - лучше сделать параметром
+    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 5);  // 3 - лучше сделать параметром
+}
+
+void PAModels::HammersteinModel(std::vector<std::complex<double>> &sig, QString Static_model, std::vector<double> &Coeffs, std::vector<double> &FIR_Coeffs, int &linear_gain_dB, int &IBO_dB)
+{
+    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 5);
+
+    // Применяем статическую нелинейность
+    if(Static_model == "Saleh")
+        SalehModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+    else if (Static_model == "Rapp")
+        RappModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+    else if (Static_model == "Ghorbani")
+        GhorbaniModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+}
+
+void PAModels::WHModel(std::vector<std::complex<double> > &sig, QString Static_model, std::vector<double> &Coeffs, std::vector<double> &FIR_Coeffs, int &linear_gain_dB, int &IBO_dB)
+{
+    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 5);
+
+    // Применяем статическую нелинейность
+    if(Static_model == "Saleh")
+        SalehModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+    else if (Static_model == "Rapp")
+        RappModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+    else if (Static_model == "Ghorbani")
+        GhorbaniModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+
+    ApplyFIRWithMemory(sig, FIR_Coeffs[1], 5);
 }
 
 double PAModels::find_Asat_Ghorbani(const std::vector<double>& c,
@@ -116,22 +144,15 @@ double PAModels::find_Asat_Ghorbani(const std::vector<double>& c,
     return A_sat;
 }
 
-void PAModels::ApplyFIRWithMemory(std::vector<std::complex<double>>& signal, const std::vector<double>& FIR_Coefs, int numTaps)
+void PAModels::ApplyFIRWithMemory(std::vector<std::complex<double>>& signal, double alpha, int numTaps)
 {
     const size_t N = signal.size();
-
-    if (N == 0 || FIR_Coefs.size() < 2 || numTaps <= 0) {
-        return;  // Проверка входных данных
-    }
-
-    double C = FIR_Coefs[0];
-    double alpha = FIR_Coefs[1];
 
     // Формируем коэффициенты FIR
     std::vector<std::complex<double>> h(numTaps);
     for (int m = 0; m < numTaps; ++m)
     {
-        h[m] = C * std::pow(alpha, m);  // Вещественные коэффициенты
+        h[m] = std::pow(alpha, m);  // Вещественные коэффициенты
     }
 
     // Нормировка
@@ -175,11 +196,27 @@ void PAModels::ScaleToRMS_forPA(Source& source, GlobalResults& CurRes)
     else if(source.PAModel == "Ghorbani")
         A_sat = find_Asat_Ghorbani(source.GhorbaniCoeffs, qPow(10, source.linear_gain_dB / 20.0));
     else if(source.PAModel == "Wiener") {
-        if (source.StaticNonlinModel == "Saleh")
+        if (source.W_StaticNonlinModel == "Saleh")
             A_sat = 1.0 / std::sqrt(source.SalehCoeffs[1]);
-        else if(source.StaticNonlinModel == "Rapp")
+        else if(source.W_StaticNonlinModel == "Rapp")
             A_sat = source.RappCoeffs[0];
-        else if(source.StaticNonlinModel == "Ghorbani")
+        else if(source.W_StaticNonlinModel == "Ghorbani")
+            A_sat = find_Asat_Ghorbani(source.GhorbaniCoeffs, qPow(10, source.linear_gain_dB / 20.0));
+    }
+    else if(source.PAModel == "Hammerstein") {
+        if (source.H_StaticNonlinModel == "Saleh")
+            A_sat = 1.0 / std::sqrt(source.SalehCoeffs[1]);
+        else if(source.H_StaticNonlinModel == "Rapp")
+            A_sat = source.RappCoeffs[0];
+        else if(source.H_StaticNonlinModel == "Ghorbani")
+            A_sat = find_Asat_Ghorbani(source.GhorbaniCoeffs, qPow(10, source.linear_gain_dB / 20.0));
+    }
+    else if(source.PAModel == "Wiener-Hammerstein") {
+        if (source.WH_StaticNonlinModel == "Saleh")
+            A_sat = 1.0 / std::sqrt(source.SalehCoeffs[1]);
+        else if(source.WH_StaticNonlinModel == "Rapp")
+            A_sat = source.RappCoeffs[0];
+        else if(source.WH_StaticNonlinModel == "Ghorbani")
             A_sat = find_Asat_Ghorbani(source.GhorbaniCoeffs, qPow(10, source.linear_gain_dB / 20.0));
     }
     target_rms = A_sat / std::pow(10.0, source.IBO_dB / 20.0);

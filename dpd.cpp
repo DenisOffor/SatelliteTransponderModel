@@ -37,7 +37,7 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
 
     if (source.PredistorterType == "MP") {
         a = DPDsolve_least_squares(
-            make_MP_mat(pa_output_norm, P, M),
+            make_MP_mat(pa_output_norm, P, M, source.Enable_even_P),
             make_goal(pa_input, source)
             );
 
@@ -46,7 +46,7 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
     else if (source.PredistorterType == "GMP") {
         a = DPDsolve_least_squares(
             make_GMP_mat(pa_output_norm, P, M,
-                         source.GMP_L_lag, source.GMP_L_lead),
+                         source.GMP_L_lag, source.GMP_L_lead, source.Enable_even_P),
             make_goal(pa_input, source)
             );
 
@@ -115,13 +115,17 @@ double DPD::computeGrms(const std::vector<std::complex<double>>& pa_input,
     return rms_out / rms_in;
 }
 
-MatrixXcd DPD::make_MP_mat(const std::vector<std::complex<double>>& x, const int P, const int M)
+MatrixXcd DPD::make_MP_mat(const std::vector<std::complex<double>>& x, const int P, const int M, bool Enable_even_P)
 {
     // y = Phi(x...)*a
     // исключили первые M-1 отсчетов, чтобы не уходить в x[-1] и тд, то есть отрицательные отсчеты
     int N = x.size();
     int rows = N - M + 1;
-    int cols = M * (P + 1) / 2;
+    int cols;
+    int p_iter;
+    if(Enable_even_P) { cols = M * P; p_iter = 1;}
+    else { cols = M * (P + 1) / 2; p_iter = 2; }
+
     MatrixXcd Phi_LS(rows, cols);
     qDebug() << "MP mat: " << rows << "x" << cols;
 
@@ -129,7 +133,7 @@ MatrixXcd DPD::make_MP_mat(const std::vector<std::complex<double>>& x, const int
         size_t cur_row = n - M + 1;
         size_t col_idx = 0;
 
-        for(int p = 1; p <= P; p += 2)
+        for(int p = 1; p <= P; p += p_iter)
             for(int m = 0; m < M; ++m)
                 Phi_LS(cur_row, col_idx++) = x[n - m] * std::pow(std::abs(x[n - m]), p - 1);
     }
@@ -139,11 +143,14 @@ MatrixXcd DPD::make_MP_mat(const std::vector<std::complex<double>>& x, const int
 
 MatrixXcd DPD::make_GMP_mat(const std::vector<std::complex<double>>& x,
                             const int P, const int M,
-                            const int L_lag, const int L_lead)
+                            const int L_lag, const int L_lead, bool Enable_even_P)
 {
     int N = x.size();
     int rows = N - M - L_lag - L_lead + 1;
-    int cols = M * (1 + L_lag + L_lead) * ((P + 1) / 2);
+    int cols;
+    int p_iter;
+    if(Enable_even_P) { cols = M * (1 + L_lag + L_lead) * P; p_iter = 1; }
+    else { cols = M * (1 + L_lag + L_lead) * ((P + 1) / 2); p_iter = 2; }
     MatrixXcd Phi_LS(rows, cols);
 
     qDebug() << "GMP mat:" << rows << "x" << cols;
@@ -153,20 +160,20 @@ MatrixXcd DPD::make_GMP_mat(const std::vector<std::complex<double>>& x,
         int col_idx = 0;
 
         // aligned
-        for (int p = 1; p <= P; p += 2)
+        for (int p = 1; p <= P; p += p_iter)
             for (int m = 0; m < M; ++m)
                 Phi_LS(cur_row, col_idx++) =
                     x[n - m] * std::pow(std::abs(x[n - m]), p - 1);
 
         // lagging
-        for (int p = 1; p <= P; p += 2)
+        for (int p = 1; p <= P; p += p_iter)
             for (int m = 0; m < M; ++m)
                 for (int l = 1; l <= L_lag; ++l)
                     Phi_LS(cur_row, col_idx++) =
                         x[n - m] * std::pow(std::abs(x[n - m - l]), p - 1);
 
         // leading
-        for (int p = 1; p <= P; p += 2)
+        for (int p = 1; p <= P; p += p_iter)
             for (int m = 0; m < M; ++m)
                 for (int l = 1; l <= L_lead; ++l)
                     Phi_LS(cur_row, col_idx++) =
@@ -216,11 +223,13 @@ std::vector<std::complex<double>> DPD::applyMP(
     for (int i = 0; i < M - 1 && i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
 
+    int p_iter = source.Enable_even_P ? 1 : 2;
+
     for (int n = M - 1; n < static_cast<int>(sig.size()); ++n) {
         int idx = 0;
         x_pre[n] = std::complex<double>(0.0, 0.0);
 
-        for (int p = 1; p <= P; p += 2) {
+        for (int p = 1; p <= P; p += p_iter) {
             for (int m = 0; m < M; ++m) {
                 x_pre[n] += coeffs[idx++] *
                             sig[n - m] * norm_coef *
@@ -248,12 +257,14 @@ std::vector<std::complex<double>> DPD::applyGMP(
     for (int i = 0; i < M - 1 + L_lag && i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
 
+    int p_iter = source.Enable_even_P ? 1 : 2;
+
     for (int n = M - 1 + L_lag; n < static_cast<int>(sig.size()) - L_lead; ++n) {
         int idx = 0;
         x_pre[n] = std::complex<double>(0.0, 0.0);
 
         // 1) aligned
-        for (int p = 1; p <= P; p += 2) {
+        for (int p = 1; p <= P; p += p_iter) {
             for (int m = 0; m < M; ++m) {
                 x_pre[n] += coeffs[idx++] *
                             sig[n - m] * norm_coef *
@@ -262,7 +273,7 @@ std::vector<std::complex<double>> DPD::applyGMP(
         }
 
         // 2) lagging
-        for (int p = 1; p <= P; p += 2) {
+        for (int p = 1; p <= P; p += p_iter) {
             for (int m = 0; m < M; ++m) {
                 for (int l = 1; l <= L_lag; ++l) {
                     x_pre[n] += coeffs[idx++] *
@@ -273,7 +284,7 @@ std::vector<std::complex<double>> DPD::applyGMP(
         }
 
         // 3) leading
-        for (int p = 1; p <= P; p += 2) {
+        for (int p = 1; p <= P; p += p_iter) {
             for (int m = 0; m < M; ++m) {
                 for (int l = 1; l <= L_lead; ++l) {
                     x_pre[n] += coeffs[idx++] *

@@ -286,7 +286,7 @@ void GraphPlotting::PlotScatterPaCurve(GlobalResults &res)
     for(int i = 0; i < res.tx_sig.size(); i += 10) {
         x.append(std::abs(res.tx_sig[i]));
         y.append(std::abs(res.pa_sig[i]));
-        Phi.append(std::arg(res.pa_sig[i]) - std::arg(res.tx_sig[i]) * 180 / 3.14);
+        Phi.append((std::arg(res.pa_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
 
     plotPaCurve->graph(2)->setData(x, y);
@@ -324,12 +324,12 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     for(int i = 0; i < res.tx_sig.size(); i += 3) {
         x.append(std::abs(res.tx_sig[i]));
         y.append(std::abs(res.tx_sig[i]));
-        //Phi.append(std::arg(res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i]) * 180 / 3.14);
+        Phi.append((std::arg(res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
     plotsOfDPD[0]->graph(0)->setData(x, y);
-    //plotsOfDPD[3]->graph(1)->setData(x, Phi);
+    plotsOfDPD[3]->graph(1)->setData(x, Phi);
     plotsOfDPD[0]->graph(0)->rescaleAxes();
-    //plotsOfDPD[3]->yAxis2->setRange(0, 45);
+    plotsOfDPD[3]->yAxis2->setRange(0, 45);
     yRange = plotsOfDPD[0]->yAxis->range();
     padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[0]->yAxis->setRange(yRange.lower, yRange.upper + padding);

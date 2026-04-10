@@ -57,21 +57,31 @@ void MetricsEval::computePSD(
     double Fs,
     double oversample,
     std::vector<double>& freq,
-    std::vector<double>& psd_tx)
+    std::vector<double>& psd_tx,
+    std::vector<std::complex<double>>& sig_buff)
 {
-    if(sig_buff.size() > WINDOW_SISE * 2)
-        sig_buff.clear();
+    if(tx.size() < WINDOW_SISE) {
+        if(sig_buff.size() > 4 * WINDOW_SISE)
+            sig_buff.clear();
 
-    for(int i = 0; i < tx.size(); ++i)
-        sig_buff.push_back(tx[i]);
+        for(int i = 0; i < tx.size(); ++i)
+            sig_buff.push_back(tx[i]);
 
-    if(sig_buff.size() < WINDOW_SISE * 2)
-        return;
+        if(sig_buff.size() < 4 * WINDOW_SISE)
+            return;
+        else {
+            freq.clear();
+            psd_tx.clear();
+            auto tx_norm = normalizeSignal(sig_buff);
+            computePSDWelch(tx_norm, Fs, oversample, freq, psd_tx);
+            return;
+        }
+    }
 
 
     freq.clear();
     psd_tx.clear();
-    auto tx_norm = normalizeSignal(sig_buff);
+    auto tx_norm = normalizeSignal(tx);
     computePSDWelch(tx_norm, Fs, oversample, freq, psd_tx);
 }
 
