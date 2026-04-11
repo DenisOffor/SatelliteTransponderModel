@@ -43,35 +43,16 @@ ScResult SC::makeSc(const std::vector<std::complex<double>>& inputSymbols,
     res.tx.resize(baseband.size());
     res.t.resize(baseband.size());
 
-    double Fs_eff = p.fs * p.oversampling;
-
     res.fc = p.fc;
+    for(int n = 0; n < baseband.size(); ++n) {
+        res.t[n] = double(n) / (p.fs * p.oversampling);
 
-    // Fast carrier generation (recursive phase rotation)
-    double w = 2 * M_PI * p.fc / Fs_eff;
-
-    std::complex<double> carrier_step =
-        std::exp(std::complex<double>(0, w));
-
-    std::complex<double> carrier = 1.0;
-
-    for(int n=0;n<baseband.size();n++)
-    {
-        double t = double(n) / Fs_eff;
-        res.t[n] = t;
-
-        if(p.fc > 0)
-        {
-            std::complex<double> mod =
-                baseband[n] * carrier;
-
-            res.tx[n] = std::real(mod);
-
-            carrier *= carrier_step;
-        }
-        else
-        {
-            res.tx[n] = baseband[n];
+        std::complex<double> s = baseband[n];
+        if(p.fc > 0) {
+            s *= std::exp(std::complex<double>(0, 2 * M_PI * p.fc * res.t[n]));
+            res.tx[n] = std::real(s);
+        } else {
+            res.tx[n] = s;
         }
     }
 
@@ -207,31 +188,24 @@ std::vector<std::complex<double>> SC::demodulateSignal(
 
     double Rs = p.SC_symrate;
     int sps = std::round(p.fs * p.oversampling / Rs);
-    double Fs_eff = p.fs * p.oversampling;
 
     // -------------------------------------------------
-    // 1️⃣ Downconversion
+    // Downconversion
     // -------------------------------------------------
-
-    if (p.fc > 0)
-    {
+    if (p.fc > 0) {
         baseband.resize(tx_signal.size());
+        double invFs = 1.0 / (p.fs * p.oversampling);
 
-        double w = 2 * M_PI * p.fc / Fs_eff;
-        std::complex<double> step =
-            std::exp(std::complex<double>(0, -w)); // минус для downconversion
+        for (int n = 0; n < tx_signal.size(); ++n) {
+            double t = n * invFs;
+            std::complex<double> carrier =
+                std::exp(std::complex<double>(0, -2 * M_PI * p.fc * t));
 
-        std::complex<double> carrier = 1.0;
-
-        for(int n = 0; n < tx_signal.size(); ++n)
-        {
             baseband[n] = tx_signal[n] * carrier;
-            carrier *= step;
         }
     }
-    else
-    {
-        baseband = tx_signal;
+    else {
+        baseband = tx_signal;   // shallow copy (Qt implicit sharing)
     }
 
     // -------------------------------------------------

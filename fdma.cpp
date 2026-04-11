@@ -11,6 +11,7 @@ FdmaResult FDMA::generate(
         throw std::runtime_error("Mismatch carriers count");
 
     FdmaResult res;
+    res.fc = p.FDMA_f_carrier;
 
     std::vector<ScResult> carrierSignals;
     carrierSignals.reserve(p.FDMA_num_subcarriers);

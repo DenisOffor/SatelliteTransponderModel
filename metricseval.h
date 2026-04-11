@@ -28,6 +28,11 @@ public:
         std::vector<std::complex<double>>& sig_buff);
     QPair<double, double> Calc_BER(std::vector<Symbols>& symbols);
     QPair<double, double> Calc_EVM(const std::vector<Symbols>& frames);
+    QPair<double, double> computeACPR(const std::vector<double> &freq, const std::vector<double> &psd, double BB,
+                                                   double deltaf, const QString &SigType);
+    double compute_av_P(const std::vector<std::complex<double>>& tx);
+    double compute_av_P_G(double Pin, double Pout);
+    double computePAPR_dB(const std::vector<std::complex<double>>& x);
 };
 
 

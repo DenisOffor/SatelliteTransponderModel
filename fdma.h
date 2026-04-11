@@ -27,8 +27,8 @@ struct FdmaResult
 {
     std::vector<std::complex<double>> tx;
     std::vector<double> t;
-    std::vector<std::complex<double>> currentNoise;
     double totalBandwidth;
+    double fc;
 
     std::vector<ScResult> perCarrierResults;
 };

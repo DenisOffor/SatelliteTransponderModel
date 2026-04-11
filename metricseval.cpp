@@ -141,6 +141,70 @@ QPair<double, double> MetricsEval::Calc_EVM(const std::vector<Symbols>& frames)
     return res;
 }
 
+QPair<double, double> MetricsEval::computeACPR(const std::vector<double> &freq, const std::vector<double> &psd,
+                                               double BB, double deltaf, const QString &SigType)
+{
+    if (SigType == "FDMA")
+        return {0.0, 0.0};
+
+    if (freq.size() < 2 || freq.size() != psd.size())
+        return {0.0, 0.0};
+
+    const double f_step = std::abs(freq[1] - freq[0]);
+
+    const QPair<double, double> main_ch  = {-BB / (1e6 * 2.0),  BB / (1e6 * 2.0)};
+    const QPair<double, double> upper_ch = {-BB / (1e6 * 2.0) + deltaf * 1.5 / 1e6,  BB / (1e6 * 2.0) + deltaf * 1.5 / 1e6};
+    const QPair<double, double> lower_ch = {-BB / (1e6 * 2.0) - deltaf * 1.5 / 1e6,  BB / (1e6 * 2.0) - deltaf * 1.5 / 1e6};
+
+    double P_lower_ch = 0.0;
+    double P_upper_ch = 0.0;
+    double P_main_ch  = 0.0;
+
+    for (int i = 0; i < static_cast<int>(freq.size()); ++i) {
+        const double f = freq[i];
+        double psd_lin = std::pow(10.0, psd[i] / 10.0);
+
+        if (f >= lower_ch.first && f <= lower_ch.second)
+            P_lower_ch += psd_lin * f_step;
+        else if (f >= main_ch.first && f <= main_ch.second)
+            P_main_ch += psd_lin * f_step;
+        else if (f >= upper_ch.first && f <= upper_ch.second)
+            P_upper_ch += psd_lin * f_step;
+    }
+
+    if (P_main_ch <= 0.0)
+        return {0.0, 0.0};
+
+    const double ACPR_lower = (P_lower_ch > 0.0)
+                                  ? 10.0 * std::log10(P_lower_ch / P_main_ch)
+                                  : -std::numeric_limits<double>::infinity();
+
+    const double ACPR_upper = (P_upper_ch > 0.0)
+                                  ? 10.0 * std::log10(P_upper_ch / P_main_ch)
+                                  : -std::numeric_limits<double>::infinity();
+
+    return {ACPR_lower, ACPR_upper};
+}
+
+double MetricsEval::compute_av_P(const std::vector<std::complex<double> > &tx)
+{
+    if (tx.empty()) return 0.0;
+
+    double sum = 0.0;
+    for (const auto& s : tx)
+        sum += std::norm(s);   // |x|^2
+
+    return sum / (tx.size());
+}
+
+double MetricsEval::compute_av_P_G(double Pin, double Pout)
+{
+    if (Pin <= 0.0 || Pout <= 0.0)
+        return -std::numeric_limits<double>::infinity();
+
+    return 10.0 * std::log10(Pout / Pin);
+}
+
 std::vector<double> MetricsEval::hamming(int N)
 {
     std::vector<double> w(N);
@@ -219,4 +283,23 @@ void MetricsEval::computePSDWelch(
         freq[i] = freq[i] / 1e6;
         psd[i] = 10.0 * std::log10(psd[i] + eps);
     }
+}
+
+double MetricsEval::computePAPR_dB(const std::vector<std::complex<double>>& x)
+{
+    if (x.empty()) return 0.0;
+
+    double pavg = 0.0;
+    double ppeak = 0.0;
+
+    for (const auto& s : x) {
+        double p = std::norm(s);
+        pavg += p;
+        if (p > ppeak) ppeak = p;
+    }
+
+    pavg /= x.size();
+    if (pavg <= 0.0) return 0.0;
+
+    return 10.0 * std::log10(ppeak / pavg);
 }

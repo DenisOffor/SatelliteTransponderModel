@@ -198,15 +198,19 @@ struct GlobalResults {
     std::vector<std::complex<double>> tx_plus_dpd_sig;
     std::vector<std::complex<double>> pa_sig;
     std::vector<std::complex<double>> pa_plus_dpd_sig;
+    std::vector<std::complex<double>> pa_sig_noisy;
+    std::vector<std::complex<double>> pa_plus_dpd_sig_noisy;
+    std::vector<std::complex<double>> currentNoise;
     std::vector<std::complex<double>> rec_sig;
     std::vector<double> time;
+    double BB;
 
     double BER_noDPD;
     double BER_withDPD;
     double EVM_noDPD;
     double EVM_withDPD;
-    double ACLR_noDPD;
-    double ACLR_withDPD;
+    QPair<double, double> ACLR_noDPD;
+    QPair<double, double> ACLR_withDPD;
 
     void resize(int size) {
         tx_sig.resize(size);

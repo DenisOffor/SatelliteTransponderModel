@@ -16,7 +16,6 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
         P = source.GMP_P;
         M = source.GMP_M;
     }
-    const int num_orders = (P + 1) / 2;
 
     std::vector<std::complex<double>> pa_output_norm;
     if (source.NormalizationType == "Peak normalization") {
@@ -40,8 +39,6 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
             make_MP_mat(pa_output_norm, P, M, source.Enable_even_P),
             make_goal(pa_input, source)
             );
-
-        num_coeffs = M * num_orders;
     }
     else if (source.PredistorterType == "GMP") {
         a = DPDsolve_least_squares(
@@ -49,14 +46,12 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
                          source.GMP_L_lag, source.GMP_L_lead, source.Enable_even_P),
             make_goal(pa_input, source)
             );
-
-        num_coeffs = M * (1 + source.GMP_L_lag + source.GMP_L_lead) * num_orders;
     }
 
     qDebug() << "LS train time:" << timer.elapsed() << "ms";
 
-    coeffs.resize(num_coeffs);
-    for (int i = 0; i < num_coeffs; ++i)
+    coeffs.resize(a.size());
+    for (int i = 0; i < a.size(); ++i)
         coeffs[i] = a(i);
 }
 
@@ -206,7 +201,8 @@ VectorXcd DPD::make_goal(const std::vector<std::complex<double>>& y, const Sourc
 
 VectorXcd DPD::DPDsolve_least_squares(const MatrixXcd& Phi, const VectorXcd& goal) {
     // Нахождение решения МНК через нормальное уравнение
-    return (Phi.adjoint() * Phi).ldlt().solve(Phi.adjoint() * goal);
+     return (Phi.adjoint() * Phi).ldlt().solve(Phi.adjoint() * goal);
+    //return Phi.colPivHouseholderQr().solve(goal);
 }
 
 std::vector<std::complex<double>> DPD::applyMP(
@@ -217,8 +213,8 @@ std::vector<std::complex<double>> DPD::applyMP(
     std::vector<std::complex<double>> x_pre(sig.size(), std::complex<double>(0.0, 0.0));
 
     double norm_coef = 1.0;
-    if(source.NormalizationType == "RMS normalization")
-        norm_coef = Gpeak/Grms;
+    //if(source.NormalizationType == "RMS normalization")
+    //    norm_coef = Gpeak/Grms;
 
     for (int i = 0; i < M - 1 && i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
@@ -251,8 +247,8 @@ std::vector<std::complex<double>> DPD::applyGMP(
     std::vector<std::complex<double>> x_pre(sig.size(), std::complex<double>(0.0, 0.0));
 
     double norm_coef = 1.0;
-    if(source.NormalizationType == "RMS normalization")
-        norm_coef = Gpeak/Grms;
+    //if(source.NormalizationType == "RMS normalization")
+    //    norm_coef = Gpeak/Grms;
 
     for (int i = 0; i < M - 1 + L_lag && i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;

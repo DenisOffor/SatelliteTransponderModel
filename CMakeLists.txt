@@ -56,6 +56,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         fdma.h fdma.cpp
         dpd.h dpd.cpp
         worker.h worker.cpp
+        processmonitor.h processmonitor.cpp
     )
 
 

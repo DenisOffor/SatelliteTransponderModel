@@ -17,7 +17,7 @@ public:
                      std::vector<double>& FIR_Coeffs, int& linear_gain_dB, int& IBO_dB);
     double find_Asat_Ghorbani(const std::vector<double>& c, double gain_linear);
     void ApplyFIRWithMemory(std::vector<std::complex<double>>& signal, double alpha, int numTaps);
-    void ScaleToRMS_forPA(Source& source, GlobalResults& CurRes);
+    void ScaleToRMS_forPA(std::vector<std::complex<double>>& sig, Source& source);
     void scaleToRMS(std::vector<std::complex<double>>& x, double target_rms);
 };
 

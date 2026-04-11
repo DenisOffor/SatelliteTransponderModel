@@ -2,6 +2,27 @@
 
 PAModels::PAModels() {}
 
+double computeAvgPower(const std::vector<std::complex<double>>& x)
+{
+    if (x.empty()) return 0.0;
+
+    double sum = 0.0;
+    for (const auto& s : x)
+        sum += std::norm(s);
+
+    return sum / x.size();
+}
+
+double computeMeasuredIBO_dB(const std::vector<std::complex<double>>& x, double A_sat)
+{
+    double Pin_avg = computeAvgPower(x);
+    double Psat_in = A_sat * A_sat;
+
+    if (Pin_avg <= 0.0) return 0.0;
+
+    return 10.0 * std::log10(Psat_in / Pin_avg);
+}
+
 void PAModels::SalehModel(std::vector<std::complex<double>>& sig,
                           std::vector<double>& Coeffs,
                           int& linear_gain_dB, int& IBO_dB)
@@ -28,6 +49,10 @@ void PAModels::SalehModel(std::vector<std::complex<double>>& sig,
         // Применяем искажения
         sig[i] = std::polar(amplitude_out[i], phase_in[i] + phase_out[i]);
     }
+
+    double A_sat = 1.0 / std::sqrt(Coeffs[1]);
+    double ibo_meas = computeMeasuredIBO_dB(sig, A_sat);
+    qDebug() << "Measured IBO =" << ibo_meas << "dB";
 }
 
 void PAModels::RappModel(std::vector<std::complex<double>>& sig, std::vector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB)
@@ -184,11 +209,10 @@ void PAModels::ApplyFIRWithMemory(std::vector<std::complex<double>>& signal, dou
     signal = std::move(output);
 }
 
-void PAModels::ScaleToRMS_forPA(Source& source, GlobalResults& CurRes)
+void PAModels::ScaleToRMS_forPA(std::vector<std::complex<double>>& sig, Source& source)
 {
     double A_sat;
     double target_rms;
-    CurRes.pa_sig = CurRes.tx_sig;
     if (source.PAModel == "Saleh")
         A_sat = 1.0 / std::sqrt(source.SalehCoeffs[1]);
     else if(source.PAModel == "Rapp")
@@ -221,8 +245,7 @@ void PAModels::ScaleToRMS_forPA(Source& source, GlobalResults& CurRes)
     }
     target_rms = A_sat / std::pow(10.0, source.IBO_dB / 20.0);
 
-    scaleToRMS(CurRes.tx_sig, target_rms);
-    scaleToRMS(CurRes.pa_sig, target_rms);
+    scaleToRMS(sig, target_rms);
 }
 
 void PAModels::scaleToRMS(std::vector<std::complex<double>>& x, double target_rms)

@@ -27,8 +27,8 @@ OfdmResult OFDM::makeOfdm(const std::vector<std::complex<double> > &symbols, con
         }
     }
 
-    double Nactivetemp = p.Nfft - p.GB_Nyq * 2;
-    res.BB = Nactivetemp / p.Nfft * p.fs; // double(Nactive) / p.Nfft * p.fs;
+    //double Nactivetemp = p.Nfft - p.GB_Nyq * 2;
+    res.BB = p.fs; // double(Nactive) / p.Nfft * p.fs;
 
     std::vector<std::complex<double>> yBB;
 
@@ -58,12 +58,12 @@ OfdmResult OFDM::makeOfdm(const std::vector<std::complex<double> > &symbols, con
         res.t[n] = double(n) / (p.fs * p.oversampling);
 
         std::complex<double> s = yBB[n];
-        //    if(p.fc > 0) {
-        //        s *= std::exp(std::complex<double>(0, 2 * M_PI * p.fc * res.t[n]));
-        //        res.tx[n] = std::real(s);
-        //    } else {
-        res.tx[n] = s;
-        //    }
+        if(p.fc > 0) {
+            s *= std::exp(std::complex<double>(0, 2 * M_PI * p.fc * res.t[n]));
+            res.tx[n] = std::real(s);
+        } else {
+            res.tx[n] = s;
+        }
     }
 
     return res;
@@ -80,21 +80,17 @@ std::vector<std::complex<double>> OFDM::ofdm_demodulate(const std::vector<std::c
     rx_bb = rx;
 
     if (p.fc > 0) {
-        //    rx_bb.resize(rx.size());
-        //    double invFs = 1.0 / (p.fs * p.oversampling);
+           rx_bb.resize(rx.size());
+           double invFs = 1.0 / (p.fs * p.oversampling);
 
-        //    for (int n = 0; n < rx.size(); ++n) {
-        //        double t = n * invFs;
-        //        std::complex<double> carrier =
-        //            std::exp(std::complex<double>(0, -2 * M_PI * p.fc * t));
+           for (int n = 0; n < rx.size(); ++n) {
+               double t = n * invFs;
+               std::complex<double> carrier =
+                   std::exp(std::complex<double>(0, -2 * M_PI * p.fc * t));
 
-        //       rx_bb[n] = rx[n] * carrier;
-        //    }
+              rx_bb[n] = rx[n] * carrier;
+           }
     }
-    //else {
-    //    rx_bb = rx;   // shallow copy (Qt implicit sharing)
-    //}
-
 
     std::vector<std::vector<std::complex<double>>> symbols(numSym, std::vector<std::complex<double>>(Nfft_os));
 
@@ -104,7 +100,7 @@ std::vector<std::complex<double>> OFDM::ofdm_demodulate(const std::vector<std::c
         int offset = s * sym_len + p.CP;
 
         for (int n = 0; n < Nfft_os; ++n)
-            symbols[s][n] = rx[offset + n];
+            symbols[s][n] = rx_bb[offset + n];
     }
 
     FFT myfft(symbols[0].size());
@@ -222,42 +218,4 @@ std::vector<std::complex<double> > OFDM::ofdm_subcarrier_demapping(const std::ve
     }
 
     return data;
-}
-
-void OFDM::changeFc(OfdmResult &x, OfdmParams& p)
-{
-    double invFs = 1.0 / (p.fs * p.oversampling);
-
-    // Вектор для хранения комплексной огибающей
-    std::vector<std::complex<double>> baseband(x.tx.size());
-
-    for (int n = 0; n < x.tx.size(); ++n) {
-        double t = n * invFs;
-
-        if(x.fc > 0) {
-            // Шаг 1: Демодуляция в baseband (убираем старую несущую)
-            std::complex<double> mixer_old =
-                std::exp(std::complex<double>(0, -2 * M_PI * x.fc * t));
-            baseband[n] = x.tx[n] * mixer_old;
-        } else {
-            // Если старой несущей нет, сигнал уже в baseband
-            baseband[n] = x.tx[n];
-        }
-    }
-
-    for (int n = 0; n < x.tx.size(); ++n) {
-        double t = n * invFs;
-
-        if(p.fc > 0) {
-            // Шаг 2: Модуляция на новую несущую
-            std::complex<double> mixer_new =
-                std::exp(std::complex<double>(0, 2 * M_PI * p.fc * t));
-            x.tx[n] = std::real(baseband[n] * mixer_new);
-        } else {
-            // Если новой несущей нет, оставляем в baseband
-            x.tx[n] = baseband[n];
-        }
-    }
-
-    x.fc = p.fc;
 }

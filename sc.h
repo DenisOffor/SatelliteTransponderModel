@@ -22,7 +22,6 @@ struct ScParams {
 struct ScResult {
     std::vector<std::complex<double>> tx;
     std::vector<double> t;
-    std::vector<std::complex<double>> currentNoise;
 
     double bandwidth = 0.0;
     double Tsym = 0.0;

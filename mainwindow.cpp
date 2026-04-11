@@ -65,6 +65,7 @@ MainWindow::MainWindow(QWidget *parent)
     CurrentRecalcNeeds.init();
     SetupCyclePushBtn();
     SetupWorker();
+    SetupProcMonitor();
     FirstDataUpdate();
 }
 
@@ -75,6 +76,7 @@ MainWindow::~MainWindow()
     delete thread;
     delete worker;
     delete timer;
+    delete proc_timer;
     delete ui;
 }
 
@@ -109,19 +111,31 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->SignalTypeComboBox) { UISource.SigType = ui->SignalTypeComboBox->currentText();
         CurrentRecalcNeeds.FullRecalc = true; CurrentRecalcNeeds.TimePlotsRescale = true; if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
 
-    if(senderObj == ui->SC_fc_SpinBox) { UISource.SC_f_carrier = ui->SC_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
+    if(senderObj == ui->SC_fc_SpinBox) {
+        if(CheckfcValidity(ui->SC_fc_SpinBox, UISource.SC_f_carrier)) {
+            UISource.SC_f_carrier = ui->SC_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true;
+        }
+    }
     if(senderObj == ui->SC_SymRate_SpinBox) { UISource.SC_symrate = ui->SC_SymRate_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->SC_Rolloff_doubleSpinBox) { UISource.SC_rolloff = ui->SC_Rolloff_doubleSpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->SC_FilterLength_SpinBox) { UISource.SC_filter_length = ui->SC_FilterLength_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->SC_FilterType_ComboBox) { UISource.SC_FilterType = ui->SC_FilterType_ComboBox->currentText(); CurrentRecalcNeeds.RecalcSig = true; }
 
-    if(senderObj == ui->OFDM_fc_SpinBox) { UISource.OFDM_f_carrier = ui->OFDM_fc_SpinBox->value(); }
+    if(senderObj == ui->OFDM_fc_SpinBox) {
+        if(CheckfcValidity(ui->OFDM_fc_SpinBox, UISource.OFDM_f_carrier)) {
+            UISource.OFDM_f_carrier = ui->OFDM_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true;
+        }
+    }
     if(senderObj == ui->OFDM_Nfft_SpinBox) { UISource.OFDM_Nfft = ui->OFDM_Nfft_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->OFDM_GB_DC_SpinBox) { UISource.OFDM_GB_DC = ui->OFDM_GB_DC_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->OFDM_GBNyq_SpinBox) { UISource.OFDM_GB_Nyq = ui->OFDM_GBNyq_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->OFDM_CyclePref_SpinBox) { UISource.OFDM_cycle_prefix = ui->OFDM_CyclePref_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
 
-    if(senderObj == ui->FDMA_fc_SpinBox) { UISource.FDMA_f_carrier = ui->FDMA_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
+    if(senderObj == ui->FDMA_fc_SpinBox) {
+        if(CheckfcValidity(ui->FDMA_fc_SpinBox, UISource.FDMA_f_carrier)) {
+            UISource.FDMA_f_carrier = ui->FDMA_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true;
+        }
+    }
     if(senderObj == ui->FDMA_SymRate_SpinBox) { UISource.FDMA_symrate = ui->FDMA_SymRate_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->FDMA_NumCarriers_SpinBox) { UISource.FDMA_num_subcarriers = ui->FDMA_NumCarriers_SpinBox->value(); CurrentRecalcNeeds.RecalcSymbols = true; }
     if(senderObj == ui->FDMA_StepCarrier_SpinBox) { UISource.FDMA_step_carrier = ui->FDMA_StepCarrier_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
@@ -303,7 +317,7 @@ void MainWindow::SetupMainLogicWork()
 {
     connect(ui->ModTypeComboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);;
     connect(ui->SNRSymSpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
-    connect(ui->SymSNR_checkBox, &QCheckBox::stateChanged, this, &MainWindow::DataUpdate);
+    connect(ui->SymSNR_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
 
     connect(ui->SC_fc_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SC_SymRate_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
@@ -357,8 +371,10 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->NormalizationType_ComboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
     connect(ui->PredistorterType_comboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
     connect(ui->DPDRecalc_pushButton, &QPushButton::clicked, this, &MainWindow::DPDRecalcBtnClicked);  // &this->MySigProc
-    connect(ui->DPDAutoRecalc_checkBox, &QCheckBox::stateChanged, this, &MainWindow::DataUpdate);
-    connect(ui->EvenP_checkBox, &QCheckBox::stateChanged, this, &MainWindow::DataUpdate);
+    connect(ui->DPDAutoRecalc_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
+    connect(ui->EvenP_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
+
+    //GUI smart behavior
 }
 
 void MainWindow::LockParChange()
@@ -538,12 +554,12 @@ void MainWindow::handleResult()
     ui->EVM_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_noDPD);
     ui->EVM_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_withDPD);
 
-    if(UISource.SigType == "OFDM")
-        ui->BB_label->setText(QString::number(MySigProc.getOfdmRes().BB));
-    else if(UISource.SigType == "FDMA")
-        ui->BB_label->setText(QString::number(MySigProc.getFDMARes().totalBandwidth));
-    else if(UISource.SigType == "SC")
-        ui->BB_label->setText(QString::number(MySigProc.getSCRes().bandwidth));
+    ui->ACLR_l_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_noDPD.first);
+    ui->ACLR_u_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_noDPD.second);
+    ui->ACLR_l_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_withDPD.first);
+    ui->ACLR_u_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_withDPD.second);
+
+    ui->BB_label->setText(QString::number(MySigProc.getTimeSignal().BB));
 }
 
 void MainWindow::PaCurvePlot() {
@@ -594,6 +610,38 @@ void MainWindow::CycleModeSlot()
     CurrentRecalcNeeds.RecalcSymbols = true;
     CurrentRecalcNeeds.DPDRecalc = false;
     MakeMainCalcAndPlot();
+}
+
+bool MainWindow::CheckfcValidity(QSpinBox* spin, double cur_fc)
+{
+    double bb = 0.0;
+    double fc = 0.0;
+    bool need_to_recalc = true;
+
+    if (UISource.SigType == "OFDM") bb = MySigProc.getOfdmRes().BB;
+    else if (UISource.SigType == "FDMA")  bb = MySigProc.getFDMARes().totalBandwidth;
+    else if (UISource.SigType == "SC")  bb = MySigProc.getSCRes().bandwidth;
+
+    if (!spin)
+        return true;
+
+    double left_border  = bb / 2.0;
+    double right_border = (UISource.fs * UISource.oversampling) / 2.0 - bb / 2.0;
+
+    double cur_value = spin->value();
+
+    QSignalBlocker blocker(spin);
+    if (cur_value < left_border) {
+        if(cur_fc < cur_value)
+            spin->setValue(left_border + 500000);
+        else if(cur_fc > cur_value)
+            spin->setValue(0);
+    }
+    else if (cur_value > right_border)
+        spin->setValue(right_border);
+
+    if (cur_fc == spin->value()) need_to_recalc = false;
+    return need_to_recalc;
 }
 
 void MainWindow::onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem*)
@@ -826,6 +874,23 @@ void MainWindow::SetupCyclePushBtn()
 
     connect(ui->Cycle_pushButton, &QPushButton::clicked, this, &MainWindow::cycleBtnClicked);
     ui->Cycle_pushButton->setCheckable(true);
+}
+
+void MainWindow::SetupProcMonitor()
+{
+    proc_timer = new QTimer(this);
+
+    m_procMonitor.reset();
+
+    connect(proc_timer, &QTimer::timeout, this, [this]() {
+        m_procMonitor.update();
+
+        ui->cpuLabel->setText(m_procMonitor.cpuText());
+        ui->ramLabel->setText(m_procMonitor.ramText());
+        //ui->cpuProgressBar->setValue(int(m_procMonitor.cpuUsagePercent()));
+    });
+
+    proc_timer->start(1000);
 }
 
 void MainWindow::onGraphsListItemChanged(QListWidgetItem* current, QListWidgetItem*) {

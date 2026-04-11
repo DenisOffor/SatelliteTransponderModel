@@ -11,6 +11,7 @@
 #include "worker.h"
 #include "graphplotting.h"
 #include "signalprocessing.h"
+#include "processmonitor.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -46,6 +47,8 @@ private:
     QThread* thread;
     Worker* worker;
     QTimer *timer;
+    QTimer *proc_timer;
+    ProcessMonitor m_procMonitor;
 
     void setupAdaptiveWindow();
     void setupSplitter();
@@ -58,8 +61,10 @@ private:
     void SetupMainLogicWork();
     void SetupWorker();
     void SetupCyclePushBtn();
+    void SetupProcMonitor();
     void LockParChange();
     void UnLockParChange();
+    bool CheckfcValidity(QSpinBox* spin, double cur_fc);
 
 private slots:
     void handleResult();

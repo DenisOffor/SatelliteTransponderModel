@@ -19,7 +19,7 @@ struct OfdmParams {
 struct OfdmResult {
     std::vector<std::complex<double>> tx;                     // выходной сигнал
     std::vector<double> t;                      // время
-    std::vector<std::complex<double>> currentNoise;
+
     double fc;
     double BB = 0.0;                        // полоса
     double Tsym = 0.0;                      // длительность символа
@@ -36,7 +36,6 @@ public:
         const std::vector<std::complex<double>> &rx,
         const std::vector<std::complex<double>> &sym_clean,
         const OfdmParams& p);
-    void changeFc(OfdmResult &x, OfdmParams& p);
 private:
     std::vector<std::vector<std::complex<double>>> ofdmSubcarrierMapping(
         const std::vector<std::complex<double>>& dataSymbols,
