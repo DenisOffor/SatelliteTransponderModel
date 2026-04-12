@@ -524,7 +524,6 @@ void GraphPlotting::InitializeDPDLearnPlotting(std::vector<QWidget *> DPDLearnGr
             plotsOfDPD[i]->axisRect()->insetLayout()->setInsetAlignment(
                 0, Qt::AlignBottom  | Qt::AlignRight);
         }
-
         plotsOfDPD[i]->xAxis->setLabel("P_вх, Вт");
         plotsOfDPD[i]->yAxis->setLabel("P_вых, Вт");
         plotsOfDPD[i]->yAxis2->setVisible(true);

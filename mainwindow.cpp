@@ -545,17 +545,27 @@ void MainWindow::handleResult()
     qDebug() << "Graphs time:" << timer.elapsed() << "ms";
     qDebug() << "\n";
 
-    ui->BER_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_noDPD);
     ui->BER_noDPD_label->setText(QString::number(MySigProc.getTimeSignal().BER_noDPD, 'e', 2));
-
-    ui->BER_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().BER_withDPD);
     ui->BER_withDPD_label->setText(QString::number(MySigProc.getTimeSignal().BER_withDPD, 'e', 2));
 
     ui->EVM_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_noDPD);
     ui->EVM_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().EVM_withDPD);
 
+    ui->PARPnoDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().PARP_noDPD);
+    ui->PARPwithDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().PARP_withDPD);
+
+    ui->PformednoDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().P_formed_noDPD);
+    ui->PformedwithDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().P_formed_withDPD);
+
+    ui->PnoDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().P_emitted_noDPD);
+    ui->PwithDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().P_emitted_withDPD);
+
+    ui->GainNoDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().Gain_noDPD);
+    ui->GainWithDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().Gain_withDPD);
+
     ui->ACLR_l_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_noDPD.first);
     ui->ACLR_u_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_noDPD.second);
+
     ui->ACLR_l_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_withDPD.first);
     ui->ACLR_u_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_withDPD.second);
 

@@ -211,6 +211,14 @@ struct GlobalResults {
     double EVM_withDPD;
     QPair<double, double> ACLR_noDPD;
     QPair<double, double> ACLR_withDPD;
+    double P_formed_noDPD;
+    double P_formed_withDPD;
+    double P_emitted_noDPD;
+    double P_emitted_withDPD;
+    double PARP_noDPD;
+    double PARP_withDPD;
+    double Gain_noDPD;
+    double Gain_withDPD;
 
     void resize(int size) {
         tx_sig.resize(size);

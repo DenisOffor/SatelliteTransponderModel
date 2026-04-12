@@ -58,33 +58,64 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
         static int num_iter = 1;
         if(CurrentRecalcNeeds.CycleMode == true) {
-            double BER_noDPD, BER_withDPD, EVM_noDPD, EVM_withDPD;
+            double BER_noDPD, BER_withDPD, EVM_noDPD, EVM_withDPD, Gain_noDPD, Gain_withDPD;
+            double P_formed_noDPD, P_formed_withDPD, P_emitted_noDPD, P_emitted_withDPD, PARP_noDPD, PARP_withDPD;
+            QPair<double, double> ACLR_noDPD, ACLR_withDPD;
             std::tie(BER_noDPD, BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
             std::tie(EVM_noDPD, EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
+            P_formed_noDPD = MyMetricsEval.compute_av_P(CurrentRes.tx_sig);
+            P_formed_withDPD = MyMetricsEval.compute_av_P(CurrentRes.tx_plus_dpd_sig);
+            P_emitted_noDPD = MyMetricsEval.compute_av_P(CurrentRes.pa_sig);
+            P_emitted_withDPD = MyMetricsEval.compute_av_P(CurrentRes.pa_plus_dpd_sig);
+            Gain_noDPD = MyMetricsEval.compute_av_P_G(CurrentRes.P_formed_noDPD, CurrentRes.P_emitted_noDPD);
+            Gain_withDPD = MyMetricsEval.compute_av_P_G(CurrentRes.P_formed_noDPD, CurrentRes.P_emitted_withDPD);
+            PARP_noDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_sig);
+            PARP_withDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_plus_dpd_sig);
 
             CurrentRes.BER_noDPD = (CurrentRes.BER_noDPD * MySource.NumSym + BER_noDPD * MySource.NumSym) / ((++num_iter) * MySource.NumSym);
             CurrentRes.BER_withDPD = (CurrentRes.BER_withDPD * MySource.NumSym + BER_withDPD * MySource.NumSym) / (num_iter * MySource.NumSym);;
+
             CurrentRes.EVM_noDPD = (CurrentRes.EVM_noDPD * (num_iter - 1) + EVM_noDPD) / num_iter;
             CurrentRes.EVM_withDPD = (CurrentRes.EVM_withDPD * (num_iter - 1)  + EVM_withDPD) / num_iter;
+
+            CurrentRes.ACLR_noDPD.first = (CurrentRes.ACLR_noDPD.first * (num_iter - 1) + ACLR_noDPD.first) / num_iter;
+            CurrentRes.ACLR_noDPD.second = (CurrentRes.ACLR_noDPD.second * (num_iter - 1) + ACLR_noDPD.second) / num_iter;
+
+            CurrentRes.ACLR_withDPD.first = (CurrentRes.ACLR_withDPD.first * (num_iter - 1) + ACLR_withDPD.first) / num_iter;
+            CurrentRes.ACLR_withDPD.second = (CurrentRes.ACLR_withDPD.second * (num_iter - 1) + ACLR_withDPD.second) / num_iter;
+
+            CurrentRes.P_formed_noDPD = (CurrentRes.P_formed_noDPD * (num_iter - 1) + P_formed_noDPD) / num_iter;
+            CurrentRes.P_formed_withDPD = (CurrentRes.P_formed_withDPD * (num_iter - 1)  + P_formed_withDPD) / num_iter;
+
+            CurrentRes.P_emitted_noDPD = (CurrentRes.P_emitted_noDPD * (num_iter - 1) + P_emitted_noDPD) / num_iter;
+            CurrentRes.P_emitted_withDPD = (CurrentRes.P_emitted_withDPD * (num_iter - 1)  + P_emitted_withDPD) / num_iter;
+
+            CurrentRes.Gain_noDPD = (CurrentRes.Gain_noDPD * (num_iter - 1) + Gain_noDPD) / num_iter;
+            CurrentRes.Gain_withDPD = (CurrentRes.Gain_withDPD * (num_iter - 1)  + Gain_withDPD) / num_iter;
+
+            CurrentRes.PARP_noDPD = (CurrentRes.PARP_noDPD * (num_iter - 1)  + PARP_noDPD) / num_iter;
+            CurrentRes.PARP_withDPD = (CurrentRes.PARP_withDPD * (num_iter - 1)  + PARP_withDPD) / num_iter;
         }
         else if(CurrentRecalcNeeds.CycleMode == false) {
             num_iter = 1;
             CurrentRes.ACLR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[1], CurrentRes.BB, CurrentRes.BB, MySource.SigType);
             CurrentRes.ACLR_withDPD = MyMetricsEval.computeACPR(freq[0], PSDs[3], CurrentRes.BB, CurrentRes.BB, MySource.SigType);
+
             std::tie(CurrentRes.BER_noDPD, CurrentRes.BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
+
             std::tie(CurrentRes.EVM_noDPD, CurrentRes.EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
-            double tx_p = MyMetricsEval.compute_av_P(CurrentRes.tx_sig);
-            double tx_p_DPD = MyMetricsEval.compute_av_P(CurrentRes.tx_plus_dpd_sig);
-            qDebug() << "P tx no DPD:" << tx_p;
-            qDebug() << "P tx with DPD:" << tx_p_DPD;
-            double P_pa = MyMetricsEval.compute_av_P(CurrentRes.pa_sig);
-            qDebug() << "P PA no DPD:" << P_pa;
-            double P_pa_with_DPD = MyMetricsEval.compute_av_P(CurrentRes.pa_plus_dpd_sig);
-            qDebug() << "P PA with DPD:" << P_pa_with_DPD;
-            double Gain_noDPD = MyMetricsEval.compute_av_P_G(tx_p, P_pa);
-            double Gain_withDPD = MyMetricsEval.compute_av_P_G(tx_p, P_pa_with_DPD);
-            qDebug() << "Gain no DPD:" << Gain_noDPD;
-            qDebug() << "Gain with DPD:" << Gain_withDPD;
+
+            CurrentRes.P_formed_noDPD = MyMetricsEval.compute_av_P(CurrentRes.tx_sig);
+            CurrentRes.P_formed_withDPD = MyMetricsEval.compute_av_P(CurrentRes.tx_plus_dpd_sig);
+
+            CurrentRes.P_emitted_noDPD = MyMetricsEval.compute_av_P(CurrentRes.pa_sig);
+            CurrentRes.P_emitted_withDPD = MyMetricsEval.compute_av_P(CurrentRes.pa_plus_dpd_sig);
+
+            CurrentRes.Gain_noDPD = MyMetricsEval.compute_av_P_G(CurrentRes.P_formed_noDPD, CurrentRes.P_emitted_noDPD);
+            CurrentRes.Gain_withDPD = MyMetricsEval.compute_av_P_G(CurrentRes.P_formed_noDPD, CurrentRes.P_emitted_withDPD);
+
+            CurrentRes.PARP_noDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_sig);
+            CurrentRes.PARP_withDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_plus_dpd_sig);
         }
     }
     qDebug() << "Metrics time:" << timer.elapsed() << "ms";
