@@ -308,36 +308,37 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     QVector<double> x, y, z;
     QVector<double> Phi;
 
-    for(int i = 0; i < res.tx_sig.size(); i += 1) {
+    x.clear(); y.clear(); Phi.clear();
+    for(int i = 0; i < res.tx_sig.size(); i += 2) {
         x.append(std::abs(res.tx_sig[i]));
-        y.append(std::abs(res.pa_sig_noisy[i]));
+        y.append(std::abs(res.tx_sig[i]));
+        Phi.append((std::arg(res.tx_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
+    }
+    plotsOfDPD[0]->graph(0)->setData(x, y);
+    plotsOfDPD[0]->graph(1)->setData(x, Phi);
+    plotsOfDPD[0]->graph(0)->rescaleAxes();
+    plotsOfDPD[0]->yAxis2->setRange(-45, 45);
+    auto yRange = plotsOfDPD[0]->yAxis->range();
+    double padding = (yRange.upper - yRange.lower) * 0.05;
+    plotsOfDPD[0]->yAxis->setRange(yRange.lower, yRange.upper + padding);
+    plotsOfDPD[0]->replot();
+
+    y.clear(); Phi.clear();
+    for(int i = 0; i < res.tx_sig.size(); i += 2) {
+        y.append(std::abs(res.pa_sig[i]));
         Phi.append((std::arg(res.pa_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
     plotsOfDPD[1]->graph(0)->setData(x, y);
     plotsOfDPD[1]->graph(1)->setData(x, Phi);
     plotsOfDPD[1]->graph(0)->rescaleAxes();
     plotsOfDPD[1]->yAxis2->setRange(-45, 45);
-    auto yRange = plotsOfDPD[1]->yAxis->range();
-    double padding = (yRange.upper - yRange.lower) * 0.05;
+    yRange = plotsOfDPD[1]->yAxis->range();
+    padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[1]->yAxis->setRange(yRange.lower, yRange.upper + padding);
     plotsOfDPD[1]->replot();
 
     y.clear(); Phi.clear();
-    for(int i = 0; i < res.tx_sig.size(); i += 1) {
-        y.append(std::abs(res.tx_sig[i]));
-        Phi.append((std::arg(res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
-    }
-    plotsOfDPD[0]->graph(0)->setData(x, y);
-    plotsOfDPD[3]->graph(1)->setData(x, Phi);
-    plotsOfDPD[0]->graph(0)->rescaleAxes();
-    plotsOfDPD[3]->yAxis2->setRange(-45, 45);
-    yRange = plotsOfDPD[0]->yAxis->range();
-    padding = (yRange.upper - yRange.lower) * 0.05;
-    plotsOfDPD[0]->yAxis->setRange(yRange.lower, yRange.upper + padding);
-    plotsOfDPD[0]->replot();
-
-    y.clear(); Phi.clear();
-    for(int i = 0; i < res.tx_sig.size(); i += 1) {
+    for(int i = 0; i < res.tx_sig.size(); i += 2) {
         y.append(std::abs(res.tx_plus_dpd_sig[i]));
         Phi.append(std::arg((res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
@@ -351,10 +352,9 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[3]->replot();
 
 
-    x.clear(); y.clear(); Phi.clear();
-    for(int i = 0; i < res.tx_sig.size(); i += 1) {
-        x.append(std::abs(res.tx_plus_dpd_sig[i]));
-        y.append(std::abs(res.pa_plus_dpd_sig_noisy[i]));
+    y.clear(); Phi.clear();
+    for(int i = 0; i < res.tx_sig.size(); i += 2) {
+        y.append(std::abs(res.pa_plus_dpd_sig[i]));
         Phi.append((std::arg(res.pa_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
     plotsOfDPD[4]->graph(0)->setData(x, y);
@@ -366,15 +366,13 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[4]->yAxis->setRange(yRange.lower, yRange.upper + padding);
     plotsOfDPD[4]->replot();
 
-    x.clear(); z.clear(); y.clear(); Phi.clear();
-    for(int i = 0; i < res.tx_sig.size(); i += 1) {
-        x.append(std::abs(res.tx_sig[i]));
-        z.append(std::abs(res.tx_plus_dpd_sig[i]));
-        y.append(std::abs(res.pa_sig_noisy[i]));
-        Phi.append(std::abs(res.pa_plus_dpd_sig_noisy[i]));
+    y.clear(); Phi.clear();
+    for(int i = 0; i < res.tx_sig.size(); i += 2) {
+        y.append(std::abs(res.pa_sig[i]));
+        Phi.append(std::abs(res.pa_plus_dpd_sig[i]));
     }
     plotsOfDPD[5]->graph(0)->setData(x, y);
-    plotsOfDPD[5]->graph(1)->setData(z, Phi);
+    plotsOfDPD[5]->graph(1)->setData(x, Phi);
     plotsOfDPD[5]->graph(0)->rescaleAxes();
     plotsOfDPD[5]->graph(1)->rescaleAxes();
     yRange = plotsOfDPD[5]->yAxis->range();
