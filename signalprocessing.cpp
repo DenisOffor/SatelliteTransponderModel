@@ -305,7 +305,7 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
 
     std::vector<Symbols> TrainSymbols;
     int sym = MySource.NumSym;
-    MySource.NumSym = 1000;
+    MySource.NumSym = 5000;
     GlobalResults TrainRes;
     GeneratePacksOfSymbols(TrainSymbols, MySource, temp);
     TransmitSignalProcessing(MySource, TrainSymbols, temp, TrainRes);
