@@ -29,9 +29,13 @@ private:
                             const std::vector<std::complex<double>>& pa_output);
     double computeRMS(const std::vector<std::complex<double>>& sig);
     VectorXcd DPDsolve_least_squares(const MatrixXcd& A, const VectorXcd& b);
+    VectorXcd DPDsolve_least_squares_fixed_linear(const MatrixXcd& A, const VectorXcd& b);
     MatrixXcd make_MP_mat(const std::vector<std::complex<double>>& x, const int P, const int M, bool Enable_even_P);
     MatrixXcd make_GMP_mat(const std::vector<std::complex<double>>& x, const int P, const int M, const int L_lag, const int L_lead, bool Enable_even_P);
     VectorXcd make_goal(const  std::vector<std::complex<double>>& y, const Source& source);
+    void softClip(std::vector<std::complex<double>>& x, double A_lim);
+    double getAmplitudeLimitFromTargetPAPR(const std::vector<std::complex<double>>& x,
+                                           double paprTarget_dB);
 };
 
 #endif // DPD_H

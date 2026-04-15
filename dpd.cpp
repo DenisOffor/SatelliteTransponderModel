@@ -35,13 +35,13 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
     int num_coeffs = 0;
 
     if (source.PredistorterType == "MP") {
-        a = DPDsolve_least_squares(
+        a = DPDsolve_least_squares_fixed_linear(
             make_MP_mat(pa_output_norm, P, M, source.Enable_even_P),
             make_goal(pa_input, source)
             );
     }
     else if (source.PredistorterType == "GMP") {
-        a = DPDsolve_least_squares(
+        a = DPDsolve_least_squares_fixed_linear(
             make_GMP_mat(pa_output_norm, P, M,
                          source.GMP_L_lag, source.GMP_L_lead, source.Enable_even_P),
             make_goal(pa_input, source)
@@ -205,6 +205,43 @@ VectorXcd DPD::DPDsolve_least_squares(const MatrixXcd& Phi, const VectorXcd& goa
     //return Phi.colPivHouseholderQr().solve(goal);
 }
 
+VectorXcd DPD::DPDsolve_least_squares_fixed_linear(const MatrixXcd &A, const VectorXcd &b)
+{
+    if (A.cols() == 0 || A.rows() == 0)
+        return VectorXcd();
+
+    // Первый коэффициент фиксируем
+    const std::complex<double> a0_fixed(1.0, 0.0);
+
+    // Если в модели только один коэффициент
+    if (A.cols() == 1) {
+        VectorXcd a(1);
+        a(0) = a0_fixed;
+        return a;
+    }
+
+    // Первый столбец = главный линейный член
+    VectorXcd phi0 = A.col(0);
+
+    // Новый целевой вектор:
+    // b = phi0 * 1 + Arest * arest
+    VectorXcd b_rest = b - phi0 * a0_fixed;
+
+    // Матрица без первого столбца
+    MatrixXcd A_rest = A.rightCols(A.cols() - 1);
+
+    // Решаем для остальных коэффициентов
+    VectorXcd a_rest =
+        A_rest.colPivHouseholderQr().solve(b_rest); //(A_rest.adjoint() * A_rest).ldlt().solve(A_rest.adjoint() * b_rest);
+
+    // Склеиваем полный вектор коэффициентов
+    VectorXcd a(A.cols());
+    a(0) = a0_fixed;
+    a.tail(A.cols() - 1) = a_rest;
+
+    return a;
+}
+
 std::vector<std::complex<double>> DPD::applyMP(
     const std::vector<std::complex<double>>& sig, const Source& source)
 {
@@ -213,8 +250,8 @@ std::vector<std::complex<double>> DPD::applyMP(
     std::vector<std::complex<double>> x_pre(sig.size(), std::complex<double>(0.0, 0.0));
 
     double norm_coef = 1.0;
-    //if(source.NormalizationType == "RMS normalization")
-    //    norm_coef = Gpeak/Grms;
+    if(source.NormalizationType == "RMS normalization")
+        norm_coef = Gpeak/Grms;
 
     for (int i = 0; i < M - 1 && i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
@@ -234,6 +271,9 @@ std::vector<std::complex<double>> DPD::applyMP(
         }
     }
 
+    //double A_lim = getAmplitudeLimitFromTargetPAPR(sig, 9.0);
+    //softClip(x_pre, A_lim);
+
     return x_pre;
 }
 
@@ -247,8 +287,8 @@ std::vector<std::complex<double>> DPD::applyGMP(
     std::vector<std::complex<double>> x_pre(sig.size(), std::complex<double>(0.0, 0.0));
 
     double norm_coef = 1.0;
-    //if(source.NormalizationType == "RMS normalization")
-    //    norm_coef = Gpeak/Grms;
+    if(source.NormalizationType == "RMS normalization")
+        norm_coef = Gpeak/Grms;
 
     for (int i = 0; i < M - 1 + L_lag && i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
@@ -295,8 +335,27 @@ std::vector<std::complex<double>> DPD::applyGMP(
          i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
 
+    //double A_lim = getAmplitudeLimitFromTargetPAPR(sig, 9.0);
+    //softClip(x_pre, A_lim);
+
     return x_pre;
 }
 
+void DPD::softClip(std::vector<std::complex<double>>& x, double A_lim)
+{
+    for (auto& s : x) {
+        double a = std::abs(s);
+        if (a > 1e-12) {
+            double gain = std::tanh(a / A_lim) / (a / A_lim);
+            s *= gain;
+        }
+    }
+}
 
+double DPD::getAmplitudeLimitFromTargetPAPR(const std::vector<std::complex<double>>& x,
+                                       double paprTarget_dB)
+{
+    double rms = computeRMS(x);
+    return rms * std::pow(10.0, paprTarget_dB / 20.0);
+}
 

@@ -219,6 +219,8 @@ struct GlobalResults {
     double PARP_withDPD;
     double Gain_noDPD;
     double Gain_withDPD;
+    double NMSE_noDPD;
+    double NMSE_withDPD;
 
     void resize(int size) {
         tx_sig.resize(size);

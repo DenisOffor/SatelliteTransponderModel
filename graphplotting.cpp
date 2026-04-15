@@ -308,8 +308,10 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     QVector<double> x, y, z;
     QVector<double> Phi;
 
+    size_t step = 2;
+
     x.clear(); y.clear(); Phi.clear();
-    for(int i = 0; i < res.tx_sig.size(); i += 2) {
+    for(int i = 0; i < res.tx_sig.size(); i += step) {
         x.append(std::abs(res.tx_sig[i]));
         y.append(std::abs(res.tx_sig[i]));
         Phi.append((std::arg(res.tx_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
@@ -317,35 +319,35 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[0]->graph(0)->setData(x, y);
     plotsOfDPD[0]->graph(1)->setData(x, Phi);
     plotsOfDPD[0]->graph(0)->rescaleAxes();
-    plotsOfDPD[0]->yAxis2->setRange(-45, 45);
+    plotsOfDPD[0]->yAxis2->setRange(-180, 180);
     auto yRange = plotsOfDPD[0]->yAxis->range();
     double padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[0]->yAxis->setRange(yRange.lower, yRange.upper + padding);
     plotsOfDPD[0]->replot();
 
     y.clear(); Phi.clear();
-    for(int i = 0; i < res.tx_sig.size(); i += 2) {
+    for(int i = 0; i < res.tx_sig.size(); i += step) {
         y.append(std::abs(res.pa_sig[i]));
         Phi.append((std::arg(res.pa_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
     plotsOfDPD[1]->graph(0)->setData(x, y);
     plotsOfDPD[1]->graph(1)->setData(x, Phi);
     plotsOfDPD[1]->graph(0)->rescaleAxes();
-    plotsOfDPD[1]->yAxis2->setRange(-45, 45);
+    plotsOfDPD[1]->yAxis2->setRange(-180, 180);
     yRange = plotsOfDPD[1]->yAxis->range();
     padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[1]->yAxis->setRange(yRange.lower, yRange.upper + padding);
     plotsOfDPD[1]->replot();
 
     y.clear(); Phi.clear();
-    for(int i = 0; i < res.tx_sig.size(); i += 2) {
-        y.append(std::abs(res.tx_plus_dpd_sig[i]));
+    for(int i = 0; i < res.tx_sig.size(); i += step) {
+        y.append(std::abs(res.tx_sig[i]));
         Phi.append(std::arg((res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
     plotsOfDPD[3]->graph(0)->setData(x, y);
     plotsOfDPD[3]->graph(1)->setData(x, Phi);
     plotsOfDPD[3]->graph(0)->rescaleAxes();
-    plotsOfDPD[3]->yAxis2->setRange(-45, 45);
+    plotsOfDPD[3]->yAxis2->setRange(-180, 180);
     yRange = plotsOfDPD[3]->yAxis->range();
     padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[3]->yAxis->setRange(yRange.lower, yRange.upper + padding);
@@ -353,21 +355,21 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
 
 
     y.clear(); Phi.clear();
-    for(int i = 0; i < res.tx_sig.size(); i += 2) {
+    for(int i = 0; i < res.tx_sig.size(); i += step) {
         y.append(std::abs(res.pa_plus_dpd_sig[i]));
         Phi.append((std::arg(res.pa_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
     plotsOfDPD[4]->graph(0)->setData(x, y);
     plotsOfDPD[4]->graph(1)->setData(x, Phi);
     plotsOfDPD[4]->graph(0)->rescaleAxes();
-    plotsOfDPD[4]->yAxis2->setRange(-45, 45);
+    plotsOfDPD[4]->yAxis2->setRange(-180, 180);
     yRange = plotsOfDPD[4]->yAxis->range();
     padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[4]->yAxis->setRange(yRange.lower, yRange.upper + padding);
     plotsOfDPD[4]->replot();
 
     y.clear(); Phi.clear();
-    for(int i = 0; i < res.tx_sig.size(); i += 2) {
+    for(int i = 0; i < res.tx_sig.size(); i += step) {
         y.append(std::abs(res.pa_sig[i]));
         Phi.append(std::abs(res.pa_plus_dpd_sig[i]));
     }
@@ -508,14 +510,14 @@ void GraphPlotting::InitializeDPDLearnPlotting(std::vector<QWidget *> DPDLearnGr
         DPDLearnGraphWidgets[i]->layout()->addWidget(plotsOfDPD[i]);
         plotsOfDPD[i]->addGraph();
         plotsOfDPD[i]->graph(0)->setLineStyle(QCPGraph::lsNone);
-        plotsOfDPD[i]->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::black, 3));
+        plotsOfDPD[i]->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::black, 2));
         plotsOfDPD[i]->addGraph();
         plotsOfDPD[i]->graph(1)->setLineStyle(QCPGraph::lsNone);
-        plotsOfDPD[i]->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::blue, 3));
+        plotsOfDPD[i]->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::blue, 2));
         plotsOfDPD[i]->graph(1)->setValueAxis(plotsOfDPD[i]->yAxis2);
         if(i == 5) {
             plotsOfDPD[i]->graph(1)->setLineStyle(QCPGraph::lsNone);
-            plotsOfDPD[i]->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::red, 3));
+            plotsOfDPD[i]->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::red, 2));
             plotsOfDPD[i]->graph(0)->setName("Scatter no DPD");
             plotsOfDPD[i]->graph(1)->setName("Scatter with DPD");
             plotsOfDPD[i]->legend->setVisible(true);

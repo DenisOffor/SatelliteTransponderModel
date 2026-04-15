@@ -202,9 +202,9 @@ void MainWindow::DataUpdate()
 
     if(senderObj == ui->W_StaticNonlin_comboBox) {UISource.W_StaticNonlinModel = ui->W_StaticNonlin_comboBox->currentText();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; }
-    if(senderObj == ui->H_StaticNonlin_comboBox) {UISource.W_StaticNonlinModel = ui->W_StaticNonlin_comboBox->currentText();
+    if(senderObj == ui->H_StaticNonlin_comboBox) {UISource.H_StaticNonlinModel = ui->H_StaticNonlin_comboBox->currentText();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; }
-    if(senderObj == ui->WH_StaticNonlin_comboBox) {UISource.W_StaticNonlinModel = ui->W_StaticNonlin_comboBox->currentText();
+    if(senderObj == ui->WH_StaticNonlin_comboBox) {UISource.WH_StaticNonlinModel = ui->WH_StaticNonlin_comboBox->currentText();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; }
     if(senderObj == ui->LinearGain_SpinBox) { UISource.linear_gain_dB = ui->LinearGain_SpinBox->value();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; CurrentRecalcNeeds.TimePlotsRescale = true;}
@@ -214,10 +214,10 @@ void MainWindow::DataUpdate()
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; CurrentRecalcNeeds.TimePlotsRescale = true;}
 
     if(senderObj == ui->MP_M_spinBox) { UISource.MP_M = ui->MP_M_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->MP_P_spinBox) { UISource.MP_M = ui->MP_P_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->MP_P_spinBox) { UISource.MP_P = ui->MP_P_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
 
     if(senderObj == ui->GMP_M_spinBox) { UISource.GMP_M = ui->GMP_M_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->GMP_P_spinBox) { UISource.GMP_M = ui->GMP_P_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->GMP_P_spinBox) { UISource.GMP_P = ui->GMP_P_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->GMP_L_lag_spinBox) { UISource.GMP_L_lag = ui->GMP_L_lag_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->GMP_L_lead_spinBox) { UISource.GMP_L_lead = ui->GMP_L_lead_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
 
@@ -246,7 +246,7 @@ void MainWindow::FirstDataUpdate()
 
     UISource.ModType = ui->ModTypeComboBox->currentText();
     UISource.SNRSymdB = ui->SNRSymSpinBox->value();
-    UISource.NumSym = 10000;
+    UISource.NumSym = 2000;
     UISource.EnableSymSNR = ui->SymSNR_checkBox->isChecked();
     UISource.SigType = ui->SignalTypeComboBox->currentText();
     UISource.SC_f_carrier = ui->SC_fc_SpinBox->value();
@@ -291,8 +291,8 @@ void MainWindow::FirstDataUpdate()
     UISource.IBO_dB = ui->IBO_SpinBox->value();
     UISource.PAModel = ui->PAModel_ComboBox->currentText();
     UISource.W_StaticNonlinModel = ui->W_StaticNonlin_comboBox->currentText();
-    UISource.H_StaticNonlinModel = ui->W_StaticNonlin_comboBox->currentText();
-    UISource.WH_StaticNonlinModel = ui->W_StaticNonlin_comboBox->currentText();
+    UISource.H_StaticNonlinModel = ui->H_StaticNonlin_comboBox->currentText();
+    UISource.WH_StaticNonlinModel = ui->WH_StaticNonlin_comboBox->currentText();
 
     UISource.MP_M = ui->MP_M_spinBox->value();
     UISource.MP_P = ui->MP_P_spinBox->value();
@@ -569,6 +569,9 @@ void MainWindow::handleResult()
     ui->ACLR_l_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_withDPD.first);
     ui->ACLR_u_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_withDPD.second);
 
+    ui->NMSE_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().NMSE_noDPD);
+    ui->NMSE_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().NMSE_withDPD);
+
     ui->BB_label->setText(QString::number(MySigProc.getTimeSignal().BB));
 }
 
@@ -602,7 +605,7 @@ void MainWindow::cycleBtnClicked()
         timer->stop();
         CurrentRecalcNeeds.CycleMode = false;
         CurrentRecalcNeeds.FullRecalc = true;
-        UISource.NumSym = 10000;
+        UISource.NumSym = 2000;
         MySigProc.clear_OFDM_buffs();
         MySigProc.DataUpdate(UISource);
         MakeMainCalcAndPlot();
@@ -702,6 +705,8 @@ void MainWindow::PaModelTypeComboBoxTextChanged(const QString& comboxString)
         ui->PaSettings_StackedWidget->setCurrentWidget(ui->Hammerstein_model_settings);
     else if (comboxString == "Wiener-Hammerstein")
         ui->PaSettings_StackedWidget->setCurrentWidget(ui->WH_model_settings);
+    else if (comboxString == "Memory Polynomial")
+        ui->PaSettings_StackedWidget->setCurrentWidget(ui->MP_model_settings);
 }
 
 void MainWindow::DPDTypeComboBoxTextChange(const QString &comboxString)

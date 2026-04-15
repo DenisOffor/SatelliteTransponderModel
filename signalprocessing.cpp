@@ -58,7 +58,7 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
         static int num_iter = 1;
         if(CurrentRecalcNeeds.CycleMode == true) {
-            double BER_noDPD, BER_withDPD, EVM_noDPD, EVM_withDPD, Gain_noDPD, Gain_withDPD;
+            double BER_noDPD, BER_withDPD, EVM_noDPD, EVM_withDPD, Gain_noDPD, Gain_withDPD, NMSE_noDPD, NMSE_withDPD;
             double P_formed_noDPD, P_formed_withDPD, P_emitted_noDPD, P_emitted_withDPD, PARP_noDPD, PARP_withDPD;
             QPair<double, double> ACLR_noDPD, ACLR_withDPD;
             std::tie(BER_noDPD, BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
@@ -71,6 +71,12 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
             Gain_withDPD = MyMetricsEval.compute_av_P_G(CurrentRes.P_formed_noDPD, CurrentRes.P_emitted_withDPD);
             PARP_noDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_sig);
             PARP_withDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_plus_dpd_sig);
+            NMSE_noDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_sig);
+            NMSE_withDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_plus_dpd_sig);
+
+
+            ACLR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[1], CurrentRes.BB, CurrentRes.BB, MySource.SigType);
+            ACLR_withDPD = MyMetricsEval.computeACPR(freq[0], PSDs[3], CurrentRes.BB, CurrentRes.BB, MySource.SigType);
 
             CurrentRes.BER_noDPD = (CurrentRes.BER_noDPD * MySource.NumSym + BER_noDPD * MySource.NumSym) / ((++num_iter) * MySource.NumSym);
             CurrentRes.BER_withDPD = (CurrentRes.BER_withDPD * MySource.NumSym + BER_withDPD * MySource.NumSym) / (num_iter * MySource.NumSym);;
@@ -95,6 +101,9 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
             CurrentRes.PARP_noDPD = (CurrentRes.PARP_noDPD * (num_iter - 1)  + PARP_noDPD) / num_iter;
             CurrentRes.PARP_withDPD = (CurrentRes.PARP_withDPD * (num_iter - 1)  + PARP_withDPD) / num_iter;
+
+            CurrentRes.NMSE_noDPD = (CurrentRes.NMSE_noDPD * (num_iter - 1)  + NMSE_noDPD) / num_iter;
+            CurrentRes.NMSE_withDPD = (CurrentRes.NMSE_withDPD * (num_iter - 1)  + NMSE_withDPD) / num_iter;
         }
         else if(CurrentRecalcNeeds.CycleMode == false) {
             num_iter = 1;
@@ -116,6 +125,9 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
             CurrentRes.PARP_noDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_sig);
             CurrentRes.PARP_withDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_plus_dpd_sig);
+
+            CurrentRes.NMSE_noDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_sig);
+            CurrentRes.NMSE_withDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_plus_dpd_sig);
         }
     }
     qDebug() << "Metrics time:" << timer.elapsed() << "ms";
@@ -305,7 +317,7 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
 
     std::vector<Symbols> TrainSymbols;
     int sym = MySource.NumSym;
-    MySource.NumSym = 5000;
+    MySource.NumSym = 2000;
     GlobalResults TrainRes;
     GeneratePacksOfSymbols(TrainSymbols, MySource, temp);
     TransmitSignalProcessing(MySource, TrainSymbols, temp, TrainRes);
@@ -457,13 +469,13 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
     if(!CurRes.tx_sig.empty() && CurrentRecalcNeeds.PARecalc == true) {
         MyPAModels.ScaleToRMS_forPA(CurRes.tx_sig, source);
         CurRes.pa_sig = CurRes.tx_sig;
-
         CurRes.tx_plus_dpd_sig = CurRes.tx_sig;
+
         if(source.PredistorterType == "MP")
             CurRes.tx_plus_dpd_sig = mydpd.applyMP(CurRes.tx_plus_dpd_sig, source);
         else if(source.PredistorterType == "GMP")
             CurRes.tx_plus_dpd_sig = mydpd.applyGMP(CurRes.tx_plus_dpd_sig, source);
-        MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
+        //MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
 
         if(source.PAModel == "Saleh") {

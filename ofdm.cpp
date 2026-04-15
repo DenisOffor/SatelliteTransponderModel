@@ -28,7 +28,7 @@ OfdmResult OFDM::makeOfdm(const std::vector<std::complex<double> > &symbols, con
     }
 
     //double Nactivetemp = p.Nfft - p.GB_Nyq * 2;
-    res.BB = p.fs; // double(Nactive) / p.Nfft * p.fs;
+    res.BB = double(Nactive) / p.Nfft * p.fs;
 
     std::vector<std::complex<double>> yBB;
 
@@ -153,6 +153,7 @@ std::vector<std::complex<double>> OFDM::ofdm_demodulate(const std::vector<std::c
 
     return symbols_rx;
 }
+
 
 std::vector<std::vector<std::complex<double>>> OFDM::ofdmSubcarrierMapping(const std::vector<std::complex<double> > &dataSymbols, const int Nfft,
                                                                    const int GB_DC, const int GB_Nyq, int &Nactive)

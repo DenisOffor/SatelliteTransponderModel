@@ -304,7 +304,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -644,6 +644,11 @@
               <item>
                <property name="text">
                 <string>Wiener-Hammerstein</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Memory Polynomial</string>
                </property>
               </item>
              </widget>
@@ -1109,7 +1114,125 @@
                 </item>
                </layout>
               </widget>
-              <widget class="QWidget" name="MP_model_settings"/>
+              <widget class="QWidget" name="MP_model_settings">
+               <layout class="QVBoxLayout" name="verticalLayout_92">
+                <property name="spacing">
+                 <number>3</number>
+                </property>
+                <property name="leftMargin">
+                 <number>3</number>
+                </property>
+                <property name="topMargin">
+                 <number>3</number>
+                </property>
+                <property name="rightMargin">
+                 <number>3</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>3</number>
+                </property>
+                <item>
+                 <widget class="QGroupBox" name="MP_StaticNonlin_GroupBox">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="title">
+                   <string>Статическая нелинейность</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_93">
+                   <item>
+                    <widget class="QComboBox" name="MP_StaticNonlin_comboBox"/>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="MP_coeffs_groupBox">
+                  <property name="title">
+                   <string>Коэффициенты модели</string>
+                  </property>
+                  <layout class="QVBoxLayout" name="verticalLayout_132">
+                   <property name="spacing">
+                    <number>3</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>3</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>3</number>
+                   </property>
+                   <item>
+                    <layout class="QVBoxLayout" name="verticalLayout_131">
+                     <item>
+                      <widget class="QGroupBox" name="MP_PA_M_groupBox">
+                       <property name="title">
+                        <string>Глубина памяти</string>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_133">
+                        <property name="spacing">
+                         <number>3</number>
+                        </property>
+                        <property name="leftMargin">
+                         <number>3</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>3</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>3</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>3</number>
+                        </property>
+                        <item>
+                         <widget class="QSpinBox" name="MP_PA_M_spinBox"/>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QGroupBox" name="MP_PA_P_groupBox">
+                       <property name="title">
+                        <string>Порядок нелинейности</string>
+                       </property>
+                       <layout class="QVBoxLayout" name="verticalLayout_134">
+                        <property name="spacing">
+                         <number>3</number>
+                        </property>
+                        <property name="leftMargin">
+                         <number>3</number>
+                        </property>
+                        <property name="topMargin">
+                         <number>3</number>
+                        </property>
+                        <property name="rightMargin">
+                         <number>3</number>
+                        </property>
+                        <property name="bottomMargin">
+                         <number>3</number>
+                        </property>
+                        <item>
+                         <widget class="QSpinBox" name="MP_PA_P_spinBox"/>
+                        </item>
+                       </layout>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
               <widget class="QWidget" name="Ghorbani_model_settings">
                <layout class="QVBoxLayout" name="verticalLayout_39">
                 <property name="leftMargin">
@@ -1597,7 +1720,7 @@
                    <item>
                     <widget class="QDoubleSpinBox" name="SalehCoef1_doubleSpinBox">
                      <property name="maximum">
-                      <double>5.000000000000000</double>
+                      <double>25.000000000000000</double>
                      </property>
                      <property name="singleStep">
                       <double>0.100000000000000</double>
@@ -1959,7 +2082,7 @@
                     <number>25</number>
                    </property>
                    <property name="value">
-                    <number>1</number>
+                    <number>3</number>
                    </property>
                   </widget>
                  </item>
@@ -2028,7 +2151,7 @@
                     <number>30</number>
                    </property>
                    <property name="value">
-                    <number>10</number>
+                    <number>20</number>
                    </property>
                   </widget>
                  </item>
@@ -3830,7 +3953,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1226</width>
-                 <height>521</height>
+                 <height>517</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_51">
@@ -4131,7 +4254,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1222</width>
-                 <height>641</height>
+                 <height>127</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_70">
@@ -4436,7 +4559,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>641</height>
+                 <height>139</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -5091,7 +5214,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QGroupBox" name="EVM_noDPD_groupBox">
+              <widget class="QGroupBox" name="EVM_groupBox">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -5105,7 +5228,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>EVM no DPD</string>
+                <string>EVM</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_127">
                 <property name="spacing">
@@ -5124,32 +5247,76 @@
                  <number>3</number>
                 </property>
                 <item>
-                 <widget class="QDoubleSpinBox" name="EVM_noDPD_doubleSpinBox">
-                  <property name="font">
-                   <font>
-                    <family>Times New Roman</family>
-                    <pointsize>14</pointsize>
-                   </font>
-                  </property>
-                  <property name="readOnly">
-                   <bool>true</bool>
-                  </property>
-                  <property name="buttonSymbols">
-                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-                  </property>
-                  <property name="minimum">
-                   <double>-100.000000000000000</double>
-                  </property>
-                  <property name="maximum">
-                   <double>100.000000000000000</double>
-                  </property>
-                 </widget>
+                 <layout class="QHBoxLayout" name="horizontalLayout_26">
+                  <item>
+                   <widget class="QLabel" name="EVMnoDPD_label">
+                    <property name="text">
+                     <string>no DPD</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="EVM_noDPD_doubleSpinBox">
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                    <property name="buttonSymbols">
+                     <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                    </property>
+                    <property name="minimum">
+                     <double>-100.000000000000000</double>
+                    </property>
+                    <property name="maximum">
+                     <double>100.000000000000000</double>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_27">
+                  <item>
+                   <widget class="QLabel" name="EVMwithDPD_label">
+                    <property name="text">
+                     <string>with DPD</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="EVM_withDPD_doubleSpinBox">
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                    <property name="buttonSymbols">
+                     <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                    </property>
+                    <property name="minimum">
+                     <double>-100.000000000000000</double>
+                    </property>
+                    <property name="maximum">
+                     <double>100.000000000000000</double>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
                 </item>
                </layout>
               </widget>
              </item>
              <item>
-              <widget class="QGroupBox" name="EVM_withDPD_groupBox">
+              <widget class="QGroupBox" name="NMSE_groupBox">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -5163,7 +5330,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>EVM with DPD</string>
+                <string>NMSE</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_128">
                 <property name="spacing">
@@ -5182,26 +5349,70 @@
                  <number>3</number>
                 </property>
                 <item>
-                 <widget class="QDoubleSpinBox" name="EVM_withDPD_doubleSpinBox">
-                  <property name="font">
-                   <font>
-                    <family>Times New Roman</family>
-                    <pointsize>14</pointsize>
-                   </font>
-                  </property>
-                  <property name="readOnly">
-                   <bool>true</bool>
-                  </property>
-                  <property name="buttonSymbols">
-                   <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
-                  </property>
-                  <property name="minimum">
-                   <double>-100.000000000000000</double>
-                  </property>
-                  <property name="maximum">
-                   <double>100.000000000000000</double>
-                  </property>
-                 </widget>
+                 <layout class="QHBoxLayout" name="horizontalLayout_28">
+                  <item>
+                   <widget class="QLabel" name="NMSEnoDPD_label">
+                    <property name="text">
+                     <string>no DPD</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="NMSE_noDPD_doubleSpinBox">
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                    <property name="buttonSymbols">
+                     <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                    </property>
+                    <property name="minimum">
+                     <double>-100.000000000000000</double>
+                    </property>
+                    <property name="maximum">
+                     <double>100.000000000000000</double>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_29">
+                  <item>
+                   <widget class="QLabel" name="NMSEwithDPD_label">
+                    <property name="text">
+                     <string>with DPD</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QDoubleSpinBox" name="NMSE_withDPD_doubleSpinBox">
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                    <property name="buttonSymbols">
+                     <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                    </property>
+                    <property name="minimum">
+                     <double>-100.000000000000000</double>
+                    </property>
+                    <property name="maximum">
+                     <double>100.000000000000000</double>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
                 </item>
                </layout>
               </widget>

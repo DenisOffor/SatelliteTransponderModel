@@ -26,6 +26,40 @@ std::vector<std::complex<double>> MetricsEval::normalizeSignal(
     return tx_norm;
 }
 
+double MetricsEval::computeNMSE_dB(const std::vector<std::complex<double>>& ref,
+                      const std::vector<std::complex<double>>& test)
+{
+    if (ref.empty() || test.empty() || ref.size() != test.size())
+        return 0.0;
+
+    std::complex<double> num(0.0, 0.0);
+    double den = 0.0;
+
+    for (size_t i = 0; i < ref.size(); ++i) {
+        num += std::conj(ref[i]) * test[i];
+        den += std::norm(ref[i]);
+    }
+
+    if (den <= 0.0)
+        return 0.0;
+
+    std::complex<double> a = num / den;
+
+    double errPow = 0.0;
+    double refPow = 0.0;
+
+    for (size_t i = 0; i < ref.size(); ++i) {
+        std::complex<double> d = a * ref[i];
+        errPow += std::norm(test[i] - d);
+        refPow += std::norm(d);
+    }
+
+    if (refPow <= 0.0)
+        return 0.0;
+
+    return 10.0 * std::log10(errPow / refPow);
+}
+
 void MetricsEval::computePSD(
     const std::vector<std::complex<double>>& tx,
     double Fs,
@@ -127,8 +161,8 @@ QPair<double, double> MetricsEval::computeACPR(const std::vector<double> &freq, 
     const double f_step = std::abs(freq[1] - freq[0]);
 
     const QPair<double, double> main_ch  = {-BB / (1e6 * 2.0),  BB / (1e6 * 2.0)};
-    const QPair<double, double> upper_ch = {-BB / (1e6 * 2.0) + deltaf * 1.5 / 1e6,  BB / (1e6 * 2.0) + deltaf * 1.5 / 1e6};
-    const QPair<double, double> lower_ch = {-BB / (1e6 * 2.0) - deltaf * 1.5 / 1e6,  BB / (1e6 * 2.0) - deltaf * 1.5 / 1e6};
+    const QPair<double, double> upper_ch = {-BB / (1e6 * 2.0) + deltaf * 1.3 / 1e6,  BB / (1e6 * 2.0) + deltaf * 1.3 / 1e6};
+    const QPair<double, double> lower_ch = {-BB / (1e6 * 2.0) - deltaf * 1.3 / 1e6,  BB / (1e6 * 2.0) - deltaf * 1.3 / 1e6};
 
     double P_lower_ch = 0.0;
     double P_upper_ch = 0.0;

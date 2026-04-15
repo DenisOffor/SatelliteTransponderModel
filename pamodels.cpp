@@ -34,6 +34,10 @@ void PAModels::SalehModel(std::vector<std::complex<double>>& sig,
 
     double gain_linear = qPow(10, linear_gain_dB / 20.0);
 
+    double A_sat = 1.0 / std::sqrt(Coeffs[1]);
+    double ibo_meas = computeMeasuredIBO_dB(sig, A_sat);
+    qDebug() << "Measured IBO =" << ibo_meas << "dB";
+
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);
@@ -49,10 +53,6 @@ void PAModels::SalehModel(std::vector<std::complex<double>>& sig,
         // Применяем искажения
         sig[i] = std::polar(amplitude_out[i], phase_in[i] + phase_out[i]);
     }
-
-    double A_sat = 1.0 / std::sqrt(Coeffs[1]);
-    double ibo_meas = computeMeasuredIBO_dB(sig, A_sat);
-    qDebug() << "Measured IBO =" << ibo_meas << "dB";
 }
 
 void PAModels::RappModel(std::vector<std::complex<double>>& sig, std::vector<double>& Coeffs, int& linear_gain_dB, int& IBO_dB)
@@ -106,6 +106,7 @@ void PAModels::WienerModel(std::vector<std::complex<double>>& sig, QString Stati
                            std::vector<double>& Coeffs, std::vector<double>& FIR_Coeffs,
                            int& linear_gain_dB, int& IBO_dB)
 {
+    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);  // 3 - лучше сделать параметром
     // Применяем статическую нелинейность
     if(Static_model == "Saleh")
         SalehModel(sig, Coeffs, linear_gain_dB, IBO_dB);
@@ -113,14 +114,10 @@ void PAModels::WienerModel(std::vector<std::complex<double>>& sig, QString Stati
         RappModel(sig, Coeffs, linear_gain_dB, IBO_dB);
     else if (Static_model == "Ghorbani")
         GhorbaniModel(sig, Coeffs, linear_gain_dB, IBO_dB);
-
-    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 5);  // 3 - лучше сделать параметром
 }
 
 void PAModels::HammersteinModel(std::vector<std::complex<double>> &sig, QString Static_model, std::vector<double> &Coeffs, std::vector<double> &FIR_Coeffs, int &linear_gain_dB, int &IBO_dB)
 {
-    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 5);
-
     // Применяем статическую нелинейность
     if(Static_model == "Saleh")
         SalehModel(sig, Coeffs, linear_gain_dB, IBO_dB);
@@ -128,11 +125,13 @@ void PAModels::HammersteinModel(std::vector<std::complex<double>> &sig, QString 
         RappModel(sig, Coeffs, linear_gain_dB, IBO_dB);
     else if (Static_model == "Ghorbani")
         GhorbaniModel(sig, Coeffs, linear_gain_dB, IBO_dB);
+
+    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);
 }
 
 void PAModels::WHModel(std::vector<std::complex<double> > &sig, QString Static_model, std::vector<double> &Coeffs, std::vector<double> &FIR_Coeffs, int &linear_gain_dB, int &IBO_dB)
 {
-    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 5);
+    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);
 
     // Применяем статическую нелинейность
     if(Static_model == "Saleh")
@@ -142,7 +141,7 @@ void PAModels::WHModel(std::vector<std::complex<double> > &sig, QString Static_m
     else if (Static_model == "Ghorbani")
         GhorbaniModel(sig, Coeffs, linear_gain_dB, IBO_dB);
 
-    ApplyFIRWithMemory(sig, FIR_Coeffs[1], 5);
+    ApplyFIRWithMemory(sig, FIR_Coeffs[1], 9);
 }
 
 double PAModels::find_Asat_Ghorbani(const std::vector<double>& c,
@@ -177,7 +176,9 @@ void PAModels::ApplyFIRWithMemory(std::vector<std::complex<double>>& signal, dou
     std::vector<std::complex<double>> h(numTaps);
     for (int m = 0; m < numTaps; ++m)
     {
-        h[m] = std::pow(alpha, m);  // Вещественные коэффициенты
+        double mag = std::pow(alpha, m);
+        double phase = alpha / 3 * m;
+        h[m] = std::polar(mag, phase);
     }
 
     // Нормировка

@@ -33,6 +33,8 @@ public:
     double compute_av_P(const std::vector<std::complex<double>>& tx);
     double compute_av_P_G(double Pin, double Pout);
     double computePAPR_dB(const std::vector<std::complex<double>>& x);
+    double computeNMSE_dB(const std::vector<std::complex<double>>& ref,
+                                const std::vector<std::complex<double>>& test);
 };
 
 
