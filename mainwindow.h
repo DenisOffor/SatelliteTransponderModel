@@ -12,6 +12,7 @@
 #include "graphplotting.h"
 #include "signalprocessing.h"
 #include "processmonitor.h"
+#include "results_csv.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -65,12 +66,14 @@ private:
     void LockParChange();
     void UnLockParChange();
     bool CheckfcValidity(QSpinBox* spin, double cur_fc);
+    void LogResultsToFile();
 
 private slots:
     void handleResult();
     void cycleBtnClicked();
     void DPDRecalcBtnClicked();
     void CycleModeSlot();
+    void LogModeSlot();
 signals:
     void startSimulation(SignalProcessing* sig, NeedToRecalc recalc);
 };

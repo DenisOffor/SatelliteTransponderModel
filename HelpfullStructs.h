@@ -117,6 +117,7 @@ struct Source {
     int FDMA_num_subcarriers;
     int FDMA_step_carrier;
 
+    double bb_delta;
     int oversampling;
     int fs;
     int SNRSig;
@@ -146,6 +147,9 @@ struct Source {
     QString PredistorterType;
     bool DPDAutoRecalc;
     bool Enable_even_P;
+
+    bool LogRes;
+    double PA_sat;
 };
 
 struct NeedToRecalc{
@@ -209,8 +213,8 @@ struct GlobalResults {
     double BER_withDPD;
     double EVM_noDPD;
     double EVM_withDPD;
-    QPair<double, double> ACLR_noDPD;
-    QPair<double, double> ACLR_withDPD;
+    QPair<double, double> ACPR_noDPD;
+    QPair<double, double> ACPR_withDPD;
     double P_formed_noDPD;
     double P_formed_withDPD;
     double P_emitted_noDPD;
@@ -221,6 +225,8 @@ struct GlobalResults {
     double Gain_withDPD;
     double NMSE_noDPD;
     double NMSE_withDPD;
+    double CurrentOBO_noDPD;
+    double CurrentOBO_withDPD;
 
     void resize(int size) {
         tx_sig.resize(size);

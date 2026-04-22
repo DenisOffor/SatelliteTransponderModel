@@ -161,8 +161,8 @@ QPair<double, double> MetricsEval::computeACPR(const std::vector<double> &freq, 
     const double f_step = std::abs(freq[1] - freq[0]);
 
     const QPair<double, double> main_ch  = {-BB / (1e6 * 2.0),  BB / (1e6 * 2.0)};
-    const QPair<double, double> upper_ch = {-BB / (1e6 * 2.0) + deltaf * 1.3 / 1e6,  BB / (1e6 * 2.0) + deltaf * 1.3 / 1e6};
-    const QPair<double, double> lower_ch = {-BB / (1e6 * 2.0) - deltaf * 1.3 / 1e6,  BB / (1e6 * 2.0) - deltaf * 1.3 / 1e6};
+    const QPair<double, double> upper_ch = {-BB / (1e6 * 2.0) + deltaf / 1e6,  BB / (1e6 * 2.0) + deltaf / 1e6};
+    const QPair<double, double> lower_ch = {-BB / (1e6 * 2.0) - deltaf / 1e6,  BB / (1e6 * 2.0) - deltaf / 1e6};
 
     double P_lower_ch = 0.0;
     double P_upper_ch = 0.0;

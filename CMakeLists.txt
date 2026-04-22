@@ -57,6 +57,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         dpd.h dpd.cpp
         worker.h worker.cpp
         processmonitor.h processmonitor.cpp
+        results_csv.h
     )
 
 

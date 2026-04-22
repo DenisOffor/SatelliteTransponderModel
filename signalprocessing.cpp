@@ -61,6 +61,7 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
             double BER_noDPD, BER_withDPD, EVM_noDPD, EVM_withDPD, Gain_noDPD, Gain_withDPD, NMSE_noDPD, NMSE_withDPD;
             double P_formed_noDPD, P_formed_withDPD, P_emitted_noDPD, P_emitted_withDPD, PARP_noDPD, PARP_withDPD;
             QPair<double, double> ACLR_noDPD, ACLR_withDPD;
+            double CurrentOBO_noDPD, CurrentOBO_withDPD;
             std::tie(BER_noDPD, BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
             std::tie(EVM_noDPD, EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
             P_formed_noDPD = MyMetricsEval.compute_av_P(CurrentRes.tx_sig);
@@ -73,10 +74,11 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
             PARP_withDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_plus_dpd_sig);
             NMSE_noDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_sig);
             NMSE_withDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_plus_dpd_sig);
+            CurrentOBO_noDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_noDPD);
+            CurrentOBO_withDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_withDPD);
 
-
-            ACLR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[1], CurrentRes.BB, CurrentRes.BB, MySource.SigType);
-            ACLR_withDPD = MyMetricsEval.computeACPR(freq[0], PSDs[3], CurrentRes.BB, CurrentRes.BB, MySource.SigType);
+            ACLR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[1], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
+            ACLR_withDPD = MyMetricsEval.computeACPR(freq[0], PSDs[3], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
 
             CurrentRes.BER_noDPD = (CurrentRes.BER_noDPD * MySource.NumSym + BER_noDPD * MySource.NumSym) / ((++num_iter) * MySource.NumSym);
             CurrentRes.BER_withDPD = (CurrentRes.BER_withDPD * MySource.NumSym + BER_withDPD * MySource.NumSym) / (num_iter * MySource.NumSym);;
@@ -84,11 +86,11 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
             CurrentRes.EVM_noDPD = (CurrentRes.EVM_noDPD * (num_iter - 1) + EVM_noDPD) / num_iter;
             CurrentRes.EVM_withDPD = (CurrentRes.EVM_withDPD * (num_iter - 1)  + EVM_withDPD) / num_iter;
 
-            CurrentRes.ACLR_noDPD.first = (CurrentRes.ACLR_noDPD.first * (num_iter - 1) + ACLR_noDPD.first) / num_iter;
-            CurrentRes.ACLR_noDPD.second = (CurrentRes.ACLR_noDPD.second * (num_iter - 1) + ACLR_noDPD.second) / num_iter;
+            CurrentRes.ACPR_noDPD.first = (CurrentRes.ACPR_noDPD.first * (num_iter - 1) + ACLR_noDPD.first) / num_iter;
+            CurrentRes.ACPR_noDPD.second = (CurrentRes.ACPR_noDPD.second * (num_iter - 1) + ACLR_noDPD.second) / num_iter;
 
-            CurrentRes.ACLR_withDPD.first = (CurrentRes.ACLR_withDPD.first * (num_iter - 1) + ACLR_withDPD.first) / num_iter;
-            CurrentRes.ACLR_withDPD.second = (CurrentRes.ACLR_withDPD.second * (num_iter - 1) + ACLR_withDPD.second) / num_iter;
+            CurrentRes.ACPR_withDPD.first = (CurrentRes.ACPR_withDPD.first * (num_iter - 1) + ACLR_withDPD.first) / num_iter;
+            CurrentRes.ACPR_withDPD.second = (CurrentRes.ACPR_withDPD.second * (num_iter - 1) + ACLR_withDPD.second) / num_iter;
 
             CurrentRes.P_formed_noDPD = (CurrentRes.P_formed_noDPD * (num_iter - 1) + P_formed_noDPD) / num_iter;
             CurrentRes.P_formed_withDPD = (CurrentRes.P_formed_withDPD * (num_iter - 1)  + P_formed_withDPD) / num_iter;
@@ -104,11 +106,14 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
             CurrentRes.NMSE_noDPD = (CurrentRes.NMSE_noDPD * (num_iter - 1)  + NMSE_noDPD) / num_iter;
             CurrentRes.NMSE_withDPD = (CurrentRes.NMSE_withDPD * (num_iter - 1)  + NMSE_withDPD) / num_iter;
+
+            CurrentRes.CurrentOBO_noDPD = (CurrentRes.CurrentOBO_noDPD * (num_iter - 1)  + CurrentOBO_noDPD) / num_iter;
+            CurrentRes.CurrentOBO_withDPD = (CurrentRes.CurrentOBO_withDPD * (num_iter - 1)  + CurrentOBO_withDPD) / num_iter;
         }
         else if(CurrentRecalcNeeds.CycleMode == false) {
             num_iter = 1;
-            CurrentRes.ACLR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[1], CurrentRes.BB, CurrentRes.BB, MySource.SigType);
-            CurrentRes.ACLR_withDPD = MyMetricsEval.computeACPR(freq[0], PSDs[3], CurrentRes.BB, CurrentRes.BB, MySource.SigType);
+            CurrentRes.ACPR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[1], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
+            CurrentRes.ACPR_withDPD = MyMetricsEval.computeACPR(freq[0], PSDs[3], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
 
             std::tie(CurrentRes.BER_noDPD, CurrentRes.BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
 
@@ -128,6 +133,9 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
             CurrentRes.NMSE_noDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_sig);
             CurrentRes.NMSE_withDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_plus_dpd_sig);
+
+            CurrentRes.CurrentOBO_noDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_noDPD);
+            CurrentRes.CurrentOBO_withDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_withDPD);
         }
     }
     qDebug() << "Metrics time:" << timer.elapsed() << "ms";
@@ -475,7 +483,8 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
             CurRes.tx_plus_dpd_sig = mydpd.applyMP(CurRes.tx_plus_dpd_sig, source);
         else if(source.PredistorterType == "GMP")
             CurRes.tx_plus_dpd_sig = mydpd.applyGMP(CurRes.tx_plus_dpd_sig, source);
-        //MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
+
+        MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
 
         if(source.PAModel == "Saleh") {
@@ -780,6 +789,7 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource.oversampling = UISource.oversampling;
     MySource.fs = UISource.fs;
     MySource.SNRSig = UISource.SNRSig;
+    MySource.bb_delta = UISource.bb_delta;
 
     MySource.PAModel = UISource.PAModel;
     MySource.IBO_dB = UISource.IBO_dB;

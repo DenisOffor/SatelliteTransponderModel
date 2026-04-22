@@ -27,6 +27,10 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
         Grms = computeGrms(pa_input, pa_output);
         pa_output_norm = normalizeByGain(pa_output, Grms);
     }
+    else if(source.NormalizationType == "Complex linear gain") {
+        Gpeak = computeLinearGainLSAbs(pa_input, pa_output);
+        pa_output_norm = normalizeByGain(pa_output, Gpeak);
+    }
 
     QElapsedTimer timer;
     timer.start();
@@ -53,6 +57,33 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
     coeffs.resize(a.size());
     for (int i = 0; i < a.size(); ++i)
         coeffs[i] = a(i);
+}
+
+double DPD::computeLinearGainLSAbs(const std::vector<std::complex<double>>& pa_input, const std::vector<std::complex<double>>& pa_output)
+{
+    return std::abs(computeLinearGainLS(pa_input, pa_output));
+}
+
+std::complex<double> DPD::computeLinearGainLS(
+    const std::vector<std::complex<double>>& pa_input,
+    const std::vector<std::complex<double>>& pa_output)
+{
+    if (pa_input.empty() || pa_output.empty() || pa_input.size() != pa_output.size())
+        return {1.0, 0.0};
+
+    std::complex<double> num(0.0, 0.0);
+    double den = 0.0;
+
+    for (size_t i = 0; i < pa_input.size(); ++i)
+    {
+        num += std::conj(pa_input[i]) * pa_output[i];
+        den += std::norm(pa_input[i]);
+    }
+
+    if (den <= 1e-15)
+        return {1.0, 0.0};
+
+    return num / den;
 }
 
 double DPD::computePeakGain(const std::vector<std::complex<double>>& pa_input,
@@ -251,7 +282,7 @@ std::vector<std::complex<double>> DPD::applyMP(
 
     double norm_coef = 1.0;
     if(source.NormalizationType == "RMS normalization")
-        norm_coef = Gpeak/Grms;
+    //    norm_coef = Gpeak/Grms;
 
     for (int i = 0; i < M - 1 && i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
@@ -271,8 +302,8 @@ std::vector<std::complex<double>> DPD::applyMP(
         }
     }
 
-    //double A_lim = getAmplitudeLimitFromTargetPAPR(sig, 9.0);
-    //softClip(x_pre, A_lim);
+    double A_lim = getAmplitudeLimitFromTargetPAPR(sig, 11.0);
+    softClip(x_pre, A_lim);
 
     return x_pre;
 }
@@ -288,7 +319,7 @@ std::vector<std::complex<double>> DPD::applyGMP(
 
     double norm_coef = 1.0;
     if(source.NormalizationType == "RMS normalization")
-        norm_coef = Gpeak/Grms;
+    //    norm_coef = Gpeak/Grms;
 
     for (int i = 0; i < M - 1 + L_lag && i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
@@ -335,8 +366,8 @@ std::vector<std::complex<double>> DPD::applyGMP(
          i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
 
-    //double A_lim = getAmplitudeLimitFromTargetPAPR(sig, 9.0);
-    //softClip(x_pre, A_lim);
+    double A_lim = getAmplitudeLimitFromTargetPAPR(sig, 11.0);
+    softClip(x_pre, A_lim);
 
     return x_pre;
 }

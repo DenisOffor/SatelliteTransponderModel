@@ -319,7 +319,7 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[0]->graph(0)->setData(x, y);
     plotsOfDPD[0]->graph(1)->setData(x, Phi);
     plotsOfDPD[0]->graph(0)->rescaleAxes();
-    plotsOfDPD[0]->yAxis2->setRange(-180, 180);
+    plotsOfDPD[0]->yAxis2->setRange(-90, 90);
     auto yRange = plotsOfDPD[0]->yAxis->range();
     double padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[0]->yAxis->setRange(yRange.lower, yRange.upper + padding);
@@ -333,7 +333,7 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[1]->graph(0)->setData(x, y);
     plotsOfDPD[1]->graph(1)->setData(x, Phi);
     plotsOfDPD[1]->graph(0)->rescaleAxes();
-    plotsOfDPD[1]->yAxis2->setRange(-180, 180);
+    plotsOfDPD[1]->yAxis2->setRange(-90, 90);
     yRange = plotsOfDPD[1]->yAxis->range();
     padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[1]->yAxis->setRange(yRange.lower, yRange.upper + padding);
@@ -341,13 +341,13 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
 
     y.clear(); Phi.clear();
     for(int i = 0; i < res.tx_sig.size(); i += step) {
-        y.append(std::abs(res.tx_sig[i]));
-        Phi.append(std::arg((res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
+        y.append(std::abs(res.tx_plus_dpd_sig[i]));
+        Phi.append((std::arg((res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i]))) * 180 / 3.14);
     }
     plotsOfDPD[3]->graph(0)->setData(x, y);
     plotsOfDPD[3]->graph(1)->setData(x, Phi);
     plotsOfDPD[3]->graph(0)->rescaleAxes();
-    plotsOfDPD[3]->yAxis2->setRange(-180, 180);
+    plotsOfDPD[3]->yAxis2->setRange(-90, 90);
     yRange = plotsOfDPD[3]->yAxis->range();
     padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[3]->yAxis->setRange(yRange.lower, yRange.upper + padding);
@@ -362,14 +362,35 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[4]->graph(0)->setData(x, y);
     plotsOfDPD[4]->graph(1)->setData(x, Phi);
     plotsOfDPD[4]->graph(0)->rescaleAxes();
-    plotsOfDPD[4]->yAxis2->setRange(-180, 180);
+    plotsOfDPD[4]->yAxis2->setRange(-90, 90);
     yRange = plotsOfDPD[4]->yAxis->range();
     padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[4]->yAxis->setRange(yRange.lower, yRange.upper + padding);
     plotsOfDPD[4]->replot();
 
     y.clear(); Phi.clear();
+    /*
+    x.clear();
+    double in_max = 0;
+    double out_max = 0;
+    double out_dpd_max = 0;
+    for (const auto& val : res.tx_sig) {
+        in_max = std::max(in_max, std::abs(val));
+    }
+    for (const auto& val : res.pa_sig) {
+        out_max = std::max(out_max, std::abs(val));
+    }
+    for (const auto& val : res.pa_plus_dpd_sig) {
+        out_dpd_max = std::max(out_dpd_max, std::abs(val));
+    }
     for(int i = 0; i < res.tx_sig.size(); i += step) {
+        x.append((std::abs(res.tx_sig[i])) / in_max);
+        y.append((std::abs(res.pa_sig[i])) / out_max);
+        Phi.append((std::abs(res.pa_plus_dpd_sig[i]) ) / out_dpd_max);
+    }
+    */
+    for(int i = 0; i < res.tx_sig.size(); i += step) {
+        x.append(std::abs(res.tx_sig[i]));
         y.append(std::abs(res.pa_sig[i]));
         Phi.append(std::abs(res.pa_plus_dpd_sig[i]));
     }
@@ -406,6 +427,14 @@ void GraphPlotting::InitializePaCurvePlot(QWidget* GraphWidget) {
     plotPaCurve->yAxis->setLabel("P_вых, Вт");
     plotPaCurve->yAxis2->setVisible(true);
     plotPaCurve->yAxis2->setLabel("Фвых, град");
+
+    plotPaCurve->graph(0)->setName("АХ");
+    plotPaCurve->graph(1)->setName("АФХ");
+    plotPaCurve->graph(2)->setName("Рабочая точка, Вт");
+    plotPaCurve->graph(3)->setName("Рабочая точка, град");
+    plotPaCurve->legend->setVisible(true);
+    plotPaCurve->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom | Qt::AlignRight);
+
     plotPaCurve->replot();
     connect(plotPaCurve, &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
 }
@@ -679,6 +708,6 @@ void GraphPlotting::copyGraphToClipboard(QCustomPlot* plot)
     QClipboard *clipboard = QApplication::clipboard();
 
     // Вариант 1: Копировать как PNG
-    QPixmap pixmap = plot->toPixmap(800, 600); // ширина, высота
+    QPixmap pixmap = plot->toPixmap(600, 450); // ширина, высота
     clipboard->setPixmap(pixmap);
 }

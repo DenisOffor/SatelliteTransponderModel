@@ -143,6 +143,8 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->Oversapmling_SpinBox) { UISource.oversampling = ui->Oversapmling_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->Fs_SpinBox) { UISource.fs = ui->Fs_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->SNRSig_SpinBox) { UISource.SNRSig = ui->SNRSig_SpinBox->value(); CurrentRecalcNeeds.RecalcNoiseSig = true; }
+    if(senderObj == ui->BB_delta_doubleSpinBox) { UISource.bb_delta = ui->BB_delta_doubleSpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
+
 
     if(senderObj == ui->SalehCoef1_doubleSpinBox || senderObj == ui->SalehCoef2_doubleSpinBox ||
         senderObj == ui->SalehCoef3_doubleSpinBox || senderObj == ui->SalehCoef4_doubleSpinBox) {
@@ -227,6 +229,8 @@ void MainWindow::DataUpdate()
         if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
     if(senderObj == ui->EvenP_checkBox) { UISource.Enable_even_P = ui->EvenP_checkBox->isChecked(); CurrentRecalcNeeds.DPDRecalc = true; }
 
+    if(senderObj == ui->LogRes_checkBox) { UISource.LogRes = ui->LogRes_checkBox->isChecked(); };
+
     if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc) {
         if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true;
         MySigProc.clear_OFDM_buffs();
@@ -266,6 +270,7 @@ void MainWindow::FirstDataUpdate()
     UISource.oversampling = ui->Oversapmling_SpinBox->value();
     UISource.fs = ui->Fs_SpinBox->value();
     UISource.SNRSig = ui->SNRSig_SpinBox->value();
+    UISource.bb_delta = ui->BB_delta_doubleSpinBox->value();
 
     UISource.SalehCoeffs.push_back(ui->SalehCoef1_doubleSpinBox->value());
     UISource.SalehCoeffs.push_back(ui->SalehCoef2_doubleSpinBox->value());
@@ -336,6 +341,7 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->Oversapmling_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->Fs_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SNRSig_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    connect(ui->BB_delta_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
 
     connect(ui->SalehCoef1_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SalehCoef2_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
@@ -374,7 +380,10 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->DPDAutoRecalc_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
     connect(ui->EvenP_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
 
+    connect(ui->LogRes_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
     //GUI smart behavior
+
+    connect(ui->LogRes_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::LogModeSlot);
 }
 
 void MainWindow::LockParChange()
@@ -404,6 +413,7 @@ void MainWindow::LockParChange()
     ui->Oversapmling_SpinBox->setEnabled(false);
     ui->Fs_SpinBox->setEnabled(false);
     ui->SNRSig_SpinBox->setEnabled(false);
+    ui->BB_delta_doubleSpinBox->setEnabled(false);
 
     ui->SalehCoef1_doubleSpinBox->setEnabled(false);
     ui->SalehCoef2_doubleSpinBox->setEnabled(false);
@@ -444,6 +454,7 @@ void MainWindow::LockParChange()
     ui->PredistorterType_comboBox->setEnabled(false);
     ui->DPDAutoRecalc_checkBox->setEnabled(false);
     ui->EvenP_checkBox->setEnabled(false);
+    ui->LogRes_checkBox->setEnabled(false);
 }
 
 void MainWindow::UnLockParChange()
@@ -473,6 +484,7 @@ void MainWindow::UnLockParChange()
     ui->Oversapmling_SpinBox->setEnabled(true);
     ui->Fs_SpinBox->setEnabled(true);
     ui->SNRSig_SpinBox->setEnabled(true);
+    ui->BB_delta_doubleSpinBox->setEnabled(true);
 
     ui->SalehCoef1_doubleSpinBox->setEnabled(true);
     ui->SalehCoef2_doubleSpinBox->setEnabled(true);
@@ -513,6 +525,7 @@ void MainWindow::UnLockParChange()
     ui->PredistorterType_comboBox->setEnabled(true);
     ui->DPDAutoRecalc_checkBox->setEnabled(true);
     ui->EvenP_checkBox->setEnabled(true);
+    ui->LogRes_checkBox->setEnabled(true);
 }
 
 void MainWindow::handleResult()
@@ -563,16 +576,23 @@ void MainWindow::handleResult()
     ui->GainNoDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().Gain_noDPD);
     ui->GainWithDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().Gain_withDPD);
 
-    ui->ACLR_l_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_noDPD.first);
-    ui->ACLR_u_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_noDPD.second);
+    ui->ACLR_l_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACPR_noDPD.first);
+    ui->ACLR_u_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACPR_noDPD.second);
 
-    ui->ACLR_l_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_withDPD.first);
-    ui->ACLR_u_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACLR_withDPD.second);
+    ui->ACLR_l_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACPR_withDPD.first);
+    ui->ACLR_u_witnDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().ACPR_withDPD.second);
 
     ui->NMSE_noDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().NMSE_noDPD);
     ui->NMSE_withDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().NMSE_withDPD);
 
     ui->BB_label->setText(QString::number(MySigProc.getTimeSignal().BB));
+
+    ui->OBOnoDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().CurrentOBO_noDPD);
+    ui->OBOwithDPD_doubleSpinBox->setValue(MySigProc.getTimeSignal().CurrentOBO_withDPD);
+
+    if(UISource.LogRes) {
+        LogResultsToFile();
+    }
 }
 
 void MainWindow::PaCurvePlot() {
@@ -625,6 +645,19 @@ void MainWindow::CycleModeSlot()
     MakeMainCalcAndPlot();
 }
 
+void MainWindow::LogModeSlot()
+{
+    if(ui->LogRes_checkBox->isChecked()) {
+        QString resultsFile = QCoreApplication::applicationDirPath() + "/results/pa_dpd_results.csv";
+
+        if (!initResultsCsv(resultsFile))
+        {
+            qWarning() << "Не удалось создать CSV:" << resultsFile;
+        }
+    }
+
+}
+
 bool MainWindow::CheckfcValidity(QSpinBox* spin, double cur_fc)
 {
     double bb = 0.0;
@@ -655,6 +688,18 @@ bool MainWindow::CheckfcValidity(QSpinBox* spin, double cur_fc)
 
     if (cur_fc == spin->value()) need_to_recalc = false;
     return need_to_recalc;
+}
+
+void MainWindow::LogResultsToFile()
+{
+    QString resultsFile = QCoreApplication::applicationDirPath() + "/results/pa_dpd_results.csv";
+    const auto& ts = MySigProc.getTimeSignal();
+
+    // currentIBO - это текущее значение IBO в твоем цикле
+    if (!appendResultsCsv(resultsFile, UISource.IBO_dB, ts))
+    {
+        qWarning() << "Не удалось дописать строку в CSV";
+    }
 }
 
 void MainWindow::onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem*)

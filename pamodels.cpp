@@ -244,6 +244,7 @@ void PAModels::ScaleToRMS_forPA(std::vector<std::complex<double>>& sig, Source& 
         else if(source.WH_StaticNonlinModel == "Ghorbani")
             A_sat = find_Asat_Ghorbani(source.GhorbaniCoeffs, qPow(10, source.linear_gain_dB / 20.0));
     }
+    source.PA_sat = A_sat * A_sat * qPow(10, source.linear_gain_dB / 10.0);
     target_rms = A_sat / std::pow(10.0, source.IBO_dB / 20.0);
 
     scaleToRMS(sig, target_rms);

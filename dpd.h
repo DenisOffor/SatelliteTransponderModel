@@ -36,6 +36,8 @@ private:
     void softClip(std::vector<std::complex<double>>& x, double A_lim);
     double getAmplitudeLimitFromTargetPAPR(const std::vector<std::complex<double>>& x,
                                            double paprTarget_dB);
+    std::complex<double> computeLinearGainLS(const std::vector<std::complex<double>>& pa_input, const std::vector<std::complex<double>>& pa_output);
+    double computeLinearGainLSAbs(const std::vector<std::complex<double>>& pa_input, const std::vector<std::complex<double>>& pa_output);
 };
 
 #endif // DPD_H
