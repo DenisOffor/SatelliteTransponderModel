@@ -625,7 +625,7 @@ void MainWindow::cycleBtnClicked()
         timer->stop();
         CurrentRecalcNeeds.CycleMode = false;
         CurrentRecalcNeeds.FullRecalc = true;
-        UISource.NumSym = 2000;
+        UISource.NumSym = 4000;
         MySigProc.clear_OFDM_buffs();
         MySigProc.DataUpdate(UISource);
         MakeMainCalcAndPlot();

@@ -77,7 +77,7 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
             CurrentOBO_noDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_noDPD);
             CurrentOBO_withDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_withDPD);
 
-            ACLR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[1], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
+            ACLR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[2], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
             ACLR_withDPD = MyMetricsEval.computeACPR(freq[0], PSDs[3], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
 
             CurrentRes.BER_noDPD = (CurrentRes.BER_noDPD * MySource.NumSym + BER_noDPD * MySource.NumSym) / ((++num_iter) * MySource.NumSym);
@@ -112,7 +112,7 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
         }
         else if(CurrentRecalcNeeds.CycleMode == false) {
             num_iter = 1;
-            CurrentRes.ACPR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[1], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
+            CurrentRes.ACPR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[2], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
             CurrentRes.ACPR_withDPD = MyMetricsEval.computeACPR(freq[0], PSDs[3], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
 
             std::tie(CurrentRes.BER_noDPD, CurrentRes.BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);

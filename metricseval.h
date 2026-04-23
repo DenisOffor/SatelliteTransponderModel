@@ -2,8 +2,8 @@
 #define METRICSEVAL_H
 #include "HelpfullStructs.h"
 
-#define FFT_SIZE 16384
-#define WINDOW_SISE 4096
+#define FFT_SIZE 8192
+#define WINDOW_SISE 2048
 
 class MetricsEval
 {
