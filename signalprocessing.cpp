@@ -52,8 +52,8 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
     timer.restart();
     if(CurrentRecalcNeeds.MetricsRecalc) {
         MyMetricsEval.computePSD(CurrentRes.tx_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[0], OFDM_tx_sig_buff);
-        MyMetricsEval.computePSD(CurrentRes.pa_sig_noisy, MySource.fs, MySource.oversampling, freq[0], PSDs[1], OFDM_tx_plus_DPD_sig_buff);
-        MyMetricsEval.computePSD(CurrentRes.tx_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[2], OFDM_pa_sig_buff);
+        MyMetricsEval.computePSD(CurrentRes.tx_plus_dpd_sig, MySource.fs, MySource.oversampling, freq[0], PSDs[1], OFDM_tx_plus_DPD_sig_buff);
+        MyMetricsEval.computePSD(CurrentRes.pa_sig_noisy, MySource.fs, MySource.oversampling, freq[0], PSDs[2], OFDM_pa_sig_buff);
         MyMetricsEval.computePSD(CurrentRes.pa_plus_dpd_sig_noisy, MySource.fs, MySource.oversampling, freq[0], PSDs[3], OFDM_pa_plus_DPD_sig_buff);
 
         static int num_iter = 1;

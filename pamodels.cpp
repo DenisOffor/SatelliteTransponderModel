@@ -34,10 +34,6 @@ void PAModels::SalehModel(std::vector<std::complex<double>>& sig,
 
     double gain_linear = qPow(10, linear_gain_dB / 20.0);
 
-    double A_sat = 1.0 / std::sqrt(Coeffs[1]);
-    double ibo_meas = computeMeasuredIBO_dB(sig, A_sat);
-    qDebug() << "Measured IBO =" << ibo_meas << "dB";
-
     for(int i = 0; i < sig.size(); ++i) {
         amplitude_in[i] = std::abs(sig[i]);
         phase_in[i] = std::arg(sig[i]);

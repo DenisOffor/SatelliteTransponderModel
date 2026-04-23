@@ -228,10 +228,10 @@ void MetricsEval::computePSDWelch(
     std::vector<double>& freq,
     std::vector<double>& psd)
 {
-    const int winSize = 2048;
+    const int winSize = 4096;
     const int overlap = 1024;
     const int step = winSize - overlap;
-    const int nfft = 8192;
+    const int nfft = 16384;
 
     if (tx.size() < winSize)
         return;

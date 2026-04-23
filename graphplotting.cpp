@@ -174,25 +174,30 @@ void GraphPlotting::PlotPSDPlots(const std::vector<std::vector<double>>& PSDs, c
 
     if(!PSDs.empty() && !freqs.empty()) {
         plotsOfPSD[0]->graph(0)->setData(qfreqs[0], qPSDs[0]);
-        plotsOfPSD[1]->graph(0)->setData(qfreqs[0], qPSDs[2]);
         plotsOfPSD[0]->graph(0)->rescaleAxes();
-        plotsOfPSD[1]->graph(0)->rescaleAxes();
         plotsOfPSD[0]->replot();
+
+        plotsOfPSD[1]->graph(0)->setData(qfreqs[0], qPSDs[1]);
+        plotsOfPSD[1]->graph(0)->rescaleAxes();
         plotsOfPSD[1]->replot();
 
+        plotsOfPSD[2]->graph(0)->setData(qfreqs[0], qPSDs[3]);
+        plotsOfPSD[2]->graph(0)->rescaleAxes();
+        plotsOfPSD[2]->replot();
+
         plotsOfPSD[3]->graph(0)->setData(qfreqs[0], qPSDs[0]);
-        plotsOfPSD[3]->graph(1)->setData(qfreqs[0], qPSDs[1]);
+        plotsOfPSD[3]->graph(1)->setData(qfreqs[0], qPSDs[2]);
         plotsOfPSD[3]->graph(0)->rescaleAxes();
         plotsOfPSD[3]->replot();
 
 
-        plotsOfPSD[4]->graph(0)->setData(qfreqs[0], qPSDs[1]);
+        plotsOfPSD[4]->graph(0)->setData(qfreqs[0], qPSDs[2]);
         plotsOfPSD[4]->graph(1)->setData(qfreqs[0], qPSDs[3]);
-        plotsOfPSD[4]->graph(0)->rescaleAxes();
+        plotsOfPSD[4]->graph(1)->rescaleAxes();
         plotsOfPSD[4]->replot();
 
         plotsOfPSD[5]->graph(0)->setData(qfreqs[0], qPSDs[0]);
-        plotsOfPSD[5]->graph(1)->setData(qfreqs[0], qPSDs[2]);
+        plotsOfPSD[5]->graph(1)->setData(qfreqs[0], qPSDs[1]);
         plotsOfPSD[5]->graph(0)->rescaleAxes();
         plotsOfPSD[5]->replot();
     }
@@ -501,16 +506,16 @@ void GraphPlotting::InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets)
         if(i >= 3) {
             plotsOfPSD[i]->addGraph();
             if(i == 3) {
-                plotsOfPSD[i]->graph(0)->setName("Перед PA");
-                plotsOfPSD[i]->graph(1)->setName("После PA");
+                plotsOfPSD[i]->graph(0)->setName("Перед УМ");
+                plotsOfPSD[i]->graph(1)->setName("После УМ");
             }
             if(i == 4) {
-                plotsOfPSD[i]->graph(0)->setName("PA no DPD");
-                plotsOfPSD[i]->graph(1)->setName("PA with DPD");
+                plotsOfPSD[i]->graph(0)->setName("УМ без ЦПИ");
+                plotsOfPSD[i]->graph(1)->setName("УМ с ЦПИ");
             }
             if(i == 5) {
-                plotsOfPSD[i]->graph(0)->setName("tx no DPD");
-                plotsOfPSD[i]->graph(1)->setName("tx with DPD");
+                plotsOfPSD[i]->graph(0)->setName("tx без ЦПИ");
+                plotsOfPSD[i]->graph(1)->setName("tx с ЦПИ");
             }
             plotsOfPSD[i]->legend->setVisible(true);
             plotsOfPSD[i]->graph(1)->setPen(QPen(Qt::red));
