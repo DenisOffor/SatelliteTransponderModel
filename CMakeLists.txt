@@ -58,6 +58,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         worker.h worker.cpp
         processmonitor.h processmonitor.cpp
         results_csv.h
+        imuxomux.cpp imuxomux.h
     )
 
 

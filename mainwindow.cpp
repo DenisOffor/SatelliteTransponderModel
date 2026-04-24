@@ -237,7 +237,7 @@ void MainWindow::FirstDataUpdate()
 
     UISource.ModType = ui->ModTypeComboBox->currentText();
     UISource.SNRSymdB = ui->SNRSymSpinBox->value();
-    UISource.NumSym = 2000;
+    UISource.NumSym = 5000;
     UISource.EnableSymSNR = ui->SymSNR_checkBox->isChecked();
     UISource.SigType = ui->SignalTypeComboBox->currentText();
     UISource.SC_symrate = ui->SC_SymRate_SpinBox->value();
@@ -608,7 +608,7 @@ void MainWindow::cycleBtnClicked()
         timer->stop();
         CurrentRecalcNeeds.CycleMode = false;
         CurrentRecalcNeeds.FullRecalc = true;
-        UISource.NumSym = 4000;
+        UISource.NumSym = 5000;
         MySigProc.clear_OFDM_buffs();
         MySigProc.DataUpdate(UISource);
         MakeMainCalcAndPlot();

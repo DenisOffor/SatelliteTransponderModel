@@ -8,6 +8,7 @@
 #include "metricseval.h"
 #include "QElapsedTimer"
 #include "dpd.h"
+#include "imuxomux.h"
 
 class SignalProcessing
 {
@@ -17,6 +18,7 @@ private:
     Source MySource;
     DPD mydpd;
     PAModels MyPAModels;
+    ImuxOmux MyMux;
     OFDM myOfdm;
     SC mySC;
     FDMA myFdma;
