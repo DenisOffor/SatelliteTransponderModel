@@ -11,7 +11,6 @@ FdmaResult FDMA::generate(
         throw std::runtime_error("Mismatch carriers count");
 
     FdmaResult res;
-    res.fc = p.FDMA_f_carrier;
 
     std::vector<ScResult> carrierSignals;
     carrierSignals.reserve(p.FDMA_num_subcarriers);
@@ -21,16 +20,19 @@ FdmaResult FDMA::generate(
     // -------------------------------------------------
     // Генерация каждой поднесущей
     // -------------------------------------------------
+    int N = p.FDMA_num_subcarriers;
+    double df = p.FDMA_step_carrier;
 
     double sc_bb = 0;
     for(int k = 0; k < p.FDMA_num_subcarriers; ++k)
     {
+        double f = (k - (N - 1) / 2.0) * df;
         ScParams scp;
 
         scp.SC_symrate = p.FDMA_symrate;
         scp.fs = p.fs;
         scp.oversampling = p.oversampling;
-        scp.fc = p.FDMA_f_carrier + k * p.FDMA_step_carrier;
+        scp.fc = f;
         scp.SNR_dB = 0;
         scp.SC_rolloff = sc_p.SC_rolloff;
         scp.SC_filter_length = sc_p.SC_filter_length;
@@ -92,15 +94,18 @@ std::vector<std::vector<std::complex<double>>> FDMA::demodulate(
     // -------------------------------------------------
     // Демодуляция каждой поднесущей
     // -------------------------------------------------
+    int N = p.FDMA_num_subcarriers;
+    double df = p.FDMA_step_carrier;
 
     for(int k = 0; k < p.FDMA_num_subcarriers; ++k)
     {
+        double f = (k - (N - 1) / 2.0) * df;
         ScParams scp;
 
         scp.SC_symrate = p.FDMA_symrate;
         scp.fs = p.fs;
         scp.oversampling = p.oversampling;
-        scp.fc = p.FDMA_f_carrier + k * p.FDMA_step_carrier;
+        scp.fc = f;
         scp.SNR_dB = p.SNRSig;
         scp.SC_rolloff = sc_p.SC_rolloff;
         scp.SC_filter_length = sc_p.SC_filter_length;

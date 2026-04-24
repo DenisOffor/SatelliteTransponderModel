@@ -1,6 +1,48 @@
 #include "metricseval.h"
 
-MetricsEval::MetricsEval(): fftw8192(FFT_SIZE) {
+#include <algorithm>
+#include <cmath>
+#include <complex>
+#include <limits>
+#include <vector>
+
+namespace
+{
+constexpr double EPS_POWER = 1e-30;
+constexpr int PSD_WIN_SIZE = 2048;
+constexpr int PSD_OVERLAP  = 1024;
+constexpr int PSD_NFFT     = 8192;
+
+static double mW_to_dBm(double p_mW)
+{
+    if (p_mW <= 0.0)
+        return -std::numeric_limits<double>::infinity();
+
+    return 10.0 * std::log10(p_mW);
+}
+
+static double dBm_to_mW(double p_dBm)
+{
+    return std::pow(10.0, p_dBm / 10.0);
+}
+
+static double avgPower_mW(const std::vector<std::complex<double>>& x)
+{
+    if (x.empty())
+        return 0.0;
+
+    double sum = 0.0;
+
+    for (const auto& s : x)
+        sum += std::norm(s);
+
+    return sum / static_cast<double>(x.size());
+}
+}
+
+MetricsEval::MetricsEval()
+    : fftw8192(FFT_SIZE)
+{
     window = hamming(WINDOW_SISE);
 }
 
@@ -11,23 +53,25 @@ std::vector<std::complex<double>> MetricsEval::normalizeSignal(
         return {};
 
     double sum = 0.0;
+
     for (const auto& s : tx)
-        sum += std::norm(s);   // |x|^2
+        sum += std::norm(s);
 
-    double rms = std::sqrt(sum / tx.size());
+    double rms = std::sqrt(sum / static_cast<double>(tx.size()));
 
-    if (rms == 0.0)
+    if (rms <= 0.0)
         return tx;
 
     std::vector<std::complex<double>> tx_norm(tx.size());
-    for (int i = 0; i < tx.size(); ++i)
+
+    for (size_t i = 0; i < tx.size(); ++i)
         tx_norm[i] = tx[i] / rms;
 
     return tx_norm;
 }
 
 double MetricsEval::computeNMSE_dB(const std::vector<std::complex<double>>& ref,
-                      const std::vector<std::complex<double>>& test)
+                                   const std::vector<std::complex<double>>& test)
 {
     if (ref.empty() || test.empty() || ref.size() != test.size())
         return 0.0;
@@ -35,7 +79,8 @@ double MetricsEval::computeNMSE_dB(const std::vector<std::complex<double>>& ref,
     std::complex<double> num(0.0, 0.0);
     double den = 0.0;
 
-    for (size_t i = 0; i < ref.size(); ++i) {
+    for (size_t i = 0; i < ref.size(); ++i)
+    {
         num += std::conj(ref[i]) * test[i];
         den += std::norm(ref[i]);
     }
@@ -48,7 +93,8 @@ double MetricsEval::computeNMSE_dB(const std::vector<std::complex<double>>& ref,
     double errPow = 0.0;
     double refPow = 0.0;
 
-    for (size_t i = 0; i < ref.size(); ++i) {
+    for (size_t i = 0; i < ref.size(); ++i)
+    {
         std::complex<double> d = a * ref[i];
         errPow += std::norm(test[i] - d);
         refPow += std::norm(d);
@@ -65,47 +111,62 @@ void MetricsEval::computePSD(
     double Fs,
     double oversample,
     std::vector<double>& freq,
-    std::vector<double>& psd_tx,
+    std::vector<double>& psd,
     std::vector<std::complex<double>>& sig_buff)
 {
-    if(tx.size() < WINDOW_SISE) {
-        if(sig_buff.size() > 4 * WINDOW_SISE)
+    if (tx.size() < WINDOW_SISE)
+    {
+        if (sig_buff.size() > 4 * WINDOW_SISE)
             sig_buff.clear();
 
-        for(int i = 0; i < tx.size(); ++i)
+        for (size_t i = 0; i < tx.size(); ++i)
             sig_buff.push_back(tx[i]);
 
-        if(sig_buff.size() < 4 * WINDOW_SISE)
+        if (sig_buff.size() < 4 * WINDOW_SISE)
             return;
-        else {
-            freq.clear();
-            psd_tx.clear();
-            auto tx_norm = normalizeSignal(sig_buff);
-            computePSDWelch(tx_norm, Fs, oversample, freq, psd_tx);
-            return;
-        }
-    }
 
+        freq.clear();
+        psd.clear();
+        computePSDWelch(sig_buff, Fs, oversample, freq, psd);
+        return;
+    }
 
     freq.clear();
-    psd_tx.clear();
-    auto tx_norm = normalizeSignal(tx);
-    computePSDWelch(tx_norm, Fs, oversample, freq, psd_tx);
+    psd.clear();
+    computePSDWelch(tx, Fs, oversample, freq, psd);
 }
 
-QPair<double, double> MetricsEval::Calc_BER(std::vector<Symbols> &symbols)
+QPair<double, double> MetricsEval::Calc_BER(std::vector<Symbols>& symbols)
 {
-    double errors_noDPD = 0;
-    double errors_withDPD = 0;
-    for(int n = 0; n < symbols.size(); ++n) {
-        for(int i = 0; i < symbols[n].data_rx.size(); ++i) {
-            if(symbols[n].data_rx[i] != symbols[n].data_tx[i])
+    if (symbols.empty() || symbols[0].data_tx.empty())
+        return {0.0, 0.0};
+
+    double errors_noDPD = 0.0;
+    double errors_withDPD = 0.0;
+    double totalBits = 0.0;
+
+    for (int n = 0; n < symbols.size(); ++n)
+    {
+        const size_t count = std::min({symbols[n].data_tx.size(),
+                                       symbols[n].data_rx.size(),
+                                       symbols[n].data_rx_with_DPD.size()});
+
+        for (size_t i = 0; i < count; ++i)
+        {
+            if (symbols[n].data_rx[i] != symbols[n].data_tx[i])
                 errors_noDPD++;
-            if(symbols[n].data_rx_with_DPD[i] != symbols[n].data_tx[i])
+
+            if (symbols[n].data_rx_with_DPD[i] != symbols[n].data_tx[i])
                 errors_withDPD++;
         }
+
+        totalBits += static_cast<double>(count);
     }
-    return QPair<double, double> (1.0 * errors_noDPD / (symbols.size() * symbols[0].data_tx.size()), 1.0 * errors_withDPD / (symbols.size() * symbols[0].data_tx.size()));
+
+    if (totalBits <= 0.0)
+        return {0.0, 0.0};
+
+    return {errors_noDPD / totalBits, errors_withDPD / totalBits};
 }
 
 QPair<double, double> MetricsEval::Calc_EVM(const std::vector<Symbols>& frames)
@@ -114,110 +175,173 @@ QPair<double, double> MetricsEval::Calc_EVM(const std::vector<Symbols>& frames)
     double err_with_dpd = 0.0;
     double ref_power = 0.0;
 
-    size_t N = 0;
-
-    for(const auto& f : frames)
+    for (const auto& f : frames)
     {
         size_t n = std::min({f.tr_sym_clean.size(),
                              f.rec_sym_noisy.size(),
                              f.rec_sym_noisy_with_DPD.size()});
 
-        for(size_t i = 0; i < n; ++i)
+        for (size_t i = 0; i < n; ++i)
         {
             const auto& ref = f.tr_sym_clean[i];
 
-            auto err1 = f.rec_sym_noisy[i] - ref;
-            auto err2 = f.rec_sym_noisy_with_DPD[i] - ref;
-
-            err_no_dpd += std::norm(err1);
-            err_with_dpd += std::norm(err2);
-
+            err_no_dpd += std::norm(f.rec_sym_noisy[i] - ref);
+            err_with_dpd += std::norm(f.rec_sym_noisy_with_DPD[i] - ref);
             ref_power += std::norm(ref);
-
-            ++N;
         }
     }
 
-    QPair<double, double> res;
+    QPair<double, double> res{0.0, 0.0};
 
-    if(ref_power > 0)
+    if (ref_power > 0.0)
     {
-        res.first = 20*std::log10(std::sqrt(err_no_dpd / ref_power));
-        res.second = 20*std::log10(std::sqrt(err_with_dpd / ref_power));
+        res.first = 20.0 * std::log10(std::sqrt(err_no_dpd / ref_power));
+        res.second = 20.0 * std::log10(std::sqrt(err_with_dpd / ref_power));
     }
 
     return res;
 }
 
-QPair<double, double> MetricsEval::computeACPR(const std::vector<double> &freq, const std::vector<double> &psd,
-                                               double BB, double deltaf, const QString &SigType)
+QPair<double, double> MetricsEval::computeACPR(const std::vector<double>& freq,
+                                               const std::vector<double>& psd,
+                                               double BB,
+                                               double deltaf,
+                                               const QString& SigType)
 {
-    if (SigType == "FDMA")
-        return {0.0, 0.0};
+    Q_UNUSED(SigType);
+
+    ACPRResult full = computeACPR_full(freq, psd, BB, deltaf);
+    return {full.lower_dB, full.upper_dB};
+}
+
+ACPRResult MetricsEval::computeACPR_full(const std::vector<double>& freq,
+                                         const std::vector<double>& psd,
+                                         double BB,
+                                         double deltaf)
+{
+    ACPRResult res{};
+
+    res.lower_dB = 0.0;
+    res.upper_dB = 0.0;
+    res.P_main_dBm = -std::numeric_limits<double>::infinity();
+    res.P_lower_dBm = -std::numeric_limits<double>::infinity();
+    res.P_upper_dBm = -std::numeric_limits<double>::infinity();
+    res.P_main_mW = 0.0;
+    res.P_lower_mW = 0.0;
+    res.P_upper_mW = 0.0;
 
     if (freq.size() < 2 || freq.size() != psd.size())
-        return {0.0, 0.0};
+        return res;
 
-    const double f_step = std::abs(freq[1] - freq[0]);
+    // freq хранится в MHz.
+    // BB и deltaf приходят в Hz.
+    const double BB_MHz = BB / 1e6;
+    const double df_MHz = deltaf / 1e6;
 
-    const QPair<double, double> main_ch  = {-BB / (1e6 * 2.0),  BB / (1e6 * 2.0)};
-    const QPair<double, double> upper_ch = {-BB / (1e6 * 2.0) + deltaf / 1e6,  BB / (1e6 * 2.0) + deltaf / 1e6};
-    const QPair<double, double> lower_ch = {-BB / (1e6 * 2.0) - deltaf / 1e6,  BB / (1e6 * 2.0) - deltaf / 1e6};
+    const QPair<double, double> main_ch = {
+        -BB_MHz / 2.0,
+        BB_MHz / 2.0
+    };
 
-    double P_lower_ch = 0.0;
-    double P_upper_ch = 0.0;
-    double P_main_ch  = 0.0;
+    const QPair<double, double> upper_ch = {
+        -BB_MHz / 2.0 + df_MHz,
+        BB_MHz / 2.0 + df_MHz
+    };
 
-    for (int i = 0; i < static_cast<int>(freq.size()); ++i) {
+    const QPair<double, double> lower_ch = {
+        -BB_MHz / 2.0 - df_MHz,
+        BB_MHz / 2.0 - df_MHz
+    };
+
+    for (int i = 0; i < static_cast<int>(freq.size()); ++i)
+    {
         const double f = freq[i];
-        double psd_lin = std::pow(10.0, psd[i] / 10.0);
 
-        if (f >= lower_ch.first && f <= lower_ch.second)
-            P_lower_ch += psd_lin * f_step;
-        else if (f >= main_ch.first && f <= main_ch.second)
-            P_main_ch += psd_lin * f_step;
-        else if (f >= upper_ch.first && f <= upper_ch.second)
-            P_upper_ch += psd_lin * f_step;
+        // ВАЖНО:
+        // psd[i] сейчас dBm/bin, то есть мощность конкретного FFT/Welch-бина.
+        // Поэтому переводим dBm -> mW и просто суммируем бины.
+        const double P_bin_mW = std::pow(10.0, psd[i] / 10.0);
+
+        if (f >= lower_ch.first && f < lower_ch.second)
+            res.P_lower_mW += P_bin_mW;
+
+        if (f >= main_ch.first && f < main_ch.second)
+            res.P_main_mW += P_bin_mW;
+
+        if (f >= upper_ch.first && f < upper_ch.second)
+            res.P_upper_mW += P_bin_mW;
     }
 
-    if (P_main_ch <= 0.0)
-        return {0.0, 0.0};
+    auto mW_to_dBm_local = [](double p_mW) -> double
+    {
+        if (p_mW <= 0.0)
+            return -std::numeric_limits<double>::infinity();
 
-    const double ACPR_lower = (P_lower_ch > 0.0)
-                                  ? 10.0 * std::log10(P_lower_ch / P_main_ch)
-                                  : -std::numeric_limits<double>::infinity();
+        return 10.0 * std::log10(p_mW);
+    };
 
-    const double ACPR_upper = (P_upper_ch > 0.0)
-                                  ? 10.0 * std::log10(P_upper_ch / P_main_ch)
-                                  : -std::numeric_limits<double>::infinity();
+    res.P_main_dBm  = mW_to_dBm_local(res.P_main_mW);
+    res.P_lower_dBm = mW_to_dBm_local(res.P_lower_mW);
+    res.P_upper_dBm = mW_to_dBm_local(res.P_upper_mW);
 
-    return {ACPR_lower, ACPR_upper};
+    res.lower_dB =
+        (res.P_main_mW > 0.0 && res.P_lower_mW > 0.0)
+            ? 10.0 * std::log10(res.P_lower_mW / res.P_main_mW)
+            : -std::numeric_limits<double>::infinity();
+
+    res.upper_dB =
+        (res.P_main_mW > 0.0 && res.P_upper_mW > 0.0)
+            ? 10.0 * std::log10(res.P_upper_mW / res.P_main_mW)
+            : -std::numeric_limits<double>::infinity();
+
+    return res;
 }
 
-double MetricsEval::compute_av_P(const std::vector<std::complex<double> > &tx)
+double MetricsEval::compute_av_P(const std::vector<std::complex<double>>& tx)
 {
-    if (tx.empty()) return 0.0;
-
-    double sum = 0.0;
-    for (const auto& s : tx)
-        sum += std::norm(s);   // |x|^2
-
-    return sum / (tx.size());
+    // После привязки PA к Pin_sat/Pout_sat считаем:
+    // |x|^2 = мощность в mW.
+    return avgPower_mW(tx);
 }
 
-double MetricsEval::compute_av_P_G(double Pin, double Pout)
+double MetricsEval::compute_av_P_dBm(const std::vector<std::complex<double>>& tx)
 {
-    if (Pin <= 0.0 || Pout <= 0.0)
-        return -std::numeric_limits<double>::infinity();
+    return mW_to_dBm(avgPower_mW(tx));
+}
 
-    return 10.0 * std::log10(Pout / Pin);
+double MetricsEval::compute_av_P_G(double Pin_mW, double Pout_mW)
+{
+    return 10.0 * std::log10(Pout_mW / Pin_mW);
+}
+
+double MetricsEval::computeIBO_dB(const std::vector<std::complex<double>>& paInput,
+                                  double Pin_sat_dBm)
+{
+    const double Pin_avg_dBm = compute_av_P_dBm(paInput);
+    return Pin_sat_dBm - Pin_avg_dBm;
+}
+
+double MetricsEval::computeOBO_dB(const std::vector<std::complex<double>>& paOutput,
+                                  double Pout_sat_dBm)
+{
+    const double Pout_avg_dBm = compute_av_P_dBm(paOutput);
+    return Pout_sat_dBm - Pout_avg_dBm;
 }
 
 std::vector<double> MetricsEval::hamming(int N)
 {
     std::vector<double> w(N);
+
+    if (N <= 1)
+    {
+        if (N == 1)
+            w[0] = 1.0;
+        return w;
+    }
+
     for (int n = 0; n < N; ++n)
         w[n] = 0.54 - 0.46 * std::cos(2.0 * M_PI * n / (N - 1));
+
     return w;
 }
 
@@ -228,31 +352,30 @@ void MetricsEval::computePSDWelch(
     std::vector<double>& freq,
     std::vector<double>& psd)
 {
-    const int winSize = 2048;
-    const int overlap = 1024;
+    const int winSize = PSD_WIN_SIZE;
+    const int overlap = PSD_OVERLAP;
     const int step = winSize - overlap;
-    const int nfft = 8192;
+    const int nfft = PSD_NFFT;
 
-    if (tx.size() < winSize)
+    if (tx.size() < static_cast<size_t>(winSize))
         return;
 
+    std::vector<double> localWindow = hamming(winSize);
 
-    // MATLAB-совместимое число сегментов
-    int segments = 1 + (tx.size() - winSize) / step;
+    const int segments = 1 + (static_cast<int>(tx.size()) - winSize) / step;
 
     psd = std::vector<double>(nfft, 0.0);
 
     std::vector<std::complex<double>> buffer(nfft);
-    //QVector<std::complex<double>> spectrum(nfft);
 
     for (int k = 0; k < segments; ++k)
     {
-        int start = k * step;
+        const int start = k * step;
 
-        std::fill(buffer.begin(), buffer.end(), 0.0);
+        std::fill(buffer.begin(), buffer.end(), std::complex<double>(0.0, 0.0));
 
         for (int i = 0; i < winSize; ++i)
-            buffer[i] = tx[start + i] * window[i];
+            buffer[i] = tx[start + i] * localWindow[i];
 
         fftw8192.fftInPlace(buffer);
 
@@ -260,54 +383,65 @@ void MetricsEval::computePSDWelch(
             psd[i] += std::norm(buffer[i]);
     }
 
-    // усреднение по сегментам
     for (int i = 0; i < nfft; ++i)
-        psd[i] /= segments;
+        psd[i] /= static_cast<double>(segments);
 
-    // мощность окна
     double U = 0.0;
-    for (double w : window)
+
+    for (double w : localWindow)
         U += w * w;
 
-    U /= winSize;   // MATLAB именно так делает
+    U /= static_cast<double>(winSize);
 
-    // НОРМИРОВКА (ключевой момент!)
-    double scale = Fs * winSize * U;
+    const double Fs_eff = Fs * oversample;
+
+    // Если |x|^2 = mW, то после этой нормировки PSD = mW/Hz.
+    const double scale = Fs_eff * winSize * U;
 
     for (int i = 0; i < nfft; ++i)
         psd[i] /= scale;
 
-    // fftshift
-    std::rotate(psd.begin(), psd.begin() + nfft/2, psd.end());
+    std::rotate(psd.begin(), psd.begin() + nfft / 2, psd.end());
 
-    // Частотная ось
     freq.resize(nfft);
-    for (int i = 0; i < nfft; ++i)
-        freq[i] = (i - nfft/2) * Fs * oversample / nfft;
 
-    // перевод в dB
-    const double eps = 1e-20;
-    for (int i = 0; i < nfft; ++i) {
+    for (int i = 0; i < nfft; ++i)
+        freq[i] = (i - nfft / 2) * Fs_eff / nfft;
+
+    const double eps = 1e-30;
+    double df_Hz = Fs_eff / nfft;
+
+    for (int i = 0; i < nfft; ++i)
+    {
         freq[i] = freq[i] / 1e6;
-        psd[i] = 10.0 * std::log10(psd[i] + eps);
+
+        double p_bin_mW = psd[i] * df_Hz; // PSD[mW/Hz] * Hz = mW
+
+        psd[i] = 10.0 * std::log10(p_bin_mW + eps); // dBm/bin
     }
 }
 
 double MetricsEval::computePAPR_dB(const std::vector<std::complex<double>>& x)
 {
-    if (x.empty()) return 0.0;
+    if (x.empty())
+        return 0.0;
 
     double pavg = 0.0;
     double ppeak = 0.0;
 
-    for (const auto& s : x) {
+    for (const auto& s : x)
+    {
         double p = std::norm(s);
         pavg += p;
-        if (p > ppeak) ppeak = p;
+
+        if (p > ppeak)
+            ppeak = p;
     }
 
-    pavg /= x.size();
-    if (pavg <= 0.0) return 0.0;
+    pavg /= static_cast<double>(x.size());
+
+    if (pavg <= 0.0)
+        return 0.0;
 
     return 10.0 * std::log10(ppeak / pavg);
 }

@@ -49,7 +49,7 @@ private:
     void SymsAddNoise(Source& source, std::vector<std::complex<double>>& symbols_clean,
                       std::vector<std::complex<double>>& symbols_noisy);
     int DemodulateSymbol(const std::complex<double>& r, const std::vector<std::complex<double>>& constellation);
-    void Demodulate(Symbols& symbols, const std::vector<std::complex<double>>& constellation);
+    void Demodulate(Symbols& symbols, const std::vector<std::complex<double>>& constellation, int M);
     void InitializeConstellations();
     void addAwgn(std::vector<std::complex<double>> &x, double SNR_dB);
     std::vector<std::complex<double>>& getCurrentConstellation(Source& source);

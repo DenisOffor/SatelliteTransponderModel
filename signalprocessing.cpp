@@ -3,11 +3,11 @@
 SignalProcessing::SignalProcessing() : myFdma(mySC), mydpd() {
     PACurve = new PaCurve(200);
     // Input power in dB and linear
-    double dB_start = -25;
-    double dB_end = 5;
-    double dB_step = (dB_end - dB_start) / (PACurve->point_num - 1);
+    double dBm_start = -25;
+    double dBm_end = 5;
+    double dBm_step = (dBm_end - dBm_start) / (PACurve->point_num - 1);
     for(int i = 0; i < PACurve->point_num; i ++) {
-        PACurve->P_in_abs.dB[i] = dB_start + i * dB_step;
+        PACurve->P_in_abs.dB[i] = dBm_start + i * dBm_step;
         PACurve->P_in_abs.linear[i] = qPow(10.0, PACurve->P_in_abs.dB[i] / 10.0);
         PACurve->r_in[i] = qSqrt(PACurve->P_in_abs.linear[i]);
     }
@@ -64,18 +64,18 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
             double CurrentOBO_noDPD, CurrentOBO_withDPD;
             std::tie(BER_noDPD, BER_withDPD) = MyMetricsEval.Calc_BER(MySymbols);
             std::tie(EVM_noDPD, EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
-            P_formed_noDPD = MyMetricsEval.compute_av_P(CurrentRes.tx_sig);
-            P_formed_withDPD = MyMetricsEval.compute_av_P(CurrentRes.tx_plus_dpd_sig);
-            P_emitted_noDPD = MyMetricsEval.compute_av_P(CurrentRes.pa_sig);
-            P_emitted_withDPD = MyMetricsEval.compute_av_P(CurrentRes.pa_plus_dpd_sig);
-            Gain_noDPD = MyMetricsEval.compute_av_P_G(CurrentRes.P_formed_noDPD, CurrentRes.P_emitted_noDPD);
-            Gain_withDPD = MyMetricsEval.compute_av_P_G(CurrentRes.P_formed_noDPD, CurrentRes.P_emitted_withDPD);
+            P_formed_noDPD = MyMetricsEval.compute_av_P_dBm(CurrentRes.tx_sig);
+            P_formed_withDPD = MyMetricsEval.compute_av_P_dBm(CurrentRes.tx_plus_dpd_sig);
+            P_emitted_noDPD = MyMetricsEval.compute_av_P_dBm(CurrentRes.pa_sig);
+            P_emitted_withDPD = MyMetricsEval.compute_av_P_dBm(CurrentRes.pa_plus_dpd_sig);
+            Gain_noDPD = CurrentRes.P_emitted_noDPD - CurrentRes.P_formed_noDPD;
+            Gain_withDPD = CurrentRes.P_emitted_withDPD - CurrentRes.P_formed_withDPD;
             PARP_noDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_sig);
             PARP_withDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_plus_dpd_sig);
             NMSE_noDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_sig);
             NMSE_withDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_plus_dpd_sig);
-            CurrentOBO_noDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_noDPD);
-            CurrentOBO_withDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_withDPD);
+            CurrentOBO_noDPD = MyMetricsEval.computeOBO_dB(CurrentRes.pa_sig, MySource.Pout_sat_dBm);
+            CurrentOBO_withDPD = MyMetricsEval.computeOBO_dB(CurrentRes.pa_plus_dpd_sig_noisy, MySource.Pout_sat_dBm);
 
             ACLR_noDPD = MyMetricsEval.computeACPR(freq[0], PSDs[2], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
             ACLR_withDPD = MyMetricsEval.computeACPR(freq[0], PSDs[3], CurrentRes.BB, CurrentRes.BB * MySource.bb_delta, MySource.SigType);
@@ -119,14 +119,14 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
 
             std::tie(CurrentRes.EVM_noDPD, CurrentRes.EVM_withDPD) = MyMetricsEval.Calc_EVM(MySymbols);
 
-            CurrentRes.P_formed_noDPD = MyMetricsEval.compute_av_P(CurrentRes.tx_sig);
-            CurrentRes.P_formed_withDPD = MyMetricsEval.compute_av_P(CurrentRes.tx_plus_dpd_sig);
+            CurrentRes.P_formed_noDPD = MyMetricsEval.compute_av_P_dBm(CurrentRes.tx_sig);
+            CurrentRes.P_formed_withDPD = MyMetricsEval.compute_av_P_dBm(CurrentRes.tx_plus_dpd_sig);
 
-            CurrentRes.P_emitted_noDPD = MyMetricsEval.compute_av_P(CurrentRes.pa_sig);
-            CurrentRes.P_emitted_withDPD = MyMetricsEval.compute_av_P(CurrentRes.pa_plus_dpd_sig);
+            CurrentRes.P_emitted_noDPD = MyMetricsEval.compute_av_P_dBm(CurrentRes.pa_sig);
+            CurrentRes.P_emitted_withDPD = MyMetricsEval.compute_av_P_dBm(CurrentRes.pa_plus_dpd_sig);
 
-            CurrentRes.Gain_noDPD = MyMetricsEval.compute_av_P_G(CurrentRes.P_formed_noDPD, CurrentRes.P_emitted_noDPD);
-            CurrentRes.Gain_withDPD = MyMetricsEval.compute_av_P_G(CurrentRes.P_formed_noDPD, CurrentRes.P_emitted_withDPD);
+            CurrentRes.Gain_noDPD = CurrentRes.P_emitted_noDPD - CurrentRes.P_formed_noDPD;
+            CurrentRes.Gain_withDPD = CurrentRes.P_emitted_withDPD - CurrentRes.P_formed_withDPD;
 
             CurrentRes.PARP_noDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_sig);
             CurrentRes.PARP_withDPD = MyMetricsEval.computePAPR_dB(CurrentRes.tx_plus_dpd_sig);
@@ -134,8 +134,8 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
             CurrentRes.NMSE_noDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_sig);
             CurrentRes.NMSE_withDPD = MyMetricsEval.computeNMSE_dB(CurrentRes.tx_sig, CurrentRes.pa_plus_dpd_sig);
 
-            CurrentRes.CurrentOBO_noDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_noDPD);
-            CurrentRes.CurrentOBO_withDPD = 10 * std::log10(MySource.PA_sat / CurrentRes.P_emitted_withDPD);
+            CurrentRes.CurrentOBO_noDPD = MyMetricsEval.computeOBO_dB(CurrentRes.pa_sig, MySource.Pout_sat_dBm);
+            CurrentRes.CurrentOBO_withDPD = MyMetricsEval.computeOBO_dB(CurrentRes.pa_plus_dpd_sig_noisy, MySource.Pout_sat_dBm);
         }
     }
     qDebug() << "Metrics time:" << timer.elapsed() << "ms";
@@ -167,30 +167,48 @@ Symbols SignalProcessing::GenerateNSymbols(Source& source)
     temp.tr_sym_clean.resize(source.NumSym);
     temp.tr_sym_noisy.resize(source.NumSym);
     temp.data_tx.resize(source.NumSym);
-    for (int i = 0; i < source.NumSym; i++)
-        temp.data_tx[i] = QRandomGenerator::global()->bounded(source.M);
+
+    int bitsPerSym = std::log2(source.M);
+    int numBits = source.NumSym * bitsPerSym;
+
+    temp.data_tx.resize(numBits);
+
+    for (int i = 0; i < numBits; i++)
+        temp.data_tx[i] = QRandomGenerator::global()->bounded(2); // 0 или 1
+
+    std::vector<int> sym_idx(source.NumSym);
+
+    for (int i = 0; i < source.NumSym; i++) {
+        int idx = 0;
+
+        for (int b = 0; b < bitsPerSym; b++) {
+            idx = (idx << 1) | temp.data_tx[i * bitsPerSym + b];
+        }
+
+        sym_idx[i] = idx;
+    }
 
     if(source.ModType == "BPSK") {
         for (int i = 0; i < source.NumSym; i++) {
-            int s = temp.data_tx[i];
+            int s = sym_idx[i];
             temp.tr_sym_clean[i] = BPSK_const[s];
         }
     }
     else if(source.ModType == "QPSK") {
         for (int i = 0; i < source.NumSym; i++) {
-            int s = temp.data_tx[i];
+            int s = sym_idx[i];
             temp.tr_sym_clean[i] = QPSK_const[s];
         }
     }
     else if(source.ModType == "16QAM") {
         for (int i = 0; i < source.NumSym; i++) {
-            int s = temp.data_tx[i];
+            int s = sym_idx[i];
             temp.tr_sym_clean[i] = QAM16_const[s];
         }
     }
     else if(source.ModType == "64QAM") {
         for (int i = 0; i < source.NumSym; i++) {
-            int s = temp.data_tx[i];
+            int s = sym_idx[i];
             temp.tr_sym_clean[i] = QAM64_const[s];
         }
     }
@@ -260,14 +278,29 @@ int SignalProcessing::DemodulateSymbol(const std::complex<double> &r, const std:
     return bestIndex;
 }
 
-void SignalProcessing::Demodulate(Symbols& symbols, const std::vector<std::complex<double> > &constellation)
+void SignalProcessing::Demodulate(Symbols& symbols,const std::vector<std::complex<double>>& constellation, int M)
 {
-    symbols.data_rx.resize(symbols.data_tx.size());
-    symbols.data_rx_with_DPD.resize(symbols.data_tx.size());
+    int bitsPerSym = static_cast<int>(std::log2(M));
+    int numBits = symbols.rec_sym_noisy.size() * bitsPerSym;
+
+    symbols.data_rx.resize(numBits);
+    symbols.data_rx_with_DPD.resize(numBits);
+
     for (size_t i = 0; i < symbols.rec_sym_noisy.size(); i++)
     {
-        symbols.data_rx[i] = DemodulateSymbol(symbols.rec_sym_noisy[i], constellation);
-        symbols.data_rx_with_DPD[i] = DemodulateSymbol(symbols.rec_sym_noisy_with_DPD[i], constellation);
+        int idx = DemodulateSymbol(symbols.rec_sym_noisy[i], constellation);
+        int idx_DPD = DemodulateSymbol(symbols.rec_sym_noisy_with_DPD[i], constellation);
+
+        for (int b = 0; b < bitsPerSym; b++)
+        {
+            int shift = bitsPerSym - 1 - b;
+
+            symbols.data_rx[i * bitsPerSym + b] =
+                (idx >> shift) & 1;
+
+            symbols.data_rx_with_DPD[i * bitsPerSym + b] =
+                (idx_DPD >> shift) & 1;
+        }
     }
 }
 
@@ -333,45 +366,7 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     MyPAModels.ScaleToRMS_forPA(TrainRes.tx_sig, MySource);
     TrainRes.pa_sig = TrainRes.tx_sig;
 
-    if(MySource.PAModel == "Saleh")
-        MyPAModels.SalehModel(TrainRes.pa_sig, MySource.SalehCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-    else if (MySource.PAModel == "Rapp")
-        MyPAModels.RappModel(TrainRes.pa_sig, MySource.RappCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-    else if (MySource.PAModel == "Ghorbani")
-        MyPAModels.GhorbaniModel(TrainRes.pa_sig, MySource.GhorbaniCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-    else if (MySource.PAModel == "Wiener") {
-        if(MySource.W_StaticNonlinModel == "Saleh")
-            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.W_StaticNonlinModel,
-                                   MySource.SalehCoeffs, MySource.W_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if(MySource.W_StaticNonlinModel == "Rapp")
-            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.W_StaticNonlinModel,
-                                   MySource.RappCoeffs, MySource.W_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if(MySource.W_StaticNonlinModel == "Ghorbani")
-            MyPAModels.WienerModel(TrainRes.pa_sig, MySource.W_StaticNonlinModel,
-                                   MySource.GhorbaniCoeffs, MySource.W_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-    }
-    else if (MySource.PAModel == "Hammerstein") {
-        if(MySource.H_StaticNonlinModel == "Saleh")
-            MyPAModels.HammersteinModel(TrainRes.pa_sig, MySource.H_StaticNonlinModel,
-                                   MySource.SalehCoeffs, MySource.H_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if(MySource.H_StaticNonlinModel == "Rapp")
-            MyPAModels.HammersteinModel(TrainRes.pa_sig, MySource.H_StaticNonlinModel,
-                                   MySource.RappCoeffs, MySource.H_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if(MySource.H_StaticNonlinModel == "Ghorbani")
-            MyPAModels.HammersteinModel(TrainRes.pa_sig, MySource.H_StaticNonlinModel,
-                                   MySource.GhorbaniCoeffs, MySource.H_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-    }
-    else if (MySource.PAModel == "Wiener-Hammerstein") {
-        if(MySource.WH_StaticNonlinModel == "Saleh")
-            MyPAModels.WHModel(TrainRes.pa_sig, MySource.WH_StaticNonlinModel,
-                                   MySource.SalehCoeffs, MySource.WH_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if(MySource.WH_StaticNonlinModel == "Rapp")
-            MyPAModels.WHModel(TrainRes.pa_sig, MySource.WH_StaticNonlinModel,
-                                   MySource.RappCoeffs, MySource.WH_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-        else if(MySource.WH_StaticNonlinModel == "Ghorbani")
-            MyPAModels.WHModel(TrainRes.pa_sig, MySource.WH_StaticNonlinModel,
-                                   MySource.GhorbaniCoeffs, MySource.WH_FIRCoeffs, MySource.linear_gain_dB, MySource.IBO_dB);
-    }
+    MyPAModels.ApplyPA(TrainRes.pa_sig, MySource);
 
     mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource);
     MySource.NumSym = sym;
@@ -401,7 +396,6 @@ OfdmParams SignalProcessing::GetOfdmParams(Source& source)
     ofdm_parms.GB_Nyq = source.OFDM_GB_Nyq;
     ofdm_parms.Nfft = source.OFDM_Nfft;
     ofdm_parms.SNR_dB = source.SNRSig;
-    ofdm_parms.fc = source.OFDM_f_carrier;
     ofdm_parms.fs = source.fs;
     ofdm_parms.oversampling = source.oversampling;
     return ofdm_parms;
@@ -412,12 +406,10 @@ ScParams SignalProcessing::GetSCParams(Source& source)
     ScParams sc_params;
     sc_params.SC_FilterType = source.SC_FilterType;
     sc_params.SC_filter_length = source.SC_filter_length;
-    sc_params.SC_f_carrier = source.SC_f_carrier;
     sc_params.SC_rolloff = source.SC_rolloff;
     sc_params.SC_symrate = source.SC_symrate;
     sc_params.SNR_dB = source.SNRSig;
     sc_params.fs = source.fs;
-    sc_params.fc = source.SC_f_carrier;
     sc_params.oversampling = source.oversampling;
     return sc_params;
 }
@@ -425,7 +417,6 @@ ScParams SignalProcessing::GetSCParams(Source& source)
 FdmaParams SignalProcessing::GetFDMAParams(Source& source)
 {
     FdmaParams fdma_params;
-    fdma_params.FDMA_f_carrier = source.FDMA_f_carrier;
     fdma_params.FDMA_symrate = source.FDMA_symrate;
     fdma_params.FDMA_num_subcarriers = source.FDMA_num_subcarriers;
     fdma_params.FDMA_step_carrier = source.FDMA_step_carrier;
@@ -484,81 +475,12 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
         else if(source.PredistorterType == "GMP")
             CurRes.tx_plus_dpd_sig = mydpd.applyGMP(CurRes.tx_plus_dpd_sig, source);
 
-        MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
+        //MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
 
-        if(source.PAModel == "Saleh") {
-            MyPAModels.SalehModel(CurRes.pa_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
-            MyPAModels.SalehModel(CurRes.pa_plus_dpd_sig, source.SalehCoeffs, source.linear_gain_dB, source.IBO_dB);
-        }
-        else if (source.PAModel == "Rapp") {
-            MyPAModels.RappModel(CurRes.pa_sig, source.RappCoeffs, source.linear_gain_dB, source.IBO_dB);
-            MyPAModels.RappModel(CurRes.pa_plus_dpd_sig, source.RappCoeffs, source.linear_gain_dB, source.IBO_dB);
-        }
-        else if (source.PAModel == "Ghorbani") {
-            MyPAModels.GhorbaniModel(CurRes.pa_sig, source.GhorbaniCoeffs, source.linear_gain_dB, source.IBO_dB);
-            MyPAModels.GhorbaniModel(CurRes.pa_plus_dpd_sig, source.GhorbaniCoeffs, source.linear_gain_dB, source.IBO_dB);
-        }
-        else if (source.PAModel == "Wiener") {
-            if(source.W_StaticNonlinModel == "Saleh") {
-                MyPAModels.WienerModel(CurRes.pa_sig, source.W_StaticNonlinModel,
-                                       source.SalehCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.W_StaticNonlinModel,
-                                       source.SalehCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-            }
-            else if(source.W_StaticNonlinModel == "Rapp") {
-                MyPAModels.WienerModel(CurRes.pa_sig, source.W_StaticNonlinModel,
-                                       source.RappCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.W_StaticNonlinModel,
-                                       source.RappCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-            }
-            else if(source.W_StaticNonlinModel == "Ghorbani") {
-                MyPAModels.WienerModel(CurRes.pa_sig, source.W_StaticNonlinModel,
-                                       source.GhorbaniCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.WienerModel(CurRes.pa_plus_dpd_sig, source.W_StaticNonlinModel,
-                                       source.GhorbaniCoeffs, source.W_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-            }
-        }
-        else if (source.PAModel == "Hammerstein") {
-            if(source.H_StaticNonlinModel == "Saleh") {
-                MyPAModels.HammersteinModel(CurRes.pa_sig, source.H_StaticNonlinModel,
-                                       source.SalehCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.HammersteinModel(CurRes.pa_plus_dpd_sig, source.H_StaticNonlinModel,
-                                       source.SalehCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-            }
-            else if(source.H_StaticNonlinModel == "Rapp") {
-                MyPAModels.HammersteinModel(CurRes.pa_sig, source.H_StaticNonlinModel,
-                                       source.RappCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.HammersteinModel(CurRes.pa_plus_dpd_sig, source.H_StaticNonlinModel,
-                                       source.RappCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-            }
-            else if(source.H_StaticNonlinModel == "Ghorbani") {
-                MyPAModels.HammersteinModel(CurRes.pa_sig, source.H_StaticNonlinModel,
-                                       source.GhorbaniCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.HammersteinModel(CurRes.pa_plus_dpd_sig, source.H_StaticNonlinModel,
-                                       source.GhorbaniCoeffs, source.H_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-            }
-        }
-        else if (source.PAModel == "Wiener-Hammerstein") {
-            if(source.WH_StaticNonlinModel == "Saleh") {
-                MyPAModels.WHModel(CurRes.pa_sig, source.WH_StaticNonlinModel,
-                                       source.SalehCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.WHModel(CurRes.pa_plus_dpd_sig, source.WH_StaticNonlinModel,
-                                       source.SalehCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-            }
-            else if(source.WH_StaticNonlinModel == "Rapp") {
-                MyPAModels.WHModel(CurRes.pa_sig, source.WH_StaticNonlinModel,
-                                       source.RappCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.WHModel(CurRes.pa_plus_dpd_sig, source.WH_StaticNonlinModel,
-                                       source.RappCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-            }
-            else if(source.WH_StaticNonlinModel == "Ghorbani") {
-                MyPAModels.WHModel(CurRes.pa_sig, source.WH_StaticNonlinModel,
-                                       source.GhorbaniCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-                MyPAModels.WHModel(CurRes.pa_plus_dpd_sig, source.WH_StaticNonlinModel,
-                                       source.GhorbaniCoeffs, source.WH_FIRCoeffs, source.linear_gain_dB, source.IBO_dB);
-            }
-        }
+        MyPAModels.ApplyPA(CurRes.pa_sig, MySource);
+        MyPAModels.ApplyPA(CurRes.pa_plus_dpd_sig, MySource);
+
         CurRes.pa_sig_noisy = CurRes.pa_sig;
         CurRes.pa_plus_dpd_sig_noisy = CurRes.pa_plus_dpd_sig;
         addAwgn(CurRes.pa_sig_noisy, source.SNRSig);
@@ -597,113 +519,201 @@ void SignalProcessing::ReceiveSignalProcessing(Source& source, std::vector<Symbo
     }
 
     for(int i = 0; i < symbols.size(); ++i)
-        Demodulate(symbols[i], getCurrentConstellation(source));
+        Demodulate(symbols[i], getCurrentConstellation(source), source.M);
 
     CurrentRecalcNeeds.MetricsRecalc = true;
 }
 
 void SignalProcessing::CalcPaCurve()
 {
-    bool FIR_enable;
     QString model_type = MySource.PAModel;
-    if(model_type == "Wiener") {
+
+    if(model_type == "Wiener")
         model_type = MySource.W_StaticNonlinModel;
-        FIR_enable = true;
-    }
+    else if(model_type == "Hammerstein")
+        model_type = MySource.H_StaticNonlinModel;
+    else if(model_type == "Wiener-Hammerstein")
+        model_type = MySource.H_StaticNonlinModel;
 
-    double linear_gain = qPow(10.0, MySource.linear_gain_dB / 20);
-    if(model_type == "Saleh") {
-        for(int i = 0; i < PACurve->point_num; i ++) {
-            // AM/AM (unnormalized)
-            PACurve->Aout[i] = (MySource.SalehCoeffs[0] * PACurve->r_in[i]) / (1 + MySource.SalehCoeffs[1] * qPow(PACurve->r_in[i], 2.0)) ;
-            // AM/PM
-            PACurve->Phi[i] = (MySource.SalehCoeffs[2] * qPow(PACurve->r_in[i], 2)) /  (1 + MySource.SalehCoeffs[3] * qPow(PACurve->r_in[i], 2)) * 180 / 3.14;
+    constexpr double eps = 1e-15;
+    constexpr double rad2deg = 180.0 / M_PI;
+
+    // -------------------------------------------------
+    // Saturation points from GUI
+    // -------------------------------------------------
+    double Pin_sat_dBm  = MySource.Pin_sat_dBm;    // X saturation point
+    double Pout_sat_dBm = MySource.Pout_sat_dBm;   // Y saturation point
+
+    // -------------------------------------------------
+    // AM/AM and AM/PM models
+    // -------------------------------------------------
+    auto calcAMAM = [&](double r) -> double
+    {
+        if(model_type == "Saleh")
+        {
+            return (MySource.SalehCoeffs[0] * r) /
+                   (1.0 + MySource.SalehCoeffs[1] * qPow(r, 2.0));
         }
-    }
-    else if (model_type == "Rapp") {
-        for(int i = 0; i < PACurve->point_num; i ++) {
-            // AM/AM (unnormalized)
-            PACurve->Aout[i] = linear_gain * PACurve->r_in[i] / qPow(1 + qPow(PACurve->r_in[i] / MySource.RappCoeffs[0], 2 * MySource.RappCoeffs[1]), 1 / (2 * MySource.RappCoeffs[1]));
-            // AM/PM
-            PACurve->Phi[i] = 0;
+        else if(model_type == "Rapp")
+        {
+            return r /
+                   qPow(1.0 + qPow(r / MySource.RappCoeffs[0],
+                                   2.0 * MySource.RappCoeffs[1]),
+                        1.0 / (2.0 * MySource.RappCoeffs[1]));
         }
-    }
-    else if (model_type == "Ghorbani") {
-        for(int i = 0; i < PACurve->point_num; i ++) {
-            // AM/AM (unnormalized)
-            PACurve->Aout[i] = MySource.GhorbaniCoeffs[0] * PACurve->r_in[i] / (1 + MySource.GhorbaniCoeffs[1] * qPow(PACurve->r_in[i], 2) + MySource.GhorbaniCoeffs[2] * qPow(PACurve->r_in[i], 4));
-            // AM/PM
-            PACurve->Phi[i] = MySource.GhorbaniCoeffs[3] * qPow(PACurve->r_in[i], 2) / (1 + MySource.GhorbaniCoeffs[4] * qPow(PACurve->r_in[i], 2) + MySource.GhorbaniCoeffs[5] * qPow(PACurve->r_in[i], 4)) * 180 / 3.14;
+        else if(model_type == "Ghorbani")
+        {
+            return MySource.GhorbaniCoeffs[0] * r /
+                   (1.0
+                    + MySource.GhorbaniCoeffs[1] * qPow(r, 2.0)
+                    + MySource.GhorbaniCoeffs[2] * qPow(r, 4.0));
         }
+
+        return r;
+    };
+
+    auto calcAMPM = [&](double r) -> double
+    {
+        if(model_type == "Saleh")
+        {
+            return (MySource.SalehCoeffs[2] * qPow(r, 2.0)) /
+                   (1.0 + MySource.SalehCoeffs[3] * qPow(r, 2.0)) *
+                   rad2deg;
+        }
+        else if(model_type == "Rapp")
+        {
+            return 0.0;
+        }
+        else if(model_type == "Ghorbani")
+        {
+            return MySource.GhorbaniCoeffs[3] * qPow(r, 2.0) /
+                   (1.0
+                    + MySource.GhorbaniCoeffs[4] * qPow(r, 2.0)
+                    + MySource.GhorbaniCoeffs[5] * qPow(r, 4.0)) *
+                   rad2deg;
+        }
+
+        return 0.0;
+    };
+
+    // -------------------------------------------------
+    // 1. Raw AM/AM and AM/PM
+    // -------------------------------------------------
+    for(int i = 0; i < PACurve->point_num; i++)
+    {
+        double r = PACurve->r_in[i];
+
+        PACurve->Aout[i] = calcAMAM(r);
+        PACurve->Phi[i]  = calcAMPM(r);
     }
 
-    // Output power in dB and linear
-    for(int i = 0; i < PACurve->point_num; i ++) {
-        // P out in dB with linear gain
-        PACurve->P_out_abs.dB[i] =  10 * std::log10(qPow(PACurve->Aout[i], 2)) + MySource.linear_gain_dB;
-        PACurve->P_out_abs.linear[i] = qPow(10.0, PACurve->P_out_abs.dB[i] / 10.0);
+    // -------------------------------------------------
+    // 2. Saturation point in the raw model
+    // -------------------------------------------------
+    auto maxItA = std::max_element(PACurve->Aout.begin(),
+                                   PACurve->Aout.end());
+
+    int maxIndex = std::distance(PACurve->Aout.begin(), maxItA);
+
+    double Asat = std::max(*maxItA, eps);
+    double r_sat = std::max(PACurve->r_in[maxIndex], eps);
+
+    // -------------------------------------------------
+    // 3. Absolute input power axis
+    //
+    // Pin_dBm = Pin_sat_dBm + 20log10(r / r_sat)
+    // -------------------------------------------------
+    for(int i = 0; i < PACurve->point_num; i++)
+    {
+        double r_norm = std::max(PACurve->r_in[i] / r_sat, eps);
+
+        PACurve->P_in_abs.dB[i] =
+            Pin_sat_dBm + 20.0 * std::log10(r_norm);
+
+        PACurve->P_in_abs.linear[i] =
+            qPow(10.0, PACurve->P_in_abs.dB[i] / 10.0);
     }
 
-    // Make artificial saturation
-    // --- ЭМПИРИЧЕСКАЯ сатурация (по факту, без аналитической асимптоты) ---
-    auto maxIt = std::max_element(PACurve->P_out_abs.dB.begin(), PACurve->P_out_abs.dB.end());
-    double Psat = *maxIt;               // значение максимума
-    int maxIndex = maxIt - PACurve->P_out_abs.dB.begin();    // индекс максимума
-    double Asat = PACurve->Aout[maxIndex];
-    double P_in_sat_dB = PACurve->P_in_abs.dB[maxIndex];
-    double P_in_sat_linear = PACurve->P_in_abs.linear[maxIndex];
-    double r_sat = PACurve->r_in[maxIndex];
+    // -------------------------------------------------
+    // 4. Absolute output power axis
+    //
+    // Pout_dBm = Pout_sat_dBm + 20log10(A / Asat)
+    // -------------------------------------------------
+    for(int i = 0; i < PACurve->point_num; i++)
+    {
+        double A_norm = std::max(PACurve->Aout[i] / Asat, eps);
 
-    //Нормированная выходная мощность: вычитаем Psat (gain_linear автоматически уйдёт)
-    for (int i = 0; i < PACurve->point_num; i++) {
-        PACurve->P_out_norm.dB[i] = PACurve->P_out_abs.dB[i] - Psat;
-        PACurve->P_out_norm.linear[i] = qPow(10.0, PACurve->P_out_norm.dB[i] / 10.0);
+        PACurve->P_out_abs.dB[i] =
+            Pout_sat_dBm + 20.0 * std::log10(A_norm);
+
+        PACurve->P_out_abs.linear[i] =
+            qPow(10.0, PACurve->P_out_abs.dB[i] / 10.0);
     }
 
-    // Нормированный вход: Pin/Pin_sat (в дБ и линейно) — используем эмпирическое r_sat
-    // Замечание: т.к. r_in — амплитуда, используем 20*log10 для dB амплитуды
-    for(int i = 0; i < PACurve->point_num; i++) {
-        PACurve->P_in_norm.dB[i] = PACurve->P_in_abs.dB[i] - P_in_sat_dB;
-        PACurve->P_in_norm.linear[i] = PACurve->P_in_abs.linear[i] / P_in_sat_linear;
+    // -------------------------------------------------
+    // 5. Normalized input/output curves
+    // -------------------------------------------------
+    for(int i = 0; i < PACurve->point_num; i++)
+    {
+        PACurve->P_in_norm.dB[i] =
+            PACurve->P_in_abs.dB[i] - Pin_sat_dBm;
+
+        PACurve->P_in_norm.linear[i] =
+            qPow(10.0, PACurve->P_in_norm.dB[i] / 10.0);
+
+        PACurve->P_out_norm.dB[i] =
+            PACurve->P_out_abs.dB[i] - Pout_sat_dBm;
+
+        PACurve->P_out_norm.linear[i] =
+            qPow(10.0, PACurve->P_out_norm.dB[i] / 10.0);
     }
 
-    // Рабочая точка
+    // -------------------------------------------------
+    // 6. Working point from IBO
+    //
+    // IBO = Pin_sat / Pin_work
+    // Pin_work_dBm = Pin_sat_dBm - IBO_dB
+    // r_work = r_sat / sqrt(IBO_linear)
+    // -------------------------------------------------
     double IBO_linear = qPow(10.0, MySource.IBO_dB / 10.0);
-    double r_work = r_sat / std::sqrt(IBO_linear);
+    double r_work = r_sat / std::sqrt(std::max(IBO_linear, eps));
 
-    double A_work;
-    if(model_type == "Saleh") {
-        A_work = (MySource.SalehCoeffs[0] * r_work) / (1 + MySource.SalehCoeffs[1] * qPow(r_work, 2));
-        PACurve->Phi_work_grad[0] = (MySource.SalehCoeffs[2] * qPow(r_work, 2)) / (1 + MySource.SalehCoeffs[3] * qPow(r_work, 2)) * 180 / 3.14;
-    }
-    else if(model_type == "Rapp") {
-        A_work = r_work / qPow(1 + qPow(r_work / MySource.RappCoeffs[0], 2 * MySource.RappCoeffs[1]), 1 / (2 * MySource.RappCoeffs[1]));
-        PACurve->Phi_work_grad[0] = 0;
-    }
-    else if(model_type == "Ghorbani") {
-        A_work = MySource.GhorbaniCoeffs[0] * r_work / (1 + MySource.GhorbaniCoeffs[1] * qPow(r_work, 2) + MySource.GhorbaniCoeffs[2] * qPow(r_work, 4));
-        PACurve->Phi_work_grad[0] = MySource.GhorbaniCoeffs[3] * qPow(r_work, 2.0) / (1 + MySource.GhorbaniCoeffs[4] * qPow(r_work, 2) + MySource.GhorbaniCoeffs[5] * qPow(r_work, 4)) * 180 / 3.14;
-    }
+    double A_work = calcAMAM(r_work);
+    double Phi_work = calcAMPM(r_work);
 
+    double A_work_norm = std::max(A_work / Asat, eps);
 
-    PACurve->Working_point_dB_abs.x[0] = 20 * std::log10(r_work);
-    PACurve->Working_point_dB_abs.y[0] = 10 * std::log10(qPow(A_work, 2)) + MySource.linear_gain_dB;
+    PACurve->Phi_work_grad[0] = Phi_work;
 
-    PACurve->Working_point_linear_abs.x[0] = qPow(10.0, PACurve->Working_point_dB_abs.x[0] / 10.0);
-    PACurve->Working_point_linear_abs.y[0] = qPow(10.0, PACurve->Working_point_dB_abs.y[0] / 10.0);
+    // -------------------------------------------------
+    // 7. Absolute working point
+    // -------------------------------------------------
+    PACurve->Working_point_dB_abs.x[0] =
+        Pin_sat_dBm - MySource.IBO_dB;
 
-    PACurve->Working_point_dB_norm.x[0] = 20 * std::log10(r_work / r_sat);
-    PACurve->Working_point_dB_norm.y[0] = 10 * std::log10(qPow(A_work, 2) / qPow(Asat, 2));
+    PACurve->Working_point_dB_abs.y[0] =
+        Pout_sat_dBm + 20.0 * std::log10(A_work_norm);
 
-    PACurve->Working_point_linear_norm.x[0] = qPow(10.0, PACurve->Working_point_dB_norm.x[0] / 10.0);
-    PACurve->Working_point_linear_norm.y[0] = qPow(10.0, PACurve->Working_point_dB_norm.y[0] / 10.0);
+    PACurve->Working_point_linear_abs.x[0] =
+        qPow(10.0, PACurve->Working_point_dB_abs.x[0] / 10.0);
 
-    if(FIR_enable) {
-        ApplyFIRWithMemory(PACurve->P_out_abs.dB, PACurve->Phi, MySource.W_FIRCoeffs, 5);
-        ApplyFIRWithMemory(PACurve->P_out_abs.linear, PACurve->Phi, MySource.W_FIRCoeffs, 5);
-        ApplyFIRWithMemory(PACurve->P_out_norm.dB, PACurve->Phi, MySource.W_FIRCoeffs, 5);
-        ApplyFIRWithMemory(PACurve->P_out_norm.linear, PACurve->Phi, MySource.W_FIRCoeffs, 5);
-    }   
+    PACurve->Working_point_linear_abs.y[0] =
+        qPow(10.0, PACurve->Working_point_dB_abs.y[0] / 10.0);
+
+    // -------------------------------------------------
+    // 8. Normalized working point
+    // -------------------------------------------------
+    PACurve->Working_point_dB_norm.x[0] =
+        -MySource.IBO_dB;
+
+    PACurve->Working_point_dB_norm.y[0] =
+        20.0 * std::log10(A_work_norm);
+
+    PACurve->Working_point_linear_norm.x[0] =
+        qPow(10.0, PACurve->Working_point_dB_norm.x[0] / 10.0);
+
+    PACurve->Working_point_linear_norm.y[0] =
+        qPow(10.0, PACurve->Working_point_dB_norm.y[0] / 10.0);
 }
 
 void SignalProcessing::ApplyFIRWithMemory(std::vector<double>& amplitude, std::vector<double>& phase,
@@ -767,21 +777,17 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource.EnableSymSNR = UISource.EnableSymSNR;
 
     MySource.SigType = UISource.SigType;
-    MySource.SC_f_carrier = UISource.SC_f_carrier;
     MySource.SC_symrate = UISource.SC_symrate;
     MySource.SC_rolloff = UISource.SC_rolloff;
     MySource.SC_filter_length = UISource.SC_filter_length;
     MySource.SC_FilterType = UISource.SC_FilterType;
 
-    MySource.OFDM_f_carrier = UISource.OFDM_f_carrier;
     MySource.OFDM_Nfft = UISource.OFDM_Nfft;
-    MySource.OFDM_f_carrier = UISource.OFDM_f_carrier;
     MySource.OFDM_Nfft = UISource.OFDM_Nfft;
     MySource.OFDM_GB_DC = UISource.OFDM_GB_DC;
     MySource.OFDM_GB_Nyq = UISource.OFDM_GB_Nyq;
     MySource.OFDM_cycle_prefix = UISource.OFDM_cycle_prefix;
 
-    MySource.FDMA_f_carrier = UISource.FDMA_f_carrier;
     MySource.FDMA_symrate = UISource.FDMA_symrate;
     MySource.FDMA_num_subcarriers = UISource.FDMA_num_subcarriers;
     MySource.FDMA_step_carrier = UISource.FDMA_step_carrier;
@@ -791,6 +797,8 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource.SNRSig = UISource.SNRSig;
     MySource.bb_delta = UISource.bb_delta;
 
+    MySource.Pin_sat_dBm = UISource.Pin_sat_dBm;
+    MySource.Pout_sat_dBm = UISource.Pout_sat_dBm;
     MySource.PAModel = UISource.PAModel;
     MySource.IBO_dB = UISource.IBO_dB;
     MySource.linear_gain_dB = UISource.linear_gain_dB;

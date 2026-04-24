@@ -28,7 +28,7 @@ OfdmResult OFDM::makeOfdm(const std::vector<std::complex<double> > &symbols, con
     }
 
     //double Nactivetemp = p.Nfft - p.GB_Nyq * 2;
-    res.BB = double(Nactive) / p.Nfft * p.fs;
+    res.BB = p.fs; //double(Nactive) / p.Nfft
 
     std::vector<std::complex<double>> yBB;
 
@@ -53,17 +53,11 @@ OfdmResult OFDM::makeOfdm(const std::vector<std::complex<double> > &symbols, con
     res.t.resize(N);
     res.tx.resize(N);
 
-    res.fc = p.fc;
     for(int n = 0; n < N; ++n) {
         res.t[n] = double(n) / (p.fs * p.oversampling);
 
         std::complex<double> s = yBB[n];
-        if(p.fc > 0) {
-            s *= std::exp(std::complex<double>(0, 2 * M_PI * p.fc * res.t[n]));
-            res.tx[n] = std::real(s);
-        } else {
-            res.tx[n] = s;
-        }
+        res.tx[n] = s;
     }
 
     return res;
@@ -78,19 +72,6 @@ std::vector<std::complex<double>> OFDM::ofdm_demodulate(const std::vector<std::c
 
     std::vector<std::complex<double>> rx_bb;
     rx_bb = rx;
-
-    if (p.fc > 0) {
-           rx_bb.resize(rx.size());
-           double invFs = 1.0 / (p.fs * p.oversampling);
-
-           for (int n = 0; n < rx.size(); ++n) {
-               double t = n * invFs;
-               std::complex<double> carrier =
-                   std::exp(std::complex<double>(0, -2 * M_PI * p.fc * t));
-
-              rx_bb[n] = rx[n] * carrier;
-           }
-    }
 
     std::vector<std::vector<std::complex<double>>> symbols(numSym, std::vector<std::complex<double>>(Nfft_os));
 

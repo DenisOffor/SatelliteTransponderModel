@@ -8,7 +8,6 @@
 struct OfdmParams {
     int Nfft = 32;
     double fs = 0.0;
-    double fc = 0.0;
     int GB_DC = 0;
     int GB_Nyq = 0;
     int CP = 0;

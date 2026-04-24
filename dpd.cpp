@@ -232,8 +232,8 @@ VectorXcd DPD::make_goal(const std::vector<std::complex<double>>& y, const Sourc
 
 VectorXcd DPD::DPDsolve_least_squares(const MatrixXcd& Phi, const VectorXcd& goal) {
     // Нахождение решения МНК через нормальное уравнение
-     return (Phi.adjoint() * Phi).ldlt().solve(Phi.adjoint() * goal);
-    //return Phi.colPivHouseholderQr().solve(goal);
+    //return (Phi.adjoint() * Phi).ldlt().solve(Phi.adjoint() * goal);
+    return Phi.colPivHouseholderQr().solve(goal);
 }
 
 VectorXcd DPD::DPDsolve_least_squares_fixed_linear(const MatrixXcd &A, const VectorXcd &b)
@@ -302,9 +302,6 @@ std::vector<std::complex<double>> DPD::applyMP(
         }
     }
 
-    double A_lim = getAmplitudeLimitFromTargetPAPR(sig, 11.0);
-    softClip(x_pre, A_lim);
-
     return x_pre;
 }
 
@@ -365,9 +362,6 @@ std::vector<std::complex<double>> DPD::applyGMP(
     for (int i = std::max(0, static_cast<int>(sig.size()) - L_lead);
          i < static_cast<int>(sig.size()); ++i)
         x_pre[i] = sig[i] * norm_coef;
-
-    double A_lim = getAmplitudeLimitFromTargetPAPR(sig, 11.0);
-    softClip(x_pre, A_lim);
 
     return x_pre;
 }

@@ -5,6 +5,20 @@
 #define FFT_SIZE 8192
 #define WINDOW_SISE 2048
 
+struct ACPRResult
+{
+    double lower_dB = 0.0;
+    double upper_dB = 0.0;
+
+    double P_main_dBm  = 0.0;
+    double P_lower_dBm = 0.0;
+    double P_upper_dBm = 0.0;
+
+    double P_main_mW  = 0.0;
+    double P_lower_mW = 0.0;
+    double P_upper_mW = 0.0;
+};
+
 class MetricsEval
 {
 private:
@@ -35,6 +49,11 @@ public:
     double computePAPR_dB(const std::vector<std::complex<double>>& x);
     double computeNMSE_dB(const std::vector<std::complex<double>>& ref,
                                 const std::vector<std::complex<double>>& test);
+
+    double compute_av_P_dBm(const std::vector<std::complex<double>>& tx);
+    double computeIBO_dB(const std::vector<std::complex<double>>& paInput, double Pin_sat_dBm);
+    double computeOBO_dB(const std::vector<std::complex<double>>& paOutput, double Pout_sat_dBm);
+    ACPRResult computeACPR_full(const std::vector<double>& freq, const std::vector<double>& psd, double BB, double deltaf);
 };
 
 

@@ -9,7 +9,6 @@
 
 struct FdmaParams
 {
-    int FDMA_f_carrier;        // стартовая
     int FDMA_symrate;
     int FDMA_num_subcarriers;
     int FDMA_step_carrier;

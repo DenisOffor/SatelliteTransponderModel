@@ -111,31 +111,16 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->SignalTypeComboBox) { UISource.SigType = ui->SignalTypeComboBox->currentText();
         CurrentRecalcNeeds.FullRecalc = true; CurrentRecalcNeeds.TimePlotsRescale = true; if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
 
-    if(senderObj == ui->SC_fc_SpinBox) {
-        if(CheckfcValidity(ui->SC_fc_SpinBox, UISource.SC_f_carrier)) {
-            UISource.SC_f_carrier = ui->SC_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true;
-        }
-    }
     if(senderObj == ui->SC_SymRate_SpinBox) { UISource.SC_symrate = ui->SC_SymRate_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->SC_Rolloff_doubleSpinBox) { UISource.SC_rolloff = ui->SC_Rolloff_doubleSpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->SC_FilterLength_SpinBox) { UISource.SC_filter_length = ui->SC_FilterLength_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->SC_FilterType_ComboBox) { UISource.SC_FilterType = ui->SC_FilterType_ComboBox->currentText(); CurrentRecalcNeeds.RecalcSig = true; }
 
-    if(senderObj == ui->OFDM_fc_SpinBox) {
-        if(CheckfcValidity(ui->OFDM_fc_SpinBox, UISource.OFDM_f_carrier)) {
-            UISource.OFDM_f_carrier = ui->OFDM_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true;
-        }
-    }
     if(senderObj == ui->OFDM_Nfft_SpinBox) { UISource.OFDM_Nfft = ui->OFDM_Nfft_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->OFDM_GB_DC_SpinBox) { UISource.OFDM_GB_DC = ui->OFDM_GB_DC_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->OFDM_GBNyq_SpinBox) { UISource.OFDM_GB_Nyq = ui->OFDM_GBNyq_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->OFDM_CyclePref_SpinBox) { UISource.OFDM_cycle_prefix = ui->OFDM_CyclePref_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
 
-    if(senderObj == ui->FDMA_fc_SpinBox) {
-        if(CheckfcValidity(ui->FDMA_fc_SpinBox, UISource.FDMA_f_carrier)) {
-            UISource.FDMA_f_carrier = ui->FDMA_fc_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true;
-        }
-    }
     if(senderObj == ui->FDMA_SymRate_SpinBox) { UISource.FDMA_symrate = ui->FDMA_SymRate_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
     if(senderObj == ui->FDMA_NumCarriers_SpinBox) { UISource.FDMA_num_subcarriers = ui->FDMA_NumCarriers_SpinBox->value(); CurrentRecalcNeeds.RecalcSymbols = true; }
     if(senderObj == ui->FDMA_StepCarrier_SpinBox) { UISource.FDMA_step_carrier = ui->FDMA_StepCarrier_SpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
@@ -146,6 +131,8 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->BB_delta_doubleSpinBox) { UISource.bb_delta = ui->BB_delta_doubleSpinBox->value(); CurrentRecalcNeeds.RecalcSig = true; }
 
 
+    if(senderObj == ui->Pin_sat_dBm_spinBox) { UISource.Pin_sat_dBm = ui->Pin_sat_dBm_spinBox->value(); CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; }
+    if(senderObj == ui->Pout_sat_dBm_spinBox) { UISource.Pout_sat_dBm = ui->Pout_sat_dBm_spinBox->value(); CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; }
     if(senderObj == ui->SalehCoef1_doubleSpinBox || senderObj == ui->SalehCoef2_doubleSpinBox ||
         senderObj == ui->SalehCoef3_doubleSpinBox || senderObj == ui->SalehCoef4_doubleSpinBox) {
         UISource.SalehCoeffs[0] = ui->SalehCoef1_doubleSpinBox->value();
@@ -253,17 +240,14 @@ void MainWindow::FirstDataUpdate()
     UISource.NumSym = 2000;
     UISource.EnableSymSNR = ui->SymSNR_checkBox->isChecked();
     UISource.SigType = ui->SignalTypeComboBox->currentText();
-    UISource.SC_f_carrier = ui->SC_fc_SpinBox->value();
     UISource.SC_symrate = ui->SC_SymRate_SpinBox->value();
     UISource.SC_rolloff = ui->SC_Rolloff_doubleSpinBox->value();
     UISource.SC_filter_length = ui->SC_FilterLength_SpinBox->value();
     UISource.SC_FilterType = ui->SC_FilterType_ComboBox->currentText();
-    UISource.OFDM_f_carrier = ui->OFDM_fc_SpinBox->value();
     UISource.OFDM_Nfft = ui->OFDM_Nfft_SpinBox->value();
     UISource.OFDM_GB_DC = ui->OFDM_GB_DC_SpinBox->value();
     UISource.OFDM_GB_Nyq = ui->OFDM_GBNyq_SpinBox->value();
     UISource.OFDM_cycle_prefix = ui->OFDM_CyclePref_SpinBox->value();
-    UISource.FDMA_f_carrier = ui->FDMA_fc_SpinBox->value();
     UISource.FDMA_symrate = ui->FDMA_SymRate_SpinBox->value();
     UISource.FDMA_num_subcarriers = ui->FDMA_NumCarriers_SpinBox->value();
     UISource.FDMA_step_carrier = ui->FDMA_StepCarrier_SpinBox->value();
@@ -272,6 +256,8 @@ void MainWindow::FirstDataUpdate()
     UISource.SNRSig = ui->SNRSig_SpinBox->value();
     UISource.bb_delta = ui->BB_delta_doubleSpinBox->value();
 
+    UISource.Pin_sat_dBm = ui->Pin_sat_dBm_spinBox->value();
+    UISource.Pout_sat_dBm = ui->Pout_sat_dBm_spinBox->value();
     UISource.SalehCoeffs.push_back(ui->SalehCoef1_doubleSpinBox->value());
     UISource.SalehCoeffs.push_back(ui->SalehCoef2_doubleSpinBox->value());
     UISource.SalehCoeffs.push_back(ui->SalehCoef3_doubleSpinBox->value());
@@ -288,7 +274,7 @@ void MainWindow::FirstDataUpdate()
     UISource.GhorbaniCoeffs.push_back(ui->GhorbaniCoef6_doubleSpinBox->value());
 
     UISource.W_FIRCoeffs.push_back(ui->W_FIR_alpha_doubleSpinBox->value());
-    UISource.H_FIRCoeffs.push_back(ui->W_FIR_alpha_doubleSpinBox->value());
+    UISource.H_FIRCoeffs.push_back(ui->H_FIR_alpha_doubleSpinBox->value());
     UISource.WH_FIRCoeffs.push_back(ui->WH_FIR_alpha1_doubleSpinBox->value());
     UISource.WH_FIRCoeffs.push_back(ui->WH_FIR_alpha2_doubleSpinBox->value());
 
@@ -324,16 +310,13 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->SNRSymSpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SymSNR_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
 
-    connect(ui->SC_fc_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SC_SymRate_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SC_Rolloff_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SC_FilterLength_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SC_FilterType_ComboBox, &QComboBox::currentTextChanged, this, &MainWindow::DataUpdate);
-    connect(ui->OFDM_fc_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->OFDM_Nfft_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->OFDM_GB_DC_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->OFDM_GBNyq_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
-    connect(ui->FDMA_fc_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->FDMA_SymRate_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->FDMA_NumCarriers_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->FDMA_StepCarrier_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
@@ -343,6 +326,8 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->SNRSig_SpinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->BB_delta_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
 
+    connect(ui->Pin_sat_dBm_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
+    connect(ui->Pout_sat_dBm_spinBox, &QSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SalehCoef1_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SalehCoef2_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
     connect(ui->SalehCoef3_doubleSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::DataUpdate);
@@ -396,17 +381,14 @@ void MainWindow::LockParChange()
     ui->SymSNR_checkBox->setEnabled(false);
 
     ui->SignalTypeComboBox->setEnabled(false);
-    ui->SC_fc_SpinBox->setEnabled(false);
     ui->SC_SymRate_SpinBox->setEnabled(false);
     ui->SC_Rolloff_doubleSpinBox->setEnabled(false);
     ui->SC_FilterLength_SpinBox->setEnabled(false);
     ui->SC_FilterType_ComboBox->setEnabled(false);
-    ui->OFDM_fc_SpinBox->setEnabled(false);
     ui->OFDM_Nfft_SpinBox->setEnabled(false);
     ui->OFDM_GB_DC_SpinBox->setEnabled(false);
     ui->OFDM_GBNyq_SpinBox->setEnabled(false);
     ui->OFDM_CyclePref_SpinBox->setEnabled(false);
-    ui->FDMA_fc_SpinBox->setEnabled(false);
     ui->FDMA_SymRate_SpinBox->setEnabled(false);
     ui->FDMA_NumCarriers_SpinBox->setEnabled(false);
     ui->FDMA_StepCarrier_SpinBox->setEnabled(false);
@@ -415,6 +397,8 @@ void MainWindow::LockParChange()
     ui->SNRSig_SpinBox->setEnabled(false);
     ui->BB_delta_doubleSpinBox->setEnabled(false);
 
+    ui->Pin_sat_dBm_spinBox->setEnabled(false);
+    ui->Pout_sat_dBm_spinBox->setEnabled(false);
     ui->SalehCoef1_doubleSpinBox->setEnabled(false);
     ui->SalehCoef2_doubleSpinBox->setEnabled(false);
     ui->SalehCoef3_doubleSpinBox->setEnabled(false);
@@ -467,17 +451,14 @@ void MainWindow::UnLockParChange()
     ui->SymSNR_checkBox->setEnabled(true);
 
     ui->SignalTypeComboBox->setEnabled(true);
-    ui->SC_fc_SpinBox->setEnabled(true);
     ui->SC_SymRate_SpinBox->setEnabled(true);
     ui->SC_Rolloff_doubleSpinBox->setEnabled(true);
     ui->SC_FilterLength_SpinBox->setEnabled(true);
     ui->SC_FilterType_ComboBox->setEnabled(true);
-    ui->OFDM_fc_SpinBox->setEnabled(true);
     ui->OFDM_Nfft_SpinBox->setEnabled(true);
     ui->OFDM_GB_DC_SpinBox->setEnabled(true);
     ui->OFDM_GBNyq_SpinBox->setEnabled(true);
     ui->OFDM_CyclePref_SpinBox->setEnabled(true);
-    ui->FDMA_fc_SpinBox->setEnabled(true);
     ui->FDMA_SymRate_SpinBox->setEnabled(true);
     ui->FDMA_NumCarriers_SpinBox->setEnabled(true);
     ui->FDMA_StepCarrier_SpinBox->setEnabled(true);
@@ -486,6 +467,8 @@ void MainWindow::UnLockParChange()
     ui->SNRSig_SpinBox->setEnabled(true);
     ui->BB_delta_doubleSpinBox->setEnabled(true);
 
+    ui->Pin_sat_dBm_spinBox->setEnabled(true);
+    ui->Pout_sat_dBm_spinBox->setEnabled(true);
     ui->SalehCoef1_doubleSpinBox->setEnabled(true);
     ui->SalehCoef2_doubleSpinBox->setEnabled(true);
     ui->SalehCoef3_doubleSpinBox->setEnabled(true);
@@ -750,8 +733,6 @@ void MainWindow::PaModelTypeComboBoxTextChanged(const QString& comboxString)
         ui->PaSettings_StackedWidget->setCurrentWidget(ui->Hammerstein_model_settings);
     else if (comboxString == "Wiener-Hammerstein")
         ui->PaSettings_StackedWidget->setCurrentWidget(ui->WH_model_settings);
-    else if (comboxString == "Memory Polynomial")
-        ui->PaSettings_StackedWidget->setCurrentWidget(ui->MP_model_settings);
 }
 
 void MainWindow::DPDTypeComboBoxTextChange(const QString &comboxString)

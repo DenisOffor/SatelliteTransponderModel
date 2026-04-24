@@ -653,11 +653,6 @@
                 <string>Wiener-Hammerstein</string>
                </property>
               </item>
-              <item>
-               <property name="text">
-                <string>Memory Polynomial</string>
-               </property>
-              </item>
              </widget>
             </item>
            </layout>
@@ -1113,125 +1108,6 @@
                         </widget>
                        </item>
                       </layout>
-                     </item>
-                    </layout>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QWidget" name="MP_model_settings">
-               <layout class="QVBoxLayout" name="verticalLayout_92">
-                <property name="spacing">
-                 <number>3</number>
-                </property>
-                <property name="leftMargin">
-                 <number>3</number>
-                </property>
-                <property name="topMargin">
-                 <number>3</number>
-                </property>
-                <property name="rightMargin">
-                 <number>3</number>
-                </property>
-                <property name="bottomMargin">
-                 <number>3</number>
-                </property>
-                <item>
-                 <widget class="QGroupBox" name="MP_StaticNonlin_GroupBox">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="title">
-                   <string>Статическая нелинейность</string>
-                  </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_93">
-                   <item>
-                    <widget class="QComboBox" name="MP_StaticNonlin_comboBox"/>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QGroupBox" name="MP_coeffs_groupBox">
-                  <property name="title">
-                   <string>Коэффициенты модели</string>
-                  </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_132">
-                   <property name="spacing">
-                    <number>3</number>
-                   </property>
-                   <property name="leftMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>3</number>
-                   </property>
-                   <item>
-                    <layout class="QVBoxLayout" name="verticalLayout_131">
-                     <item>
-                      <widget class="QGroupBox" name="MP_PA_M_groupBox">
-                       <property name="title">
-                        <string>Глубина памяти</string>
-                       </property>
-                       <layout class="QVBoxLayout" name="verticalLayout_133">
-                        <property name="spacing">
-                         <number>3</number>
-                        </property>
-                        <property name="leftMargin">
-                         <number>3</number>
-                        </property>
-                        <property name="topMargin">
-                         <number>3</number>
-                        </property>
-                        <property name="rightMargin">
-                         <number>3</number>
-                        </property>
-                        <property name="bottomMargin">
-                         <number>3</number>
-                        </property>
-                        <item>
-                         <widget class="QSpinBox" name="MP_PA_M_spinBox"/>
-                        </item>
-                       </layout>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QGroupBox" name="MP_PA_P_groupBox">
-                       <property name="title">
-                        <string>Порядок нелинейности</string>
-                       </property>
-                       <layout class="QVBoxLayout" name="verticalLayout_134">
-                        <property name="spacing">
-                         <number>3</number>
-                        </property>
-                        <property name="leftMargin">
-                         <number>3</number>
-                        </property>
-                        <property name="topMargin">
-                         <number>3</number>
-                        </property>
-                        <property name="rightMargin">
-                         <number>3</number>
-                        </property>
-                        <property name="bottomMargin">
-                         <number>3</number>
-                        </property>
-                        <item>
-                         <widget class="QSpinBox" name="MP_PA_P_spinBox"/>
-                        </item>
-                       </layout>
-                      </widget>
                      </item>
                     </layout>
                    </item>
@@ -2182,6 +2058,12 @@
                      <pointsize>14</pointsize>
                     </font>
                    </property>
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                   <property name="buttonSymbols">
+                    <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
+                   </property>
                    <property name="minimum">
                     <number>10</number>
                    </property>
@@ -2310,7 +2192,7 @@
                   </sizepolicy>
                  </property>
                  <property name="title">
-                  <string>OBO no DPD</string>
+                  <string>OBO без ЦПИ</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_136">
                   <property name="spacing">
@@ -2359,7 +2241,7 @@
                   </sizepolicy>
                  </property>
                  <property name="title">
-                  <string>OBO with DPD</string>
+                  <string>OBO с ЦПИ</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_137">
                   <property name="spacing">
@@ -2397,16 +2279,52 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="label_3">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
+             <widget class="QGroupBox" name="Psat_dBm_groupBox">
+              <property name="title">
+               <string>Мощность насыщения, дБм</string>
               </property>
-              <property name="text">
-               <string>TextLabel</string>
-              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_33">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_31">
+                 <item>
+                  <widget class="QLabel" name="Pin_sat_dBm_label">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string>Вх:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="Pin_sat_dBm_spinBox"/>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_32">
+                 <item>
+                  <widget class="QLabel" name="Pout_sat_dBm_label">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string>Вых:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="Pout_sat_dBm_spinBox"/>
+                 </item>
+                </layout>
+               </item>
+              </layout>
              </widget>
             </item>
            </layout>
@@ -2522,7 +2440,7 @@
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>1</number>
+               <number>0</number>
               </property>
               <widget class="QWidget" name="OFDM_page">
                <property name="sizePolicy">
@@ -2544,52 +2462,6 @@
                 <property name="bottomMargin">
                  <number>3</number>
                 </property>
-                <item>
-                 <widget class="QGroupBox" name="OFDM_fc_GroupBox">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="font">
-                   <font>
-                    <family>Times New Roman</family>
-                    <pointsize>14</pointsize>
-                   </font>
-                  </property>
-                  <property name="title">
-                   <string>Несущая частота</string>
-                  </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_17">
-                   <property name="leftMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>3</number>
-                   </property>
-                   <item>
-                    <widget class="QSpinBox" name="OFDM_fc_SpinBox">
-                     <property name="maximum">
-                      <number>100000000</number>
-                     </property>
-                     <property name="singleStep">
-                      <number>500000</number>
-                     </property>
-                     <property name="value">
-                      <number>0</number>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
                 <item>
                  <widget class="QGroupBox" name="OFDM_Nfft_GroupBox">
                   <property name="sizePolicy">
@@ -2764,58 +2636,6 @@
                 <property name="bottomMargin">
                  <number>3</number>
                 </property>
-                <item>
-                 <widget class="QGroupBox" name="SC_fc_GroupBox">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>16777214</width>
-                    <height>16777215</height>
-                   </size>
-                  </property>
-                  <property name="font">
-                   <font>
-                    <family>Times New Roman</family>
-                    <pointsize>14</pointsize>
-                   </font>
-                  </property>
-                  <property name="title">
-                   <string>Несущая частота</string>
-                  </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_11">
-                   <property name="leftMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>3</number>
-                   </property>
-                   <item>
-                    <widget class="QSpinBox" name="SC_fc_SpinBox">
-                     <property name="maximum">
-                      <number>50000000</number>
-                     </property>
-                     <property name="singleStep">
-                      <number>500000</number>
-                     </property>
-                     <property name="value">
-                      <number>0</number>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
                 <item>
                  <widget class="QGroupBox" name="SC_SymRate_GroupBox">
                   <property name="sizePolicy">
@@ -3017,52 +2837,6 @@
                 <property name="bottomMargin">
                  <number>3</number>
                 </property>
-                <item>
-                 <widget class="QGroupBox" name="FDMA_fc_GroupBox">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="font">
-                   <font>
-                    <family>Times New Roman</family>
-                    <pointsize>14</pointsize>
-                   </font>
-                  </property>
-                  <property name="title">
-                   <string>Несущая частота</string>
-                  </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_22">
-                   <property name="leftMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>3</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>3</number>
-                   </property>
-                   <item>
-                    <widget class="QSpinBox" name="FDMA_fc_SpinBox">
-                     <property name="maximum">
-                      <number>50000000</number>
-                     </property>
-                     <property name="singleStep">
-                      <number>250000</number>
-                     </property>
-                     <property name="value">
-                      <number>10000000</number>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
                 <item>
                  <widget class="QGroupBox" name="FDMA_SymRate_GroupBox">
                   <property name="sizePolicy">
@@ -5344,7 +5118,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>BER no DPD</string>
+                <string>BER без ЦПИ</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_104">
                 <property name="spacing">
@@ -5394,7 +5168,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>BER with DPD</string>
+                <string>BER с ЦПИ</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_125">
                 <property name="spacing">
@@ -5546,7 +5320,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>NMSE</string>
+                <string>НСКО</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_128">
                 <property name="spacing">
@@ -5648,7 +5422,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>ACLR no DPD</string>
+                <string>ACPR без ЦПИ</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_129">
                 <property name="spacing">
@@ -5716,7 +5490,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>ACLR with DPD</string>
+                <string>ACPR с ЦПИ</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_130">
                 <property name="spacing">
@@ -5788,7 +5562,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>P formed</string>
+                <string>Pвх_ср, дБм</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_91">
                 <property name="spacing">
@@ -5811,7 +5585,7 @@
                   <item>
                    <widget class="QLabel" name="PformednoDPD_label">
                     <property name="text">
-                     <string>no DPD</string>
+                     <string>без ЦПИ</string>
                     </property>
                    </widget>
                   </item>
@@ -5841,7 +5615,7 @@
                   <item>
                    <widget class="QLabel" name="PformedwithDPD_label">
                     <property name="text">
-                     <string>with DPD</string>
+                     <string>с ЦПИ</string>
                     </property>
                    </widget>
                   </item>
@@ -5878,7 +5652,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>P emitted</string>
+                <string>Pвых_ср, дБм</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_88">
                 <property name="spacing">
@@ -5901,7 +5675,7 @@
                   <item>
                    <widget class="QLabel" name="PnoDPD_label">
                     <property name="text">
-                     <string>no DPD</string>
+                     <string>без ЦПИ</string>
                     </property>
                    </widget>
                   </item>
@@ -5931,7 +5705,7 @@
                   <item>
                    <widget class="QLabel" name="PwithDPD_label">
                     <property name="text">
-                     <string>with DPD</string>
+                     <string>с ЦПИ</string>
                     </property>
                    </widget>
                   </item>
@@ -5968,7 +5742,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>PARP</string>
+                <string>Пик-фактор</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_89">
                 <property name="spacing">
@@ -5991,7 +5765,7 @@
                   <item>
                    <widget class="QLabel" name="PARPnoDPD_label">
                     <property name="text">
-                     <string>no DPD</string>
+                     <string>без ЦПИ</string>
                     </property>
                    </widget>
                   </item>
@@ -6021,7 +5795,7 @@
                   <item>
                    <widget class="QLabel" name="PARPwithDPD_label">
                     <property name="text">
-                     <string>with DPD</string>
+                     <string>с ЦПИ</string>
                     </property>
                    </widget>
                   </item>
@@ -6058,7 +5832,7 @@
                 </font>
                </property>
                <property name="title">
-                <string>Gain</string>
+                <string>Усиление сигнала</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_90">
                 <property name="spacing">
@@ -6081,7 +5855,7 @@
                   <item>
                    <widget class="QLabel" name="GainNoDPD_label">
                     <property name="text">
-                     <string>no DPD</string>
+                     <string>без ЦПИ</string>
                     </property>
                    </widget>
                   </item>
@@ -6111,7 +5885,7 @@
                   <item>
                    <widget class="QLabel" name="GainWithDPD_label">
                     <property name="text">
-                     <string>with DPD</string>
+                     <string>с ЦПИ</string>
                     </property>
                    </widget>
                   </item>

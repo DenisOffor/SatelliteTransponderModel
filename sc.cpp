@@ -28,9 +28,7 @@ ScResult SC::makeSc(const std::vector<std::complex<double>>& inputSymbols,
         symbols.push_back(std::complex<double>(0,0));
 
     // ----- Полоса -----
-    res.bandwidth = (p.SC_FilterType.toLower() == "RRC") ?
-                        Rs * (1.0 + p.SC_rolloff) :
-                        Rs;
+    res.bandwidth = Rs * (1.0 + p.SC_rolloff);
 
     // ----- Фильтр -----
     auto pulse = rrcFilter(span, sps, p.SC_rolloff);
@@ -47,13 +45,10 @@ ScResult SC::makeSc(const std::vector<std::complex<double>>& inputSymbols,
     for(int n = 0; n < baseband.size(); ++n) {
         res.t[n] = double(n) / (p.fs * p.oversampling);
 
-        std::complex<double> s = baseband[n];
-        if(p.fc > 0) {
-            s *= std::exp(std::complex<double>(0, 2 * M_PI * p.fc * res.t[n]));
-            res.tx[n] = std::real(s);
-        } else {
-            res.tx[n] = s;
-        }
+        double phase = 2.0 * M_PI * p.fc * res.t[n];
+
+        res.tx[n] = baseband[n] *
+                    std::exp(std::complex<double>(0.0, phase));
     }
 
     return res;
@@ -192,20 +187,14 @@ std::vector<std::complex<double>> SC::demodulateSignal(
     // -------------------------------------------------
     // Downconversion
     // -------------------------------------------------
-    if (p.fc > 0) {
-        baseband.resize(tx_signal.size());
-        double invFs = 1.0 / (p.fs * p.oversampling);
+    baseband.resize(tx_signal.size());
+    double invFs = 1.0 / (p.fs * p.oversampling);
 
-        for (int n = 0; n < tx_signal.size(); ++n) {
-            double t = n * invFs;
-            std::complex<double> carrier =
-                std::exp(std::complex<double>(0, -2 * M_PI * p.fc * t));
+    for (int n = 0; n < tx_signal.size(); ++n) {
+        double t = n * invFs;
 
-            baseband[n] = tx_signal[n] * carrier;
-        }
-    }
-    else {
-        baseband = tx_signal;   // shallow copy (Qt implicit sharing)
+        baseband[n] = tx_signal[n] *
+                      std::exp(std::complex<double>(0.0, -2.0 * M_PI * p.fc * t));
     }
 
     // -------------------------------------------------

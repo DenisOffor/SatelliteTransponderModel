@@ -7,7 +7,6 @@
 #include <fft.h>
 
 struct ScParams {
-    int SC_f_carrier = 0;        // можно не использовать отдельно
     int SC_symrate = 0;          // Rs
     double SC_rolloff = 0.35;
     int SC_filter_length = 6;    // span

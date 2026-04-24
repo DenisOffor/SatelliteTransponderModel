@@ -100,19 +100,16 @@ struct Source {
 
     QString SigType;
 
-    int SC_f_carrier;
     int SC_symrate;
     double SC_rolloff;
     int SC_filter_length;
     QString SC_FilterType;
 
-    int OFDM_f_carrier;
     int OFDM_Nfft;
     int OFDM_GB_DC;
     int OFDM_GB_Nyq;
     int OFDM_cycle_prefix;
 
-    int FDMA_f_carrier;
     int FDMA_symrate;
     int FDMA_num_subcarriers;
     int FDMA_step_carrier;
@@ -149,7 +146,8 @@ struct Source {
     bool Enable_even_P;
 
     bool LogRes;
-    double PA_sat;
+    double Pin_sat_dBm;
+    double Pout_sat_dBm;
 };
 
 struct NeedToRecalc{

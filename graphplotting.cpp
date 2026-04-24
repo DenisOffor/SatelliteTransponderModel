@@ -225,8 +225,8 @@ void GraphPlotting::PlotStaticPaCurve(PaCurve& PACurve, const QList<QAction*> ac
                             PACurve.Working_point_linear_norm.y.end());
         wp_x  = QVector<double>(PACurve.Working_point_linear_norm.x.begin(),
                             PACurve.Working_point_linear_norm.x.end());
-        xLabel = "Pвх/Pнас, Вт";
-        yLabel = "Pвх/Pнас, Вт";
+        xLabel = "Pвх/Pнас";
+        yLabel = "Pвх/Pнас";
     }
     else if (actions[0]->isChecked() && actions[2]->isChecked()) {
         x = QVector<double>((PACurve.P_in_abs.linear.begin() + PA_CURVE_BIAS),
@@ -237,8 +237,8 @@ void GraphPlotting::PlotStaticPaCurve(PaCurve& PACurve, const QList<QAction*> ac
                                PACurve.Working_point_linear_abs.y.end());
         wp_x  = QVector<double>(PACurve.Working_point_linear_abs.x.begin(),
                                PACurve.Working_point_linear_abs.x.end());
-        xLabel = "Pвх, Вт";
-        yLabel = "Pвых, Вт";
+        xLabel = "Pвх, мВт";
+        yLabel = "Pвых, мВт";
     }
     else if (actions[1]->isChecked() && actions[3]->isChecked()) {
         x = QVector<double>((PACurve.P_in_norm.dB.begin() + PA_CURVE_BIAS),
@@ -249,8 +249,8 @@ void GraphPlotting::PlotStaticPaCurve(PaCurve& PACurve, const QList<QAction*> ac
                                PACurve.Working_point_dB_norm.y.end());
         wp_x  = QVector<double>(PACurve.Working_point_dB_norm.x.begin(),
                                PACurve.Working_point_dB_norm.x.end());
-        xLabel = "Pвх/Pнас, дБВт";
-        yLabel = "Pвых/Pнас, дБВт";
+        xLabel = "Pвх/Pнас";
+        yLabel = "Pвых/Pнас";
     }
     else {
         x = QVector<double>((PACurve.P_in_abs.dB.begin() + PA_CURVE_BIAS),
@@ -261,8 +261,8 @@ void GraphPlotting::PlotStaticPaCurve(PaCurve& PACurve, const QList<QAction*> ac
                                PACurve.Working_point_dB_abs.y.end());
         wp_x  = QVector<double>(PACurve.Working_point_dB_abs.x.begin(),
                                PACurve.Working_point_dB_abs.x.end());
-        xLabel = "Pвх, дБВт";
-        yLabel = "Pвых, дБВт";
+        xLabel = "Pвх, дБм";
+        yLabel = "Pвых, дБм";
     }
 
     QVector<double> Phi = QVector<double>((PACurve.Phi.begin() + PA_CURVE_BIAS), PACurve.Phi.end());
@@ -317,8 +317,8 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
 
     x.clear(); y.clear(); Phi.clear();
     for(int i = 0; i < res.tx_sig.size(); i += step) {
-        x.append(std::abs(res.tx_sig[i]));
-        y.append(std::abs(res.tx_sig[i]));
+        x.append(std::norm(res.tx_sig[i]));
+        y.append(std::norm(res.tx_sig[i]));
         Phi.append((std::arg(res.tx_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
     plotsOfDPD[0]->graph(0)->setData(x, y);
@@ -332,7 +332,7 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
 
     y.clear(); Phi.clear();
     for(int i = 0; i < res.tx_sig.size(); i += step) {
-        y.append(std::abs(res.pa_sig[i]));
+        y.append(std::norm(res.pa_sig[i]));
         Phi.append((std::arg(res.pa_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
     plotsOfDPD[1]->graph(0)->setData(x, y);
@@ -346,7 +346,7 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
 
     y.clear(); Phi.clear();
     for(int i = 0; i < res.tx_sig.size(); i += step) {
-        y.append(std::abs(res.tx_plus_dpd_sig[i]));
+        y.append(std::norm(res.tx_plus_dpd_sig[i]));
         Phi.append((std::arg((res.tx_plus_dpd_sig[i]) - std::arg(res.tx_sig[i]))) * 180 / 3.14);
     }
     plotsOfDPD[3]->graph(0)->setData(x, y);
@@ -361,7 +361,7 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
 
     y.clear(); Phi.clear();
     for(int i = 0; i < res.tx_sig.size(); i += step) {
-        y.append(std::abs(res.pa_plus_dpd_sig[i]));
+        y.append(std::norm(res.pa_plus_dpd_sig[i]));
         Phi.append((std::arg(res.pa_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
     plotsOfDPD[4]->graph(0)->setData(x, y);
@@ -374,30 +374,10 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[4]->replot();
 
     y.clear(); Phi.clear();
-    /*
-    x.clear();
-    double in_max = 0;
-    double out_max = 0;
-    double out_dpd_max = 0;
-    for (const auto& val : res.tx_sig) {
-        in_max = std::max(in_max, std::abs(val));
-    }
-    for (const auto& val : res.pa_sig) {
-        out_max = std::max(out_max, std::abs(val));
-    }
-    for (const auto& val : res.pa_plus_dpd_sig) {
-        out_dpd_max = std::max(out_dpd_max, std::abs(val));
-    }
     for(int i = 0; i < res.tx_sig.size(); i += step) {
-        x.append((std::abs(res.tx_sig[i])) / in_max);
-        y.append((std::abs(res.pa_sig[i])) / out_max);
-        Phi.append((std::abs(res.pa_plus_dpd_sig[i]) ) / out_dpd_max);
-    }
-    */
-    for(int i = 0; i < res.tx_sig.size(); i += step) {
-        x.append(std::abs(res.tx_sig[i]));
-        y.append(std::abs(res.pa_sig[i]));
-        Phi.append(std::abs(res.pa_plus_dpd_sig[i]));
+        x.append(std::norm(res.tx_sig[i]));
+        y.append(std::norm(res.pa_sig[i]));
+        Phi.append(std::norm(res.pa_plus_dpd_sig[i]));
     }
     plotsOfDPD[5]->graph(0)->setData(x, y);
     plotsOfDPD[5]->graph(1)->setData(x, Phi);
@@ -428,14 +408,14 @@ void GraphPlotting::InitializePaCurvePlot(QWidget* GraphWidget) {
     plotPaCurve->graph(3)->setLineStyle(QCPGraph::lsNone);
     plotPaCurve->graph(3)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::blue, 10));
     plotPaCurve->graph(3)->setValueAxis(plotPaCurve->yAxis2);
-    plotPaCurve->xAxis->setLabel("P_вх, Вт");
-    plotPaCurve->yAxis->setLabel("P_вых, Вт");
+    plotPaCurve->xAxis->setLabel("P_вх, мВт");
+    plotPaCurve->yAxis->setLabel("P_вых, мВт");
     plotPaCurve->yAxis2->setVisible(true);
     plotPaCurve->yAxis2->setLabel("Фвых, град");
 
     plotPaCurve->graph(0)->setName("АХ");
     plotPaCurve->graph(1)->setName("АФХ");
-    plotPaCurve->graph(2)->setName("Рабочая точка, Вт");
+    plotPaCurve->graph(2)->setName("Рабочая точка, мВт");
     plotPaCurve->graph(3)->setName("Рабочая точка, град");
     plotPaCurve->legend->setVisible(true);
     plotPaCurve->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom | Qt::AlignRight);
@@ -481,7 +461,7 @@ void GraphPlotting::InitializeTimeDomainPlotting(std::vector<QWidget*> TimeDomai
         plotsOfTimeDomain[i]->xAxis->setLabel("t, мкс");
         plotsOfTimeDomain[i]->xAxis->setNumberFormat("f");
         plotsOfTimeDomain[i]->xAxis->setNumberPrecision(1);
-        plotsOfTimeDomain[i]->yAxis->setLabel("Amplitude");
+        plotsOfTimeDomain[i]->yAxis->setLabel("Magnitude, dBm");
         plotsOfTimeDomain[i]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
         plotsOfTimeDomain[i]->axisRect()->setRangeZoom(Qt::Horizontal);
         plotsOfTimeDomain[i]->axisRect()->setRangeDrag(Qt::Horizontal);
@@ -552,14 +532,14 @@ void GraphPlotting::InitializeDPDLearnPlotting(std::vector<QWidget *> DPDLearnGr
         if(i == 5) {
             plotsOfDPD[i]->graph(1)->setLineStyle(QCPGraph::lsNone);
             plotsOfDPD[i]->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::red, 2));
-            plotsOfDPD[i]->graph(0)->setName("Scatter no DPD");
-            plotsOfDPD[i]->graph(1)->setName("Scatter with DPD");
+            plotsOfDPD[i]->graph(0)->setName("Scatter без ЦПИ");
+            plotsOfDPD[i]->graph(1)->setName("Scatter с ЦПИ");
             plotsOfDPD[i]->legend->setVisible(true);
             plotsOfDPD[i]->axisRect()->insetLayout()->setInsetAlignment(
                 0, Qt::AlignBottom  | Qt::AlignRight);
         }
-        plotsOfDPD[i]->xAxis->setLabel("P_вх, Вт");
-        plotsOfDPD[i]->yAxis->setLabel("P_вых, Вт");
+        plotsOfDPD[i]->xAxis->setLabel("P_вх, мВт");
+        plotsOfDPD[i]->yAxis->setLabel("P_вых, мВт");
         plotsOfDPD[i]->yAxis2->setVisible(true);
         plotsOfDPD[i]->yAxis2->setLabel("Фвых, град");
         plotsOfDPD[i]->replot();
