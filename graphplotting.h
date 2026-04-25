@@ -28,6 +28,8 @@ private:
     QCustomPlot* plotsOfTimeDomain[6];
     QCustomPlot* plotsOfPSD[6];
     QCustomPlot* plotsOfDPD[6];
+    QCustomPlot* plotsOfImux[4];
+    QCustomPlot* plotsOfOmux[4];
 
     QMap<QString, GraphActions> m_graphActions;  // Тип графика -> действия
     QString m_currentGraphType;
@@ -53,6 +55,7 @@ private:
     void InitializeConstellationsPlotting(std::vector<QWidget*> ConstellationsGraphWidgets);
     void InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets);
     void InitializeDPDLearnPlotting(std::vector<QWidget*> DPDLearnGraphWidgets);
+    void InitializeImuxOmuxPlotting(std::vector<QWidget *> ImuxGraphWidgets, std::vector<QWidget *> OmuxGraphWidgets);
 
     void setupGraphActions();
     void updateMenuForGraphType(QMenu &menu, const QString &graphType);
@@ -66,7 +69,8 @@ public:
     //need to get GroupBox to constuctor in order to place QCustomPlot in widget in GropuBox
     GraphPlotting(SignalProcessing* sig_proc, Ui::MainWindow *ui, QObject *parent);
     void init(std::vector<QWidget*> SetupGraphWidgets, std::vector<QWidget*> ConstellationsGraphWidgets,
-              std::vector<QWidget*> TimeDomainGraphWidgets, std::vector<QWidget*> PSDGraphWidgets, std::vector<QWidget*> DPDLearnGraphWidgets);
+              std::vector<QWidget*> TimeDomainGraphWidgets, std::vector<QWidget*> PSDGraphWidgets, std::vector<QWidget*> DPDLearnGraphWidgets,
+                std::vector<QWidget *> ImuxGraphWidgets, std::vector<QWidget *> OmuxGraphWidgets);
     ~GraphPlotting();
     void PaCurvePlot();
     void PlotStaticPaCurve(PaCurve& PaCurveData, const QList<QAction*> actions);
@@ -75,6 +79,7 @@ public:
     void PlotConstellationsPlots(const Symbols& MySymbols);
     void PlotTimeDomainPlots(const GlobalResults& CurrentOfdm, bool rescale);
     void PlotPSDPlots(const std::vector<std::vector<double>>& PSDs, const std::vector<std::vector<double>>& freqs);
+    void PlotImuxOmuxPlots();
     QString GetPaCurveType();
 
 public slots:

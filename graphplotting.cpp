@@ -32,13 +32,15 @@ void GraphPlotting::PaCurvePlot()
 }
 
 void GraphPlotting::init(std::vector<QWidget*> SetupGraphWidgets, std::vector<QWidget*> ConstellationsGraphWidgets,
-                         std::vector<QWidget*> TimeDomainGraphWidgets, std::vector<QWidget*> PSDGraphWidgets, std::vector<QWidget*> DPDLearnGraphWidgets) {
+                         std::vector<QWidget*> TimeDomainGraphWidgets, std::vector<QWidget*> PSDGraphWidgets, std::vector<QWidget*> DPDLearnGraphWidgets,
+                            std::vector<QWidget *> ImuxGraphWidgets, std::vector<QWidget *> OmuxGraphWidgets) {
     InitializeIdealSymConstPlot(SetupGraphWidgets[0]);
     InitializePaCurvePlot(SetupGraphWidgets[1]);
     InitializeConstellationsPlotting(ConstellationsGraphWidgets);
     InitializeTimeDomainPlotting(TimeDomainGraphWidgets);
     InitializePSDPlotting(PSDGraphWidgets);
     InitializeDPDLearnPlotting(DPDLearnGraphWidgets);
+    InitializeImuxOmuxPlotting(ImuxGraphWidgets, OmuxGraphWidgets);
     setupGraphActions();
 }
 
@@ -201,6 +203,128 @@ void GraphPlotting::PlotPSDPlots(const std::vector<std::vector<double>>& PSDs, c
         plotsOfPSD[5]->graph(0)->rescaleAxes();
         plotsOfPSD[5]->replot();
     }
+}
+
+void GraphPlotting::PlotImuxOmuxPlots()
+{
+    if (!Local_copy_SigProc)
+        return;
+
+    const ImuxOmux& mux = Local_copy_SigProc->getMux();
+
+    auto makeQVectorPair = [](
+                               const std::vector<double>& x,
+                               const std::vector<double>& y,
+                               QVector<double>& qx,
+                               QVector<double>& qy)
+    {
+        qx.clear();
+        qy.clear();
+
+        const int n = static_cast<int>(std::min(x.size(), y.size()));
+
+        qx.reserve(n);
+        qy.reserve(n);
+
+        for (int i = 0; i < n; ++i) {
+            qx.append(x[i]);
+            qy.append(y[i]);
+        }
+    };
+
+    auto rescaleWithPadding = [](QCustomPlot* plot)
+    {
+        if (!plot)
+            return;
+
+        plot->rescaleAxes();
+
+        QCPRange yRange = plot->yAxis->range();
+        double padding = (yRange.upper - yRange.lower) * 0.05;
+
+        if (padding <= 0.0)
+            padding = 1.0;
+
+        plot->yAxis->setRange(yRange.lower - padding, yRange.upper + padding);
+    };
+
+    auto plotSingle = [&](
+                          QCustomPlot* plot,
+                          const std::vector<double>& fMHz,
+                          const std::vector<double>& y)
+    {
+        if (!plot || plot->graphCount() < 1)
+            return;
+
+        QVector<double> qx, qy;
+        makeQVectorPair(fMHz, y, qx, qy);
+
+        plot->graph(0)->setData(qx, qy);
+
+        rescaleWithPadding(plot);
+        plot->replot();
+    };
+
+    auto plotDouble = [&](
+                          QCustomPlot* plot,
+                          const std::vector<double>& fMHz0,
+                          const std::vector<double>& y0,
+                          const std::vector<double>& fMHz1,
+                          const std::vector<double>& y1)
+    {
+        if (!plot || plot->graphCount() < 2)
+            return;
+
+        QVector<double> qx0, qy0;
+        QVector<double> qx1, qy1;
+
+        makeQVectorPair(fMHz0, y0, qx0, qy0);
+        makeQVectorPair(fMHz1, y1, qx1, qy1);
+
+        plot->graph(0)->setData(qx0, qy0);
+        plot->graph(1)->setData(qx1, qy1);
+
+        rescaleWithPadding(plot);
+        plot->replot();
+    };
+
+    auto drawMux = [&](MuxKind kind, QCustomPlot* plots[4])
+    {
+        // 0. АХ из стандарта
+        plotSingle(
+            plots[0],
+            mux.get_Raw_Freq_MHz(kind),
+            mux.get_Raw_Amp_dB(kind)
+            );
+
+        // 1. ГЗ из стандарта
+        plotSingle(
+            plots[1],
+            mux.get_Raw_Freq_MHz(kind),
+            mux.get_Raw_GroupDelay_ns(kind)
+            );
+
+        // 2. Масштабированная АХ и АХ полученного КИХ
+        plotDouble(
+            plots[2],
+            mux.get_Freq_MHz(kind),
+            mux.get_Amp_dB(kind),
+            mux.get_FIR_Freq_MHz(kind),
+            mux.get_FIR_Amp_dB(kind)
+            );
+
+        // 3. Масштабированная ГЗ и ГЗ полученного КИХ
+        plotDouble(
+            plots[3],
+            mux.get_Freq_MHz(kind),
+            mux.get_GroupDelay_ns(kind),
+            mux.get_FIR_Freq_MHz(kind),
+            mux.get_FIR_GroupDelay_ns(kind)
+            );
+    };
+
+    drawMux(MuxKind::IMUX, plotsOfImux);
+    drawMux(MuxKind::OMUX, plotsOfOmux);
 }
 
 QString GraphPlotting::GetPaCurveType()
@@ -545,6 +669,173 @@ void GraphPlotting::InitializeDPDLearnPlotting(std::vector<QWidget *> DPDLearnGr
         plotsOfDPD[i]->replot();
         connect(plotsOfDPD[i], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
     }
+}
+
+void GraphPlotting::InitializeImuxOmuxPlotting(std::vector<QWidget *> ImuxGraphWidgets, std::vector<QWidget *> OmuxGraphWidgets)
+{
+    plotsOfImux[0] = new QCustomPlot(ImuxGraphWidgets[0]);
+    QVBoxLayout* layout0 = new QVBoxLayout(ImuxGraphWidgets[0]);
+    layout0->setContentsMargins(3, 3, 3, 3);
+    plotsOfImux[0]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ImuxGraphWidgets[0]->layout()->addWidget(plotsOfImux[0]);
+    plotsOfImux[0]->addGraph();
+    plotsOfImux[0]->graph(0)->setPen(QPen(Qt::black));
+    plotsOfImux[0]->graph(0)->setLineStyle(QCPGraph::lsLine);
+    plotsOfImux[0]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfImux[0]->xAxis->setLabel("f, МГц");
+    plotsOfImux[0]->yAxis->setLabel("Амплитуда, дБ");
+    plotsOfImux[0]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    plotsOfImux[0]->axisRect()->setRangeZoom(Qt::Horizontal);
+    plotsOfImux[0]->axisRect()->setRangeDrag(Qt::Horizontal);
+    plotsOfImux[0]->replot();
+    connect(plotsOfImux[0], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
+
+    plotsOfImux[1] = new QCustomPlot(ImuxGraphWidgets[1]);
+    QVBoxLayout* layout1 = new QVBoxLayout(ImuxGraphWidgets[1]);
+    layout1->setContentsMargins(3, 3, 3, 3);
+    plotsOfImux[1]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ImuxGraphWidgets[1]->layout()->addWidget(plotsOfImux[1]);
+    plotsOfImux[1]->addGraph();
+    plotsOfImux[1]->graph(0)->setPen(QPen(Qt::black));
+    plotsOfImux[1]->graph(0)->setLineStyle(QCPGraph::lsLine);
+    plotsOfImux[1]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfImux[1]->xAxis->setLabel("f, МГц");
+    plotsOfImux[1]->yAxis->setLabel("ГЗ, нс");
+    plotsOfImux[1]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    plotsOfImux[1]->axisRect()->setRangeZoom(Qt::Horizontal);
+    plotsOfImux[1]->axisRect()->setRangeDrag(Qt::Horizontal);
+    plotsOfImux[1]->replot();
+    connect(plotsOfImux[1], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
+
+    plotsOfImux[2] = new QCustomPlot(ImuxGraphWidgets[2]);
+    QVBoxLayout* layout2 = new QVBoxLayout(ImuxGraphWidgets[2]);
+    layout2->setContentsMargins(3, 3, 3, 3);
+    plotsOfImux[2]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ImuxGraphWidgets[2]->layout()->addWidget(plotsOfImux[2]);
+    plotsOfImux[2]->addGraph();
+    plotsOfImux[2]->graph(0)->setPen(QPen(Qt::black));
+    plotsOfImux[2]->graph(0)->setLineStyle(QCPGraph::lsLine);
+    plotsOfImux[2]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfImux[2]->addGraph();
+    plotsOfImux[2]->graph(1)->setPen(QPen(Qt::blue));
+    plotsOfImux[2]->graph(1)->setLineStyle(QCPGraph::lsLine);
+    plotsOfImux[2]->graph(1)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfImux[2]->graph(0)->setName("АХ");
+    plotsOfImux[2]->graph(1)->setName("АХ КИХ");
+    plotsOfImux[2]->legend->setVisible(true);
+    plotsOfImux[2]->xAxis->setLabel("f, МГц");
+    plotsOfImux[2]->yAxis->setLabel("Амплитуда, дБ");
+    plotsOfImux[2]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    plotsOfImux[2]->axisRect()->setRangeZoom(Qt::Horizontal);
+    plotsOfImux[2]->axisRect()->setRangeDrag(Qt::Horizontal);
+    plotsOfImux[2]->replot();
+    connect(plotsOfImux[2], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
+
+    plotsOfImux[3] = new QCustomPlot(ImuxGraphWidgets[3]);
+    QVBoxLayout* layout3 = new QVBoxLayout(ImuxGraphWidgets[3]);
+    layout3->setContentsMargins(3, 3, 3, 3);
+    plotsOfImux[3]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    ImuxGraphWidgets[3]->layout()->addWidget(plotsOfImux[3]);
+    plotsOfImux[3]->addGraph();
+    plotsOfImux[3]->graph(0)->setPen(QPen(Qt::black));
+    plotsOfImux[3]->graph(0)->setLineStyle(QCPGraph::lsLine);
+    plotsOfImux[3]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfImux[3]->addGraph();
+    plotsOfImux[3]->graph(1)->setPen(QPen(Qt::blue));
+    plotsOfImux[3]->graph(1)->setLineStyle(QCPGraph::lsLine);
+    plotsOfImux[3]->graph(1)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfImux[3]->graph(0)->setName("ГЗ");
+    plotsOfImux[3]->graph(1)->setName("ГЗ КИХ");
+    plotsOfImux[3]->legend->setVisible(true);
+    plotsOfImux[3]->xAxis->setLabel("f, МГц");
+    plotsOfImux[3]->yAxis->setLabel("ГЗ, нс");
+    plotsOfImux[3]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    plotsOfImux[3]->axisRect()->setRangeZoom(Qt::Horizontal);
+    plotsOfImux[3]->axisRect()->setRangeDrag(Qt::Horizontal);
+    plotsOfImux[3]->replot();
+    connect(plotsOfImux[3], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
+
+    plotsOfOmux[0] = new QCustomPlot(OmuxGraphWidgets[0]);
+    QVBoxLayout* layout4 = new QVBoxLayout(OmuxGraphWidgets[0]);
+    layout4->setContentsMargins(3, 3, 3, 3);
+    plotsOfOmux[0]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    OmuxGraphWidgets[0]->layout()->addWidget(plotsOfOmux[0]);
+    plotsOfOmux[0]->addGraph();
+    plotsOfOmux[0]->graph(0)->setPen(QPen(Qt::black));
+    plotsOfOmux[0]->graph(0)->setLineStyle(QCPGraph::lsLine);
+    plotsOfOmux[0]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfOmux[0]->xAxis->setLabel("f, МГц");
+    plotsOfOmux[0]->yAxis->setLabel("Амплитуда, дБ");
+    plotsOfOmux[0]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    plotsOfOmux[0]->axisRect()->setRangeZoom(Qt::Horizontal);
+    plotsOfOmux[0]->axisRect()->setRangeDrag(Qt::Horizontal);
+    plotsOfOmux[0]->replot();
+    connect(plotsOfOmux[0], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
+
+    plotsOfOmux[1] = new QCustomPlot(OmuxGraphWidgets[1]);
+    QVBoxLayout* layout5 = new QVBoxLayout(OmuxGraphWidgets[1]);
+    layout5->setContentsMargins(3, 3, 3, 3);
+    plotsOfOmux[1]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    OmuxGraphWidgets[1]->layout()->addWidget(plotsOfOmux[1]);
+    plotsOfOmux[1]->addGraph();
+    plotsOfOmux[1]->graph(0)->setPen(QPen(Qt::black));
+    plotsOfOmux[1]->graph(0)->setLineStyle(QCPGraph::lsLine);
+    plotsOfOmux[1]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfOmux[1]->xAxis->setLabel("f, МГц");
+    plotsOfOmux[1]->yAxis->setLabel("ГЗ, нс");
+    plotsOfOmux[1]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    plotsOfOmux[1]->axisRect()->setRangeZoom(Qt::Horizontal);
+    plotsOfOmux[1]->axisRect()->setRangeDrag(Qt::Horizontal);
+    plotsOfOmux[1]->replot();
+    connect(plotsOfOmux[1], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
+
+    plotsOfOmux[2] = new QCustomPlot(OmuxGraphWidgets[2]);
+    QVBoxLayout* layout6 = new QVBoxLayout(OmuxGraphWidgets[2]);
+    layout6->setContentsMargins(3, 3, 3, 3);
+    plotsOfOmux[2]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    OmuxGraphWidgets[2]->layout()->addWidget(plotsOfOmux[2]);
+    plotsOfOmux[2]->addGraph();
+    plotsOfOmux[2]->graph(0)->setPen(QPen(Qt::black));
+    plotsOfOmux[2]->graph(0)->setLineStyle(QCPGraph::lsLine);
+    plotsOfOmux[2]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfOmux[2]->addGraph();
+    plotsOfOmux[2]->graph(1)->setPen(QPen(Qt::blue));
+    plotsOfOmux[2]->graph(1)->setLineStyle(QCPGraph::lsLine);
+    plotsOfOmux[2]->graph(1)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfOmux[2]->graph(0)->setName("АХ");
+    plotsOfOmux[2]->graph(1)->setName("АХ КИХ");
+    plotsOfOmux[2]->legend->setVisible(true);
+    plotsOfOmux[2]->xAxis->setLabel("f, МГц");
+    plotsOfOmux[2]->yAxis->setLabel("Амплитуда, дБ");
+    plotsOfOmux[2]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    plotsOfOmux[2]->axisRect()->setRangeZoom(Qt::Horizontal);
+    plotsOfOmux[2]->axisRect()->setRangeDrag(Qt::Horizontal);
+    plotsOfOmux[2]->replot();
+    connect(plotsOfOmux[2], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
+
+    plotsOfOmux[3] = new QCustomPlot(OmuxGraphWidgets[3]);
+    QVBoxLayout* layout7 = new QVBoxLayout(OmuxGraphWidgets[3]);
+    layout7->setContentsMargins(3, 3, 3, 3);
+    plotsOfOmux[3]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    OmuxGraphWidgets[3]->layout()->addWidget(plotsOfOmux[3]);
+    plotsOfOmux[3]->addGraph();
+    plotsOfOmux[3]->graph(0)->setPen(QPen(Qt::black));
+    plotsOfOmux[3]->graph(0)->setLineStyle(QCPGraph::lsLine);
+    plotsOfOmux[3]->graph(0)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfOmux[3]->addGraph();
+    plotsOfOmux[3]->graph(1)->setPen(QPen(Qt::blue));
+    plotsOfOmux[3]->graph(1)->setLineStyle(QCPGraph::lsLine);
+    plotsOfOmux[3]->graph(1)->setScatterStyle(QCPScatterStyle::ssNone);
+    plotsOfOmux[3]->graph(0)->setName("ГЗ");
+    plotsOfOmux[3]->graph(1)->setName("ГЗ КИХ");
+    plotsOfOmux[3]->legend->setVisible(true);
+    plotsOfOmux[3]->xAxis->setLabel("f, МГц");
+    plotsOfOmux[3]->yAxis->setLabel("ГЗ, нс");
+    plotsOfOmux[3]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+    plotsOfOmux[3]->axisRect()->setRangeZoom(Qt::Horizontal);
+    plotsOfOmux[3]->axisRect()->setRangeDrag(Qt::Horizontal);
+    plotsOfOmux[3]->replot();
+    connect(plotsOfOmux[3], &QCustomPlot::mousePress, this, &GraphPlotting::onPlotClick);
 }
 
 void GraphPlotting::InitializeConstellationsPlotting(std::vector<QWidget *> ConstellationsGraphWidgets)

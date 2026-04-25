@@ -44,7 +44,20 @@ MainWindow::MainWindow(QWidget *parent)
     DPDLearningGraphWidgets.push_back(ui->DPDLearnPageGraph5_Widget);
     DPDLearningGraphWidgets.push_back(ui->DPDLearnPageGraph6_Widget);
 
-    Graphs.init(SetupGraphWidgets, ConstellationsGraphWidgets, TimeDomainGraphWidgets, PSDGraphWidgets, DPDLearningGraphWidgets);
+    std::vector<QWidget*> ImuxGraphWidgets;
+    ImuxGraphWidgets.push_back(ui->ImuxPageGraph1_Widget);
+    ImuxGraphWidgets.push_back(ui->ImuxPageGraph2_Widget);
+    ImuxGraphWidgets.push_back(ui->ImuxPageGraph3_Widget);
+    ImuxGraphWidgets.push_back(ui->ImuxPageGraph4_Widget);
+
+    std::vector<QWidget*> OmuxGraphWidgets;
+    OmuxGraphWidgets.push_back(ui->OmuxPageGraph1_Widget);
+    OmuxGraphWidgets.push_back(ui->OmuxPageGraph2_Widget);
+    OmuxGraphWidgets.push_back(ui->OmuxPageGraph3_Widget);
+    OmuxGraphWidgets.push_back(ui->OmuxPageGraph4_Widget);
+
+    Graphs.init(SetupGraphWidgets, ConstellationsGraphWidgets, TimeDomainGraphWidgets, PSDGraphWidgets, DPDLearningGraphWidgets,
+        ImuxGraphWidgets, OmuxGraphWidgets);
 
     //Connecting chosen signal type with settings of this signal and setting starting page
     connect(ui->SignalTypeComboBox, &QComboBox::currentTextChanged, this, &MainWindow::SignalTypeComboBoxTextChanged);
@@ -218,6 +231,9 @@ void MainWindow::DataUpdate()
 
     if(senderObj == ui->LogRes_checkBox) { UISource.LogRes = ui->LogRes_checkBox->isChecked(); };
 
+    if(senderObj == ui->IMUX_enabled_checkBox) { UISource.IMUX_enabled = ui->IMUX_enabled_checkBox->isChecked(); CurrentRecalcNeeds.FullRecalc = true; }
+    if(senderObj == ui->OMUX_enabled_checkBox) { UISource.OMUX_enabled = ui->OMUX_enabled_checkBox->isChecked(); CurrentRecalcNeeds.FullRecalc = true; }
+
     if(CurrentRecalcNeeds.PARecalc || CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc) {
         if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true;
         MySigProc.clear_OFDM_buffs();
@@ -298,6 +314,9 @@ void MainWindow::FirstDataUpdate()
     UISource.DPDAutoRecalc = ui->DPDAutoRecalc_checkBox->isChecked();
     UISource.Enable_even_P = ui->EvenP_checkBox->isChecked();
 
+    UISource.IMUX_enabled = ui->IMUX_enabled_checkBox->isChecked();
+    UISource.OMUX_enabled = ui->OMUX_enabled_checkBox->isChecked();
+
     CurrentRecalcNeeds.init();
     MySigProc.DataUpdate(UISource);
     emit ui->DPDRecalc_pushButton->pressed();
@@ -366,6 +385,9 @@ void MainWindow::SetupMainLogicWork()
     connect(ui->EvenP_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
 
     connect(ui->LogRes_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
+    connect(ui->IMUX_enabled_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
+    connect(ui->OMUX_enabled_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::DataUpdate);
+
     //GUI smart behavior
 
     connect(ui->LogRes_checkBox, &QCheckBox::checkStateChanged, this, &MainWindow::LogModeSlot);
@@ -439,6 +461,8 @@ void MainWindow::LockParChange()
     ui->DPDAutoRecalc_checkBox->setEnabled(false);
     ui->EvenP_checkBox->setEnabled(false);
     ui->LogRes_checkBox->setEnabled(false);
+    ui->IMUX_enabled_checkBox->setEnabled(false);
+    ui->OMUX_enabled_checkBox->setEnabled(false);
 }
 
 void MainWindow::UnLockParChange()
@@ -509,6 +533,8 @@ void MainWindow::UnLockParChange()
     ui->DPDAutoRecalc_checkBox->setEnabled(true);
     ui->EvenP_checkBox->setEnabled(true);
     ui->LogRes_checkBox->setEnabled(true);
+    ui->IMUX_enabled_checkBox->setEnabled(true);
+    ui->OMUX_enabled_checkBox->setEnabled(true);
 }
 
 void MainWindow::handleResult()
@@ -537,6 +563,9 @@ void MainWindow::handleResult()
 
     if(text == "    DPD learning    ")
         Graphs.PlotScatterDPDLearn(MySigProc.getTimeSignal());
+
+    if(text == "    IMUX/OMUX    ")
+        Graphs.PlotImuxOmuxPlots();
 
     qDebug() << "Graphs time:" << timer.elapsed() << "ms";
     qDebug() << "\n";
@@ -701,8 +730,8 @@ void MainWindow::onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem
         PaCurvePlot();
         ui->settingsStack->setCurrentWidget(ui->PagePA);   
     }
-    else if (name == "Metrics") {
-        ui->settingsStack->setCurrentWidget(ui->Metric_Page);
+    else if (name == "Imux/Omux") {
+        ui->settingsStack->setCurrentWidget(ui->TransponderSettings_Page);
     }
     else if (name == "Predistorter") {
         ui->settingsStack->setCurrentWidget(ui->PagePredistorter);
@@ -954,6 +983,9 @@ void MainWindow::onGraphsListItemChanged(QListWidgetItem* current, QListWidgetIt
     else if (name == "    TimeDomain    ") {
         CurrentRecalcNeeds.TimePlotsRescale = true;
         ui->GraphsListstackedWidget->setCurrentWidget(ui->TimeDomainPage);
+    }
+    else if(name == "    IMUX/OMUX    ") {
+        ui->GraphsListstackedWidget->setCurrentWidget(ui->ImuxOmuxPage);
     }
 }
 

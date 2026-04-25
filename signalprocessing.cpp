@@ -366,9 +366,13 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     MyPAModels.ScaleToRMS_forPA(TrainRes.tx_sig, MySource);
     TrainRes.pa_sig = TrainRes.tx_sig;
 
-    MyMux.apply(TrainRes.pa_sig, MuxKind::IMUX, TrainRes.BB, MySource.fs * MySource.oversampling);
+    if(MySource.IMUX_enabled)
+        MyMux.apply(TrainRes.pa_sig, MuxKind::IMUX, TrainRes.BB, MySource.fs * MySource.oversampling);
+
     MyPAModels.ApplyPA(TrainRes.pa_sig, MySource);
-    MyMux.apply(TrainRes.pa_sig, MuxKind::OMUX, TrainRes.BB, MySource.fs * MySource.oversampling);
+
+    if(MySource.OMUX_enabled)
+        MyMux.apply(TrainRes.pa_sig, MuxKind::OMUX, TrainRes.BB, MySource.fs * MySource.oversampling);
 
     mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource);
     MySource.NumSym = sym;
@@ -469,9 +473,6 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
 {
     if(!CurRes.tx_sig.empty() && CurrentRecalcNeeds.PARecalc == true) {
         MyPAModels.ScaleToRMS_forPA(CurRes.tx_sig, source);
-        CurRes.pa_sig = CurRes.tx_sig;
-        MyMux.apply(CurRes.pa_sig, MuxKind::IMUX, CurRes.BB, source.fs * source.oversampling);
-
         CurRes.tx_plus_dpd_sig = CurRes.tx_sig;
 
         if(source.PredistorterType == "MP")
@@ -479,14 +480,22 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
         else if(source.PredistorterType == "GMP")
             CurRes.tx_plus_dpd_sig = mydpd.applyGMP(CurRes.tx_plus_dpd_sig, source);
 
-        //MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
+        MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
+        CurRes.pa_sig = CurRes.tx_sig;
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
-        MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::IMUX, CurRes.BB, source.fs * source.oversampling);
+
+        if(MySource.IMUX_enabled) {
+            MyMux.apply(CurRes.pa_sig, MuxKind::IMUX, CurRes.BB, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::IMUX, CurRes.BB, source.fs * source.oversampling);
+        }
 
         MyPAModels.ApplyPA(CurRes.pa_sig, MySource);
         MyPAModels.ApplyPA(CurRes.pa_plus_dpd_sig, MySource);
-        MyMux.apply(CurRes.pa_sig, MuxKind::OMUX, CurRes.BB, source.fs * source.oversampling);
-        MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::OMUX, CurRes.BB, source.fs * source.oversampling);
+
+        if(MySource.OMUX_enabled) {
+            MyMux.apply(CurRes.pa_sig, MuxKind::OMUX, CurRes.BB, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::OMUX, CurRes.BB, source.fs * source.oversampling);
+        }
 
         CurRes.pa_sig_noisy = CurRes.pa_sig;
         CurRes.pa_plus_dpd_sig_noisy = CurRes.pa_plus_dpd_sig;
@@ -831,6 +840,9 @@ void SignalProcessing::DataUpdate(Source &UISource)
     MySource.PredistorterType = UISource.PredistorterType;
     MySource.DPDAutoRecalc = UISource.DPDAutoRecalc;
     MySource.Enable_even_P = UISource.Enable_even_P;
+
+    MySource.IMUX_enabled = UISource.IMUX_enabled;
+    MySource.OMUX_enabled = UISource.OMUX_enabled;
 }
 
 void SignalProcessing::addAwgn(std::vector<std::complex<double>> &x, double SNR_dB)
@@ -891,6 +903,11 @@ std::vector<std::vector<double>>& SignalProcessing::getFreq()
 std::vector<std::vector<double>>& SignalProcessing::getPSDs()
 {
     return PSDs;
+}
+
+ImuxOmux &SignalProcessing::getMux()
+{
+    return MyMux;
 }
 
 PaCurve &SignalProcessing::getPaCurve()

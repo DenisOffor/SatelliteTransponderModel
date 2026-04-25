@@ -69,6 +69,7 @@ public:
     GlobalResults& getTimeSignal();
     std::vector<std::vector<double>>& getFreq();
     std::vector<std::vector<double>>& getPSDs();
+    ImuxOmux& getMux();
     PaCurve& getPaCurve();
     void clear_OFDM_buffs();
     void RecalcDPD(NeedToRecalc& CurrentRecalcNeeds);

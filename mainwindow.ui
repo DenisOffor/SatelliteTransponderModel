@@ -153,9 +153,19 @@
              </item>
              <item>
               <property name="text">
+               <string>Imux/Omux</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
                <string>Power Amplifier</string>
               </property>
              </item>
+            </item>
+            <item>
+             <property name="text">
+              <string/>
+             </property>
             </item>
            </widget>
           </item>
@@ -311,7 +321,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -559,8 +569,118 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="Metric_Page">
-        <layout class="QVBoxLayout" name="verticalLayout_81"/>
+       <widget class="QWidget" name="TransponderSettings_Page">
+        <layout class="QVBoxLayout" name="verticalLayout_81">
+         <item>
+          <widget class="QGroupBox" name="TransponderSettings_GroupBox">
+           <property name="title">
+            <string>Настройки тракта</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_142">
+            <property name="spacing">
+             <number>3</number>
+            </property>
+            <property name="leftMargin">
+             <number>3</number>
+            </property>
+            <property name="topMargin">
+             <number>3</number>
+            </property>
+            <property name="rightMargin">
+             <number>3</number>
+            </property>
+            <property name="bottomMargin">
+             <number>3</number>
+            </property>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_141">
+              <item>
+               <widget class="QGroupBox" name="IMUX_enabled_groupBox">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="title">
+                 <string>IMUX</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_93">
+                 <property name="spacing">
+                  <number>3</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>3</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>3</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>3</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>3</number>
+                 </property>
+                 <item>
+                  <widget class="QCheckBox" name="IMUX_enabled_checkBox">
+                   <property name="text">
+                    <string>Работает</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="OMUX_enabled_groupBox">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="title">
+                 <string>OMUX</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_92">
+                 <property name="spacing">
+                  <number>3</number>
+                 </property>
+                 <property name="leftMargin">
+                  <number>3</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>3</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>3</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>3</number>
+                 </property>
+                 <item>
+                  <widget class="QCheckBox" name="OMUX_enabled_checkBox">
+                   <property name="text">
+                    <string>Работает</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <widget class="QGroupBox" name="groupBox_7">
+                <property name="title">
+                 <string>GroupBox</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
        </widget>
        <widget class="QWidget" name="PagePA">
         <property name="sizePolicy">
@@ -3902,6 +4022,11 @@
           </item>
           <item>
            <property name="text">
+            <string>    IMUX/OMUX    </string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
             <string>    Custom    </string>
            </property>
           </item>
@@ -4201,6 +4326,343 @@
                      </property>
                      <item>
                       <widget class="QWidget" name="ConstelPageGraph6_Widget" native="true"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="ImuxOmuxPage">
+           <layout class="QVBoxLayout" name="verticalLayout_11">
+            <item>
+             <widget class="QScrollArea" name="scrollAreaDPDLearningPage_2">
+              <property name="widgetResizable">
+               <bool>true</bool>
+              </property>
+              <widget class="QWidget" name="scrollAreaDPDLearningPageWidgetContents_2">
+               <property name="geometry">
+                <rect>
+                 <x>-804</x>
+                 <y>0</y>
+                 <width>1649</width>
+                 <height>501</height>
+                </rect>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_131">
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_34">
+                  <property name="leftMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>3</number>
+                  </property>
+                  <item>
+                   <widget class="QGroupBox" name="ImuxPageGraph1_GroupBox">
+                    <property name="minimumSize">
+                     <size>
+                      <width>400</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="title">
+                     <string>IMUX, АХ из стандарта </string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_132">
+                     <property name="leftMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>3</number>
+                     </property>
+                     <item>
+                      <widget class="QWidget" name="ImuxPageGraph1_Widget" native="true"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="ImuxPageGraph2_GroupBox">
+                    <property name="minimumSize">
+                     <size>
+                      <width>400</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="title">
+                     <string>IMUX, ГЗ из стандарта </string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_133">
+                     <property name="leftMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>3</number>
+                     </property>
+                     <item>
+                      <widget class="QWidget" name="ImuxPageGraph2_Widget" native="true"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="OmuxPageGraph1_GroupBox">
+                    <property name="minimumSize">
+                     <size>
+                      <width>400</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="title">
+                     <string>OMUX, АХ из стандарта </string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_134">
+                     <property name="leftMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>3</number>
+                     </property>
+                     <item>
+                      <widget class="QWidget" name="OmuxPageGraph1_Widget" native="true"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="OmuxPageGraph2_GroupBox">
+                    <property name="minimumSize">
+                     <size>
+                      <width>400</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="title">
+                     <string>OMUX, ГЗ из стандарта </string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_17">
+                     <property name="spacing">
+                      <number>3</number>
+                     </property>
+                     <property name="leftMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>3</number>
+                     </property>
+                     <item>
+                      <widget class="QWidget" name="OmuxPageGraph2_Widget" native="true"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_35">
+                  <property name="leftMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>3</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>3</number>
+                  </property>
+                  <item>
+                   <widget class="QGroupBox" name="ImuxPageGraph3_GroupBox">
+                    <property name="minimumSize">
+                     <size>
+                      <width>400</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="title">
+                     <string>Масштабированная АХ IMUX и АХ КИХ</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_138">
+                     <property name="leftMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>3</number>
+                     </property>
+                     <item>
+                      <widget class="QWidget" name="ImuxPageGraph3_Widget" native="true"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="ImuxPageGraph4_GroupBox">
+                    <property name="minimumSize">
+                     <size>
+                      <width>400</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="title">
+                     <string>Масштабированная ГЗ IMUX и ГЗ КИХ</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_139">
+                     <property name="leftMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>3</number>
+                     </property>
+                     <item>
+                      <widget class="QWidget" name="ImuxPageGraph4_Widget" native="true"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="OmuxPageGraph3_GroupBox">
+                    <property name="minimumSize">
+                     <size>
+                      <width>400</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Times New Roman</family>
+                      <pointsize>14</pointsize>
+                     </font>
+                    </property>
+                    <property name="title">
+                     <string>Масштабированная АХ OMUX и АХ КИХ</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_140">
+                     <property name="leftMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>3</number>
+                     </property>
+                     <item>
+                      <widget class="QWidget" name="OmuxPageGraph3_Widget" native="true"/>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="OmuxPageGraph4_GroupBox">
+                    <property name="minimumSize">
+                     <size>
+                      <width>400</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <property name="title">
+                     <string>Масштабированная ГЗ OMUX и ГЗ КИХ</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_22">
+                     <property name="spacing">
+                      <number>3</number>
+                     </property>
+                     <property name="leftMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>3</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>3</number>
+                     </property>
+                     <item>
+                      <widget class="QWidget" name="OmuxPageGraph4_Widget" native="true"/>
                      </item>
                     </layout>
                    </widget>
@@ -4814,7 +5276,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1242</width>
-                 <height>147</height>
+                 <height>501</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_113">

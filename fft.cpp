@@ -20,6 +20,8 @@ FFT::FFT(int n) : m_n(n)
         FFTW_BACKWARD,
         FFTW_MEASURE
         );
+
+    m_plansCreated = (m_planForward != nullptr && m_planBackward != nullptr);
 }
 
 FFT::~FFT()
@@ -29,32 +31,6 @@ FFT::~FFT()
         fftw_destroy_plan(m_planBackward);
     }
 }
-
-// std::vector<std::complex<double>> FFT::fft(const std::vector<std::complex<double>>& x)
-// {
-//     std::vector<std::complex<double>> result(m_n);
-
-//     if(x.size() != m_n || !m_plansCreated) {
-//         qWarning() << "FFTWWrapper: размер не совпадает или планы не созданы";
-//         return result;
-//     }
-
-//     // Копируем входные данные
-//     for(int i = 0; i < m_n; ++i) {
-//         m_in[i][0] = x[i].real();
-//         m_in[i][1] = x[i].imag();
-//     }
-
-//     // Выполняем FFT
-//     fftw_execute(m_planForward);
-
-//     // Копируем результат
-//     for(int i = 0; i < m_n; ++i) {
-//         result[i] = std::complex<double>(m_out[i][0], m_out[i][1]);
-//     }
-
-//     return result;
-// }
 
 void FFT::fftInPlace(std::vector<std::complex<double>>& x)
 {
@@ -73,29 +49,3 @@ void FFT::ifftInPlace(std::vector<std::complex<double>>& x)
         reinterpret_cast<fftw_complex*>(x.data())
         );
 }
-
-// std::vector<std::complex<double>> FFT::ifft(const std::vector<std::complex<double>>& X)
-// {
-//     std::vector<std::complex<double>> result(m_n);
-
-//     if(X.size() != m_n || !m_plansCreated) {
-//         qWarning() << "FFTWWrapper: размер не совпадает или планы не созданы";
-//         return result;
-//     }
-
-//     // Копируем входные данные
-//     for(int i = 0; i < m_n; ++i) {
-//         m_in[i][0] = X[i].real();
-//         m_in[i][1] = X[i].imag();
-//     }
-
-//     // Выполняем обратное FFT
-//     fftw_execute(m_planBackward);
-
-//     // Копируем результат и делим на N
-//     for(int i = 0; i < m_n; ++i) {
-//         result[i] = std::complex<double>(m_out[i][0] / m_n, m_out[i][1] / m_n);
-//     }
-
-//     return result;
-// }

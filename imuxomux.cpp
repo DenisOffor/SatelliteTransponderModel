@@ -16,7 +16,7 @@ namespace
 constexpr double PI = 3.141592653589793238462643383279502884;
 constexpr double EPS = 1e-15;
 
-std::vector<std::complex<double>> ifftShiftEven(const std::vector<std::complex<double>>& x)
+std::vector<std::complex<double>> shiftEven(const std::vector<std::complex<double>>& x)
 {
     const int N = static_cast<int>(x.size());
     std::vector<std::complex<double>> y(N);
@@ -27,6 +27,26 @@ std::vector<std::complex<double>> ifftShiftEven(const std::vector<std::complex<d
         y[half + i] = x[i];
     }
     return y;
+}
+
+std::vector<double> unwrapPhase(const std::vector<double>& phase)
+{
+    if (phase.empty())
+        return {};
+
+    std::vector<double> out = phase;
+    double offset = 0.0;
+
+    for (int i = 1; i < static_cast<int>(out.size()); ++i) {
+        const double d = (phase[i] + offset) - out[i - 1];
+        if (d > PI)
+            offset -= 2.0 * PI;
+        else if (d < -PI)
+            offset += 2.0 * PI;
+        out[i] = phase[i] + offset;
+    }
+
+    return out;
 }
 }
 
@@ -65,6 +85,11 @@ bool ImuxOmux::recalc(double bandwidthHz, double sampleRateHz)
         return false;
     }
 
+    if ((m_cfg.taps % 2) == 0) {
+        qWarning() << "IMUX/OMUX: taps must be odd for integer delay compensation" << m_cfg.taps;
+        return false;
+    }
+
     bool ok = true;
     ok = recalcOne(m_imux, bandwidthHz, sampleRateHz) && ok;
     ok = recalcOne(m_omux, bandwidthHz, sampleRateHz) && ok;
@@ -99,6 +124,61 @@ const std::vector<std::complex<double>>& ImuxOmux::fir(MuxKind kind) const
 bool ImuxOmux::isReady(MuxKind kind) const
 {
     return state(kind).ready;
+}
+
+const std::vector<double> &ImuxOmux::get_Raw_Freq_MHz(MuxKind kind) const
+{
+    return state(kind).raw.fMHz;
+}
+
+const std::vector<double> &ImuxOmux::get_Raw_Amp_dB(MuxKind kind) const
+{
+    return state(kind).raw.ampDb;
+}
+
+const std::vector<double> &ImuxOmux::get_Raw_GroupDelay_ns(MuxKind kind) const
+{
+    return state(kind).raw.gdNs;
+}
+
+const std::vector<double>& ImuxOmux::get_Freq_Hz(MuxKind kind) const
+{
+    return state(kind).curFreqHz;
+}
+
+const std::vector<double>& ImuxOmux::get_Freq_MHz(MuxKind kind) const
+{
+    return state(kind).curFreqMHz;
+}
+
+const std::vector<double>& ImuxOmux::get_Amp_dB(MuxKind kind) const
+{
+    return state(kind).curAmpDb;
+}
+
+const std::vector<double>& ImuxOmux::get_GroupDelay_ns(MuxKind kind) const
+{
+    return state(kind).curGroupDelayNs;
+}
+
+const std::vector<double>& ImuxOmux::get_FIR_Freq_Hz(MuxKind kind) const
+{
+    return state(kind).firFreqHz;
+}
+
+const std::vector<double>& ImuxOmux::get_FIR_Freq_MHz(MuxKind kind) const
+{
+    return state(kind).firFreqMHz;
+}
+
+const std::vector<double>& ImuxOmux::get_FIR_Amp_dB(MuxKind kind) const
+{
+    return state(kind).firAmpDb;
+}
+
+const std::vector<double>& ImuxOmux::get_FIR_GroupDelay_ns(MuxKind kind) const
+{
+    return state(kind).firGroupDelayNs;
 }
 
 ImuxOmux::FilterState& ImuxOmux::state(MuxKind kind)
@@ -179,9 +259,11 @@ bool ImuxOmux::loadRaw(FilterState& s)
 
     for (const Row& r : rows) {
         s.raw.fHz.push_back(r.f);
+        s.raw.fMHz.push_back(r.f / 1e6);
         s.raw.ampDb.push_back(r.a);
         s.raw.gdNs.push_back(r.gd);
     }
+
 
     s.rawLoaded = true;
     return true;
@@ -200,7 +282,8 @@ bool ImuxOmux::recalcOne(FilterState& s, double bandwidthHz, double sampleRateHz
         almostEqual(s.lastSampleRateHz, sampleRateHz) &&
         s.lastSynthesisNfft == m_cfg.synthesisNfft &&
         s.lastTaps == m_cfg.taps &&
-        almostEqual(s.lastReferenceBandwidthHz, m_cfg.referenceBandwidthHz);
+        almostEqual(s.lastReferenceBandwidthHz, m_cfg.referenceBandwidthHz) &&
+        s.lastRemoveBulkGroupDelay == m_cfg.removeBulkGroupDelay;
 
     if (same)
         return true;
@@ -208,14 +291,16 @@ bool ImuxOmux::recalcOne(FilterState& s, double bandwidthHz, double sampleRateHz
     if (!loadRaw(s))
         return false;
 
-    s.h = synthesizeFir(s.raw, bandwidthHz, sampleRateHz);
+    s.h = synthesizeFir(s, bandwidthHz, sampleRateHz);
     buildConvolutionSpectrum(s);
+    updateFirResponse(s, sampleRateHz);
 
     s.lastBandwidthHz = bandwidthHz;
     s.lastSampleRateHz = sampleRateHz;
     s.lastSynthesisNfft = m_cfg.synthesisNfft;
     s.lastTaps = m_cfg.taps;
     s.lastReferenceBandwidthHz = m_cfg.referenceBandwidthHz;
+    s.lastRemoveBulkGroupDelay = m_cfg.removeBulkGroupDelay;
     s.ready = !s.h.empty();
 
     return s.ready;
@@ -263,18 +348,17 @@ void ImuxOmux::scaleResponse(const RawResponse& raw,
     for (size_t i = 0; i < fGridHz.size(); ++i) {
         const double fQuery = fGridHz[i] * k;
 
-        if (fQuery < fMin || fQuery > fMax) {
-            ampDb[i] = ampFloor;
-            gdNs[i] = 0.0;
-            continue;
-        }
+        ampDb[i] = (fQuery < fMin || fQuery > fMax)
+            ? ampFloor
+            : interpLinearClipped(raw.fHz, raw.ampDb, fQuery);
 
-        ampDb[i] = interpLinearClipped(raw.fHz, raw.ampDb, fQuery);
+        // За пределами оцифрованной области ГВЗ клипуется к краю, а не сбрасывается в 0.
+        // Иначе на границе полосы появляется резкий скачок фазы.
         gdNs[i] = k * interpLinearClipped(raw.fHz, raw.gdNs, fQuery);
     }
 }
 
-std::vector<std::complex<double>> ImuxOmux::synthesizeFir(const RawResponse& raw,
+std::vector<std::complex<double>> ImuxOmux::synthesizeFir(FilterState& s,
                                                           double bandwidthHz,
                                                           double sampleRateHz) const
 {
@@ -288,11 +372,25 @@ std::vector<std::complex<double>> ImuxOmux::synthesizeFir(const RawResponse& raw
 
     std::vector<double> ampDb;
     std::vector<double> gdNs;
-    scaleResponse(raw, m_cfg.referenceBandwidthHz, bandwidthHz, f, ampDb, gdNs);
+    scaleResponse(s.raw, m_cfg.referenceBandwidthHz, bandwidthHz, f, ampDb, gdNs);
+
+    s.curFreqHz = f;
+    s.curFreqMHz.resize(f.size());
+    s.curAmpDb = ampDb;
+    s.curGroupDelayNs = gdNs;
+    for (size_t i = 0; i < f.size(); ++i)
+        s.curFreqMHz[i] = f[i] / 1.0e6;
+
+    std::vector<double> gdForPhaseNs = gdNs;
+    if (m_cfg.removeBulkGroupDelay && !gdForPhaseNs.empty()) {
+        const double bulkNs = gdForPhaseNs[Nfft / 2]; // f=0 для такой сетки
+        for (double& v : gdForPhaseNs)
+            v -= bulkNs;
+    }
 
     std::vector<double> gdS(Nfft);
     for (int i = 0; i < Nfft; ++i)
-        gdS[i] = gdNs[i] * 1e-9;
+        gdS[i] = gdForPhaseNs[i] * 1e-9;
 
     // phi(f) = -2*pi * integral gd(f) df, аналог cumtrapz из Matlab.
     std::vector<double> phi(Nfft, 0.0);
@@ -302,21 +400,11 @@ std::vector<std::complex<double>> ImuxOmux::synthesizeFir(const RawResponse& raw
     }
 
     // phi(0)=0.
-    int i0 = 0;
-    double bestAbsF = std::abs(f[0]);
-    for (int i = 1; i < Nfft; ++i) {
-        const double af = std::abs(f[i]);
-        if (af < bestAbsF) {
-            bestAbsF = af;
-            i0 = i;
-        }
-    }
-
-    const double phi0 = phi[i0];
+    const double phi0 = phi[Nfft / 2];
     for (double& p : phi)
         p -= phi0;
 
-    // Делаем фазу нечётной: phi(-f) = -phi(f), как fliplr в Matlab-коде.
+    // Делаем фазу нечётной: phi(-f) = -phi(f).
     std::vector<double> phiOdd(Nfft);
     for (int i = 0; i < Nfft; ++i)
         phiOdd[i] = 0.5 * (phi[i] - phi[Nfft - 1 - i]);
@@ -333,10 +421,14 @@ std::vector<std::complex<double>> ImuxOmux::synthesizeFir(const RawResponse& raw
         Hshifted[i] = std::polar(A, phi[i]);
     }
 
-    // Matlab: hLong = ifft(ifftshift(H)).
-    std::vector<std::complex<double>> hLong = ifftShiftEven(Hshifted);
+    // Matlab: hLong = ifft(ifftshift(H)). Для четной сетки fftshift == ifftshift.
+    std::vector<std::complex<double>> hLong = shiftEven(Hshifted);
     FFT fft(Nfft);
     fft.ifftInPlace(hLong);
+
+    const double invN = 1.0 / static_cast<double>(Nfft);
+    for (auto& v : hLong)
+        v *= invN;
 
     std::vector<std::complex<double>> h(Ntaps);
     for (int n = 0; n < Ntaps; ++n) {
@@ -370,6 +462,58 @@ void ImuxOmux::buildConvolutionSpectrum(FilterState& s) const
     fft.fftInPlace(s.Hconv);
 }
 
+void ImuxOmux::updateFirResponse(FilterState& s, double sampleRateHz) const
+{
+    const int Nfft = m_cfg.synthesisNfft;
+    if (Nfft <= 0 || s.Hconv.empty()) {
+        s.firFreqHz.clear();
+        s.firFreqMHz.clear();
+        s.firAmpDb.clear();
+        s.firGroupDelayNs.clear();
+        return;
+    }
+
+    const std::vector<std::complex<double>> Hshifted = shiftEven(s.Hconv);
+
+    s.firFreqHz.resize(Nfft);
+    s.firFreqMHz.resize(Nfft);
+    s.firAmpDb.resize(Nfft);
+    s.firGroupDelayNs.assign(Nfft, 0.0);
+
+    std::vector<double> phase(Nfft);
+    for (int i = 0; i < Nfft; ++i) {
+        const double f = (i - Nfft / 2) * (sampleRateHz / static_cast<double>(Nfft));
+        s.firFreqHz[i] = f;
+        s.firFreqMHz[i] = f / 1.0e6;
+        s.firAmpDb[i] = 20.0 * std::log10(std::max(std::abs(Hshifted[i]), EPS));
+        phase[i] = std::arg(Hshifted[i]);
+    }
+
+    phase = unwrapPhase(phase);
+
+    const double artificialDelayNs = m_cfg.compensateArtificialDelay
+        ? (static_cast<double>((m_cfg.taps - 1) / 2) / sampleRateHz) * 1e9
+        : 0.0;
+
+    for (int i = 0; i < Nfft; ++i) {
+        int i0 = std::max(0, i - 1);
+        int i1 = std::min(Nfft - 1, i + 1);
+        if (i0 == i1) {
+            s.firGroupDelayNs[i] = 0.0;
+            continue;
+        }
+
+        const double dPhi = phase[i1] - phase[i0];
+        const double dF = s.firFreqHz[i1] - s.firFreqHz[i0];
+        const double gdNs = (std::abs(dF) > EPS)
+            ? -dPhi / (2.0 * PI * dF) * 1e9
+            : 0.0;
+
+        // На графике показываем характеристику после той же компенсации, что apply() делает с сигналом.
+        s.firGroupDelayNs[i] = gdNs - artificialDelayNs;
+    }
+}
+
 std::vector<std::complex<double>> ImuxOmux::applyFftFir(
     const std::vector<std::complex<double>>& x,
     const FilterState& s) const
@@ -392,6 +536,7 @@ std::vector<std::complex<double>> ImuxOmux::applyFftFir(
     if (blockValid <= 0)
         return x;
 
+    // overlap-save: M-1 нулей в начале дают линейную свёртку без циклического заворота.
     std::vector<std::complex<double>> padded(M - 1 + N, std::complex<double>(0.0, 0.0));
     std::copy(x.begin(), x.end(), padded.begin() + (M - 1));
 
@@ -410,9 +555,16 @@ std::vector<std::complex<double>> ImuxOmux::applyFftFir(
         }
 
         fft.fftInPlace(buf);
+
         for (int i = 0; i < Nfft; ++i)
             buf[i] *= s.Hconv[i];
+
         fft.ifftInPlace(buf);
+
+        // FFTW backward is unnormalized
+        const double invN = 1.0 / static_cast<double>(Nfft);
+        for (auto& v : buf)
+            v *= invN;
 
         const int take = std::min(blockValid, N - outPos);
         for (int i = 0; i < take; ++i)

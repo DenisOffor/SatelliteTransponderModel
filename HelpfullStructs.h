@@ -148,6 +148,9 @@ struct Source {
     bool LogRes;
     double Pin_sat_dBm;
     double Pout_sat_dBm;
+
+    bool IMUX_enabled;
+    bool OMUX_enabled;
 };
 
 struct NeedToRecalc{

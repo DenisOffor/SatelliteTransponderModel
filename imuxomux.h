@@ -30,11 +30,15 @@ struct MuxFilterConfig
 
     // Параметры синтеза FIR, как в Matlab-файле.
     int synthesisNfft = 8192;
-    int taps = 51;
+    int taps = 101;
 
-    // Для твоей модели лучше убирать только искусственную задержку D=(Ntaps-1)/2,
-    // иначе демодуляторы SC/OFDM/FDMA получат сдвиг по времени.
+    // Убирает искусственную задержку D=(Ntaps-1)/2 после свёртки.
+    // Это нужно, чтобы SC/OFDM/FDMA демодуляторы не получали сдвиг отсчётов.
     bool compensateArtificialDelay = true;
+
+    // Убирает постоянную составляющую групповой задержки из CSV при синтезе фазы.
+    // На график отдаётся исходная масштабированная ГВЗ, а в FIR уходит ripple ГВЗ.
+    bool removeBulkGroupDelay = true;
 
     bool enableImux = true;
     bool enableOmux = true;
@@ -61,10 +65,27 @@ public:
     const std::vector<std::complex<double>>& fir(MuxKind kind) const;
     bool isReady(MuxKind kind) const;
 
+    const std::vector<double>& get_Raw_Freq_MHz(MuxKind kind) const;
+    const std::vector<double>& get_Raw_Amp_dB(MuxKind kind) const;
+    const std::vector<double>& get_Raw_GroupDelay_ns(MuxKind kind) const;
+
+    // Масштабированная исходная характеристика, которая использовалась для синтеза FIR.
+    const std::vector<double>& get_Freq_Hz(MuxKind kind) const;
+    const std::vector<double>& get_Freq_MHz(MuxKind kind) const;
+    const std::vector<double>& get_Amp_dB(MuxKind kind) const;
+    const std::vector<double>& get_GroupDelay_ns(MuxKind kind) const;
+
+    // Реальная характеристика полученного FIR после усечения/окна/нормировки.
+    const std::vector<double>& get_FIR_Freq_Hz(MuxKind kind) const;
+    const std::vector<double>& get_FIR_Freq_MHz(MuxKind kind) const;
+    const std::vector<double>& get_FIR_Amp_dB(MuxKind kind) const;
+    const std::vector<double>& get_FIR_GroupDelay_ns(MuxKind kind) const;
+
 private:
     struct RawResponse
     {
         std::vector<double> fHz;
+        std::vector<double> fMHz;
         std::vector<double> ampDb;
         std::vector<double> gdNs;
     };
@@ -80,11 +101,24 @@ private:
         std::vector<std::complex<double>> h;
         std::vector<std::complex<double>> Hconv;
 
+        // Текущая масштабированная исходная характеристика из CSV.
+        std::vector<double> curFreqHz;
+        std::vector<double> curFreqMHz;
+        std::vector<double> curAmpDb;
+        std::vector<double> curGroupDelayNs;
+
+        // Характеристика реально полученного FIR.
+        std::vector<double> firFreqHz;
+        std::vector<double> firFreqMHz;
+        std::vector<double> firAmpDb;
+        std::vector<double> firGroupDelayNs;
+
         double lastBandwidthHz = -1.0;
         double lastSampleRateHz = -1.0;
         int lastSynthesisNfft = -1;
         int lastTaps = -1;
         double lastReferenceBandwidthHz = -1.0;
+        bool lastRemoveBulkGroupDelay = false;
     };
 
     MuxFilterConfig m_cfg;
@@ -108,11 +142,12 @@ private:
                               std::vector<double>& ampDb,
                               std::vector<double>& gdNs);
 
-    std::vector<std::complex<double>> synthesizeFir(const RawResponse& raw,
+    std::vector<std::complex<double>> synthesizeFir(FilterState& s,
                                                     double bandwidthHz,
                                                     double sampleRateHz) const;
 
     void buildConvolutionSpectrum(FilterState& s) const;
+    void updateFirResponse(FilterState& s, double sampleRateHz) const;
 
     std::vector<std::complex<double>> applyFftFir(
         const std::vector<std::complex<double>>& x,
