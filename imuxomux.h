@@ -30,7 +30,7 @@ struct MuxFilterConfig
 
     // Параметры синтеза FIR, как в Matlab-файле.
     int synthesisNfft = 8192;
-    int taps = 201;
+    int taps = 401;
 
     // Убирает искусственную задержку D=(Ntaps-1)/2 после свёртки.
     // Это нужно, чтобы SC/OFDM/FDMA демодуляторы не получали сдвиг отсчётов.

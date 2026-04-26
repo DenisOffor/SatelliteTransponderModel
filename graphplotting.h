@@ -49,6 +49,8 @@ private:
 
     GraphActions DPDGraphActions;
 
+    GraphActions ImuxOmuxGraphActions;
+
     void InitializePaCurvePlot(QWidget* GraphWidget);
     void InitializeIdealSymConstPlot(QWidget* GraphWidget);
     void InitializeTimeDomainPlotting(std::vector<QWidget*> TimeDomainGraphWidgets);

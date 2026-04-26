@@ -457,14 +457,14 @@ std::vector<std::complex<double>> ImuxOmux::synthesizeFir(FilterState& s,
     }
 
 
-    // // Нормировка по DC: sum(h)=1.
-    // const std::complex<double> sumH = std::accumulate(
-    //     h.begin(), h.end(), std::complex<double>(0.0, 0.0));
+    // Нормировка по DC: sum(h)=1.
+    const std::complex<double> sumH = std::accumulate(
+        h.begin(), h.end(), std::complex<double>(0.0, 0.0));
 
-    // if (std::abs(sumH) > EPS) {
-    //     for (auto& v : h)
-    //         v /= sumH;
-    // }
+    if (std::abs(sumH) > EPS) {
+        for (auto& v : h)
+            v /= sumH;
+    }
 
     return h;
 }

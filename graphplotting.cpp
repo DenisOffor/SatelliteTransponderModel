@@ -864,7 +864,7 @@ void GraphPlotting::InitializeConstellationsPlotting(std::vector<QWidget *> Cons
 void GraphPlotting::setupGraphActions()
 {
     PaCurveGraphActions.common = IdealSymConstGraphActions.common = SymConstGraphActions.common
-    = TimeDomainGraphActions.common = PSDGraphActions.common = DPDGraphActions.common =
+    = TimeDomainGraphActions.common = PSDGraphActions.common = DPDGraphActions.common = ImuxOmuxGraphActions.common =
     {
         new QAction("Сохранить как...", this),
         new QAction("Копировать", this)
@@ -883,6 +883,7 @@ void GraphPlotting::setupGraphActions()
     m_graphActions["TimeDomain"] = TimeDomainGraphActions;
     m_graphActions["PSD"] = PSDGraphActions;
     m_graphActions["DPD Learning"] = DPDGraphActions;
+    m_graphActions["ImuxOmux"] = DPDGraphActions;
 }
 
 void GraphPlotting::updateMenuForGraphType(QMenu &menu, const QString &graphType)
@@ -944,6 +945,8 @@ void GraphPlotting::onPlotClick(QMouseEvent *event)
             || senderObj == plotsOfTimeDomain[3] || senderObj == plotsOfTimeDomain[4] || senderObj == plotsOfTimeDomain[5]) currentType = "TimeDomain";
         if(senderObj == plotsOfDPD[0] || senderObj == plotsOfDPD[1] || senderObj == plotsOfDPD[2]
             || senderObj == plotsOfDPD[3] || senderObj == plotsOfDPD[4] || senderObj == plotsOfDPD[5]) currentType = "DPD Learning";
+        if(senderObj == plotsOfImux[0] || plotsOfImux[1] || plotsOfImux[2] || plotsOfImux[3] || plotsOfOmux[0] || plotsOfOmux[1] ||
+            plotsOfOmux[2] || plotsOfOmux[3]) currentType = "ImuxOmux";
 
         updateMenuForGraphType(menu, currentType);
 
