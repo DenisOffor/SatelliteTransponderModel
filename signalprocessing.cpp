@@ -164,19 +164,17 @@ void SignalProcessing::GeneratePacksOfSymbols(std::vector<Symbols>& Symbols, Sou
 Symbols SignalProcessing::GenerateNSymbols(Source& source)
 {
     Symbols temp;
-    temp.tr_sym_clean.resize(source.NumSym);
-    temp.tr_sym_noisy.resize(source.NumSym);
-    temp.data_tx.resize(source.NumSym);
+    temp.resize(source.NumSym);
 
     int bitsPerSym = std::log2(source.M);
     int numBits = source.NumSym * bitsPerSym;
 
     temp.data_tx.resize(numBits);
+    temp.data_rx.resize(numBits);
+    temp.data_rx_with_DPD.resize(numBits);
 
     for (int i = 0; i < numBits; i++)
         temp.data_tx[i] = QRandomGenerator::global()->bounded(2); // 0 или 1
-
-    std::vector<int> sym_idx(source.NumSym);
 
     for (int i = 0; i < source.NumSym; i++) {
         int idx = 0;
@@ -185,30 +183,30 @@ Symbols SignalProcessing::GenerateNSymbols(Source& source)
             idx = (idx << 1) | temp.data_tx[i * bitsPerSym + b];
         }
 
-        sym_idx[i] = idx;
+        temp.sym_idx_tx[i] = idx;
     }
 
     if(source.ModType == "BPSK") {
         for (int i = 0; i < source.NumSym; i++) {
-            int s = sym_idx[i];
+            int s = temp.sym_idx_tx[i];
             temp.tr_sym_clean[i] = BPSK_const[s];
         }
     }
     else if(source.ModType == "QPSK") {
         for (int i = 0; i < source.NumSym; i++) {
-            int s = sym_idx[i];
+            int s = temp.sym_idx_tx[i];
             temp.tr_sym_clean[i] = QPSK_const[s];
         }
     }
     else if(source.ModType == "16QAM") {
         for (int i = 0; i < source.NumSym; i++) {
-            int s = sym_idx[i];
+            int s = temp.sym_idx_tx[i];
             temp.tr_sym_clean[i] = QAM16_const[s];
         }
     }
     else if(source.ModType == "64QAM") {
         for (int i = 0; i < source.NumSym; i++) {
-            int s = sym_idx[i];
+            int s = temp.sym_idx_tx[i];
             temp.tr_sym_clean[i] = QAM64_const[s];
         }
     }
@@ -288,18 +286,18 @@ void SignalProcessing::Demodulate(Symbols& symbols,const std::vector<std::comple
 
     for (size_t i = 0; i < symbols.rec_sym_noisy.size(); i++)
     {
-        int idx = DemodulateSymbol(symbols.rec_sym_noisy[i], constellation);
-        int idx_DPD = DemodulateSymbol(symbols.rec_sym_noisy_with_DPD[i], constellation);
+        symbols.sym_idx_rx_noDPD[i] = DemodulateSymbol(symbols.rec_sym_noisy[i], constellation);
+        symbols.sym_idx_rx_withDPD[i] = DemodulateSymbol(symbols.rec_sym_noisy_with_DPD[i], constellation);
 
         for (int b = 0; b < bitsPerSym; b++)
         {
             int shift = bitsPerSym - 1 - b;
 
             symbols.data_rx[i * bitsPerSym + b] =
-                (idx >> shift) & 1;
+                (symbols.sym_idx_rx_noDPD[i] >> shift) & 1;
 
             symbols.data_rx_with_DPD[i * bitsPerSym + b] =
-                (idx_DPD >> shift) & 1;
+                (symbols.sym_idx_rx_withDPD[i] >> shift) & 1;
         }
     }
 }
@@ -367,12 +365,12 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     TrainRes.pa_sig = TrainRes.tx_sig;
 
     if(MySource.IMUX_enabled)
-        MyMux.apply(TrainRes.pa_sig, MuxKind::IMUX, TrainRes.BB, MySource.fs * MySource.oversampling);
+        MyMux.apply(TrainRes.pa_sig, MuxKind::IMUX, TrainRes.BB * MySource.bb_delta, MySource.fs * MySource.oversampling);
 
     MyPAModels.ApplyPA(TrainRes.pa_sig, MySource);
 
     if(MySource.OMUX_enabled)
-        MyMux.apply(TrainRes.pa_sig, MuxKind::OMUX, TrainRes.BB, MySource.fs * MySource.oversampling);
+        MyMux.apply(TrainRes.pa_sig, MuxKind::OMUX, TrainRes.BB * MySource.bb_delta, MySource.fs * MySource.oversampling);
 
     mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource);
     MySource.NumSym = sym;
@@ -480,21 +478,21 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
         else if(source.PredistorterType == "GMP")
             CurRes.tx_plus_dpd_sig = mydpd.applyGMP(CurRes.tx_plus_dpd_sig, source);
 
-        MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
+        //MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
         CurRes.pa_sig = CurRes.tx_sig;
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
 
         if(MySource.IMUX_enabled) {
-            MyMux.apply(CurRes.pa_sig, MuxKind::IMUX, CurRes.BB, source.fs * source.oversampling);
-            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::IMUX, CurRes.BB, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_sig, MuxKind::IMUX, CurRes.BB * source.bb_delta, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::IMUX, CurRes.BB * source.bb_delta, source.fs * source.oversampling);
         }
 
         MyPAModels.ApplyPA(CurRes.pa_sig, MySource);
         MyPAModels.ApplyPA(CurRes.pa_plus_dpd_sig, MySource);
 
         if(MySource.OMUX_enabled) {
-            MyMux.apply(CurRes.pa_sig, MuxKind::OMUX, CurRes.BB, source.fs * source.oversampling);
-            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::OMUX, CurRes.BB, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_sig, MuxKind::OMUX, CurRes.BB * source.bb_delta, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::OMUX, CurRes.BB * source.bb_delta, source.fs * source.oversampling);
         }
 
         CurRes.pa_sig_noisy = CurRes.pa_sig;

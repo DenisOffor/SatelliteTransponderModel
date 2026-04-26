@@ -36,6 +36,9 @@ struct Symbols{
     std::vector<std::complex<double>> sym_after_pa;
     std::vector<std::complex<double>> rec_sym_noisy;
     std::vector<std::complex<double>> rec_sym_noisy_with_DPD;
+    std::vector<int> sym_idx_tx;
+    std::vector<int> sym_idx_rx_noDPD;
+    std::vector<int> sym_idx_rx_withDPD;
     std::vector<int> data_tx;
     std::vector<int> data_rx;
     std::vector<int> data_rx_with_DPD;
@@ -43,6 +46,9 @@ struct Symbols{
     void resize(int n) {
         data_tx.resize(n);
         data_rx.resize(n);
+        sym_idx_tx.resize(n);
+        sym_idx_rx_noDPD.resize(n);
+        sym_idx_rx_withDPD.resize(n);
         tr_sym_clean.resize(n);
         tr_sym_noisy.resize(n);
         rec_sym_noisy.resize(n);

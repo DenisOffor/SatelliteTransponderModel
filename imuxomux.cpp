@@ -110,10 +110,28 @@ void ImuxOmux::apply(std::vector<std::complex<double>>& signal,
     if (!s.enabled || !s.ready || s.h.empty())
         return;
 
+    const int originalN = static_cast<int>(signal.size());
+
+    int D = 0;
+    if (m_cfg.compensateArtificialDelay) {
+        D = (static_cast<int>(s.h.size()) - 1) / 2;
+
+        // ВАЖНО: добавляем справа guard, чтобы после сдвига
+        // не занулялись последние полезные отсчёты.
+        signal.insert(signal.end(),
+                      D,
+                      std::complex<double>(0.0, 0.0));
+    }
+
     signal = applyFftFir(signal, s);
 
-    if (m_cfg.compensateArtificialDelay)
+    if (m_cfg.compensateArtificialDelay) {
         compensateDelay(signal);
+
+        // Возвращаем исходную длину, но теперь последние originalN отсчётов
+        // уже не были искусственно занулены.
+        signal.resize(originalN);
+    }
 }
 
 const std::vector<std::complex<double>>& ImuxOmux::fir(MuxKind kind) const
@@ -438,14 +456,15 @@ std::vector<std::complex<double>> ImuxOmux::synthesizeFir(FilterState& s,
         h[n] = hLong[n] * w;
     }
 
-    // Нормировка по DC: sum(h)=1.
-    const std::complex<double> sumH = std::accumulate(
-        h.begin(), h.end(), std::complex<double>(0.0, 0.0));
 
-    if (std::abs(sumH) > EPS) {
-        for (auto& v : h)
-            v /= sumH;
-    }
+    // // Нормировка по DC: sum(h)=1.
+    // const std::complex<double> sumH = std::accumulate(
+    //     h.begin(), h.end(), std::complex<double>(0.0, 0.0));
+
+    // if (std::abs(sumH) > EPS) {
+    //     for (auto& v : h)
+    //         v /= sumH;
+    // }
 
     return h;
 }
