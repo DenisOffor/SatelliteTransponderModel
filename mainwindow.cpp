@@ -552,19 +552,19 @@ void MainWindow::handleResult()
     if(CurrentRecalcNeeds.PaCurveReplot)
          PaCurvePlot();
 
-    if(text == "    Constellation    ")
+    if(text == "    Сигнальные созвездия    ")
         Graphs.PlotConstellationsPlots(MySigProc.getSymbols());
 
-    if(text == "    TimeDomain    ")
+    if(text == "    Временная область    ")
         Graphs.PlotTimeDomainPlots(MySigProc.getTimeSignal(), CurrentRecalcNeeds.TimePlotsRescale);
 
-    if(text == "    PSD    ")
+    if(text == "    Частотная область    ")
         Graphs.PlotPSDPlots(MySigProc.getPSDs(), MySigProc.getFreq());
 
-    if(text == "    DPD learning    ")
+    if(text == "    ЦПИ идентификация    ")
         Graphs.PlotScatterDPDLearn(MySigProc.getTimeSignal());
 
-    if(text == "    IMUX/OMUX    ")
+    if(text == "    Мультиплексоры    ")
         Graphs.PlotImuxOmuxPlots();
 
     qDebug() << "Graphs time:" << timer.elapsed() << "ms";
@@ -616,7 +616,7 @@ void MainWindow::PaCurvePlot() {
 
     QElapsedTimer timer;
     timer.start();
-    if(ui->pipelineTree->currentItem() && ui->pipelineTree->currentItem()->text(0) == "Power Amplifier")
+    if(ui->pipelineTree->currentItem() && ui->pipelineTree->currentItem()->text(0) == "Усилитель мощности")
         if(Graphs.GetPaCurveType() == "Static")
             MySigProc.CalcPaCurve();
 
@@ -720,20 +720,19 @@ void MainWindow::onPipelineItemChanged(QTreeWidgetItem* current, QTreeWidgetItem
 
     QString name = current->text(0);
 
-    if (name == "Modulation") {
-
+    if (name == "Модуляция") {
         ui->settingsStack->setCurrentWidget(ui->PageModulation);    
     }
-    else if (name == "SignalType")
+    else if (name == "Тип сигнала")
         ui->settingsStack->setCurrentWidget(ui->PageSignalType);
-    else if (name == "Power Amplifier") {
+    else if (name == "Усилитель мощности") {
         PaCurvePlot();
         ui->settingsStack->setCurrentWidget(ui->PagePA);   
     }
-    else if (name == "Imux/Omux") {
+    else if (name == "Мультиплексоры") {
         ui->settingsStack->setCurrentWidget(ui->TransponderSettings_Page);
     }
-    else if (name == "Predistorter") {
+    else if (name == "ЦПИ") {
         ui->settingsStack->setCurrentWidget(ui->PagePredistorter);
     }
 }
@@ -968,23 +967,19 @@ void MainWindow::onGraphsListItemChanged(QListWidgetItem* current, QListWidgetIt
 
     QString name = current->text();
 
-    if (name == "    Constellation    ") {
-
+    if (name == "    Сигнальные созвездия    ") {
         ui->GraphsListstackedWidget->setCurrentWidget(ui->ConstellationGraphsPage);
     }
-    else if (name == "    PSD    ")
+    else if (name == "    Частотная область    ")
         ui->GraphsListstackedWidget->setCurrentWidget(ui->PSDGraphsPage);
-    else if (name == "    DPD learning    ") {
+    else if (name == "    ЦПИ идентификация    ") {
         ui->GraphsListstackedWidget->setCurrentWidget(ui->DPDlearningPage);
     }
-    else if (name == "    Custom    ") {
-        ui->GraphsListstackedWidget->setCurrentWidget(ui->CustomGraphsPage);
-    }
-    else if (name == "    TimeDomain    ") {
+    else if (name == "    Временная область    ") {
         CurrentRecalcNeeds.TimePlotsRescale = true;
         ui->GraphsListstackedWidget->setCurrentWidget(ui->TimeDomainPage);
     }
-    else if(name == "    IMUX/OMUX    ") {
+    else if(name == "    Мультиплексоры    ") {
         ui->GraphsListstackedWidget->setCurrentWidget(ui->ImuxOmuxPage);
     }
 }

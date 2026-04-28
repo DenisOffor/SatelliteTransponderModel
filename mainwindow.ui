@@ -129,36 +129,36 @@
             </column>
             <item>
              <property name="text">
-              <string>Source</string>
+              <string>Источник</string>
              </property>
              <item>
               <property name="text">
-               <string>Modulation</string>
+               <string>Модуляция</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>SignalType</string>
+               <string>Тип сигнала</string>
               </property>
              </item>
             </item>
             <item>
              <property name="text">
-              <string>Processing</string>
+              <string>Тракт</string>
              </property>
              <item>
               <property name="text">
-               <string>Predistorter</string>
+               <string>ЦПИ</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>Imux/Omux</string>
+               <string>Усилитель мощности</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>Power Amplifier</string>
+               <string>Мультиплексоры</string>
               </property>
              </item>
             </item>
@@ -4002,32 +4002,27 @@
           </property>
           <item>
            <property name="text">
-            <string>    Constellation    </string>
+            <string>    Сигнальные созвездия    </string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>    TimeDomain    </string>
+            <string>    Временная область    </string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>    PSD    </string>
+            <string>    Частотная область    </string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>    DPD learning    </string>
+            <string>    ЦПИ идентификация    </string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>    IMUX/OMUX    </string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>    Custom    </string>
+            <string>    Мультиплексоры    </string>
            </property>
           </item>
          </widget>
@@ -4185,7 +4180,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>Созвездие после УМ без DPD</string>
+                     <string>Созвездие после ЦПИ</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_57">
                      <property name="leftMargin">
@@ -4237,7 +4232,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>Cозвездие после УМ с DPD</string>
+                     <string>Cозвездие после УМ с ЦПИ</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_53">
                      <property name="leftMargin">
@@ -4273,7 +4268,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>Принятое созвездие</string>
+                     <string>Созвездие после УМ без ЦПИ</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_55">
                      <property name="leftMargin">
@@ -4348,7 +4343,7 @@
               <widget class="QWidget" name="scrollAreaDPDLearningPageWidgetContents_2">
                <property name="geometry">
                 <rect>
-                 <x>-804</x>
+                 <x>0</x>
                  <y>0</y>
                  <width>1649</width>
                  <height>501</height>
@@ -5011,7 +5006,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>139</height>
+                 <height>517</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -5153,7 +5148,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>Спектр до УМ без DPD и после</string>
+                     <string>Спектр до УМ без ЦПИ и после УМ</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_61">
                      <property name="spacing">
@@ -5192,7 +5187,7 @@
                      </font>
                     </property>
                     <property name="title">
-                     <string>Спектр до УМ с DPD и после</string>
+                     <string>Спектр до УМ с DPD и после УМ</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_62">
                      <property name="spacing">

@@ -457,14 +457,14 @@ std::vector<std::complex<double>> ImuxOmux::synthesizeFir(FilterState& s,
     }
 
 
-    // Нормировка по DC: sum(h)=1.
-    const std::complex<double> sumH = std::accumulate(
-        h.begin(), h.end(), std::complex<double>(0.0, 0.0));
+    // // Нормировка по DC: sum(h)=1.
+    // const std::complex<double> sumH = std::accumulate(
+    //     h.begin(), h.end(), std::complex<double>(0.0, 0.0));
 
-    if (std::abs(sumH) > EPS) {
-        for (auto& v : h)
-            v /= sumH;
-    }
+    // if (std::abs(sumH) > EPS) {
+    //     for (auto& v : h)
+    //         v /= sumH;
+    // }
 
     return h;
 }
@@ -508,6 +508,13 @@ void ImuxOmux::updateFirResponse(FilterState& s, double sampleRateHz) const
         phase[i] = std::arg(Hshifted[i]);
     }
 
+    const double ampMaxDb = *std::max_element(
+        s.firAmpDb.begin(),
+        s.firAmpDb.end()
+        );
+
+    const double gdValidThresholdDb = ampMaxDb - 50.0;
+
     phase = unwrapPhase(phase);
 
     const double artificialDelayNs = m_cfg.compensateArtificialDelay
@@ -517,18 +524,28 @@ void ImuxOmux::updateFirResponse(FilterState& s, double sampleRateHz) const
     for (int i = 0; i < Nfft; ++i) {
         int i0 = std::max(0, i - 1);
         int i1 = std::min(Nfft - 1, i + 1);
+
         if (i0 == i1) {
-            s.firGroupDelayNs[i] = 0.0;
+            s.firGroupDelayNs[i] = std::numeric_limits<double>::quiet_NaN();
+            continue;
+        }
+
+        // Не считаем ГЗ в стоп-полосе и на плохих соседних точках
+        if (s.firAmpDb[i]  < gdValidThresholdDb ||
+            s.firAmpDb[i0] < gdValidThresholdDb ||
+            s.firAmpDb[i1] < gdValidThresholdDb)
+        {
+            s.firGroupDelayNs[i] = std::numeric_limits<double>::quiet_NaN();
             continue;
         }
 
         const double dPhi = phase[i1] - phase[i0];
         const double dF = s.firFreqHz[i1] - s.firFreqHz[i0];
-        const double gdNs = (std::abs(dF) > EPS)
-            ? -dPhi / (2.0 * PI * dF) * 1e9
-            : 0.0;
 
-        // На графике показываем характеристику после той же компенсации, что apply() делает с сигналом.
+        const double gdNs = (std::abs(dF) > EPS)
+                                ? -dPhi / (2.0 * PI * dF) * 1e9
+                                : std::numeric_limits<double>::quiet_NaN();
+
         s.firGroupDelayNs[i] = gdNs - artificialDelayNs;
     }
 }

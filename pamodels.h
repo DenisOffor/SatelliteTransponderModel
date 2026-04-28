@@ -17,8 +17,10 @@ public:
 
     double find_Asat_Ghorbani(const std::vector<double>& c, double gain_linear);
     void ApplyFIRWithMemory(std::vector<std::complex<double>>& signal, double alpha, int numTaps);
+    void ApplyFIR(std::vector<std::complex<double>>& signal, std::vector<std::complex<double>> h);
     void ScaleToRMS_forPA(std::vector<std::complex<double>>& sig, Source& source);
     void scaleToRMS(std::vector<std::complex<double>>& x, double target_rms);
+    double computeRMS(const std::vector<std::complex<double>>& sig);
 };
 
 #endif // PAMODELS_H

@@ -319,7 +319,13 @@ void PAModels::WienerModel(std::vector<std::complex<double>>& sig,
                            std::vector<double>& FIR_Coeffs,
                            Source& source)
 {
-    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);
+    std::vector<std::complex<double>> h = {
+        {1.0, 0.0},
+        {0.5, 0.05}
+    };
+
+    ApplyFIR(sig, h);
+    //ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);
     applyStaticModelWithPsat(sig, Static_model, source);
 }
 
@@ -328,8 +334,14 @@ void PAModels::HammersteinModel(std::vector<std::complex<double>>& sig,
                                 std::vector<double>& FIR_Coeffs,
                                 Source& source)
 {
+    std::vector<std::complex<double>> h = {
+        {1.0, 0.0},
+        {0.5, 0.05}
+    };
+
     applyStaticModelWithPsat(sig, Static_model, source);
-    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);
+    ApplyFIR(sig, h);
+    //ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);
 }
 
 void PAModels::WHModel(std::vector<std::complex<double>>& sig,
@@ -337,9 +349,16 @@ void PAModels::WHModel(std::vector<std::complex<double>>& sig,
                        std::vector<double>& FIR_Coeffs,
                        Source& source)
 {
-    ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);
+    std::vector<std::complex<double>> h = {
+        {1.0, 0.0},
+        {0.5, 0.05}
+    };
+
+    //ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);
+    ApplyFIR(sig, h);
     applyStaticModelWithPsat(sig, Static_model, source);
-    ApplyFIRWithMemory(sig, FIR_Coeffs[1], 9);
+    ApplyFIR(sig, h);
+    //ApplyFIRWithMemory(sig, FIR_Coeffs[1], 9);
 }
 
 void PAModels::ApplyPA(std::vector<std::complex<double>>& sig,
@@ -455,6 +474,46 @@ void PAModels::ApplyFIRWithMemory(std::vector<std::complex<double>>& signal,
     signal = std::move(output);
 }
 
+void PAModels::ApplyFIR(std::vector<std::complex<double>>& signal, std::vector<std::complex<double>> h)
+{
+    const size_t N = signal.size();
+
+    double e = 0.0;
+    for(const auto& v : h)
+        e += std::norm(v);
+
+    e = std::sqrt(e);
+
+    if(e > 1e-15)
+    {
+        for(auto& v : h)
+            v /= e;
+    }
+
+    std::vector<std::complex<double>> output(N, {0.0, 0.0});
+
+    for(size_t n = 0; n < N; ++n)
+    {
+        for(int m = 0; m < 2; ++m)
+        {
+            if(n >= static_cast<size_t>(m))
+                output[n] += h[m] * signal[n - m];
+        }
+    }
+
+    double rmsIn = computeRMS(signal);
+    double rmsOut = computeRMS(output);
+
+    if(rmsOut > 1e-15)
+    {
+        double scale = rmsIn / rmsOut;
+        for(auto& s : output)
+            s *= scale;
+    }
+
+    signal = std::move(output);
+}
+
 void PAModels::ScaleToRMS_forPA(std::vector<std::complex<double>>& sig,
                                 Source& source)
 {
@@ -495,4 +554,15 @@ void PAModels::scaleToRMS(std::vector<std::complex<double>>& x,
 
     for(auto& s : x)
         s *= k;
+}
+
+double PAModels::computeRMS(const std::vector<std::complex<double>>& sig)
+{
+    if (sig.empty()) return 0.0;
+
+    double sum = 0.0;
+    for (const auto& s : sig)
+        sum += std::norm(s);
+
+    return std::sqrt(sum / sig.size());
 }

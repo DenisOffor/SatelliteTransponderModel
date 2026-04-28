@@ -364,13 +364,13 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     MyPAModels.ScaleToRMS_forPA(TrainRes.tx_sig, MySource);
     TrainRes.pa_sig = TrainRes.tx_sig;
 
-    if(MySource.IMUX_enabled)
-        MyMux.apply(TrainRes.pa_sig, MuxKind::IMUX, TrainRes.BB * MySource.bb_delta, MySource.fs * MySource.oversampling);
+    //if(MySource.IMUX_enabled)
+    //    MyMux.apply(TrainRes.pa_sig, MuxKind::IMUX, TrainRes.BB, MySource.fs * MySource.oversampling);
 
     MyPAModels.ApplyPA(TrainRes.pa_sig, MySource);
 
-    if(MySource.OMUX_enabled)
-        MyMux.apply(TrainRes.pa_sig, MuxKind::OMUX, TrainRes.BB * MySource.bb_delta, MySource.fs * MySource.oversampling);
+    //if(MySource.OMUX_enabled)
+    //    MyMux.apply(TrainRes.pa_sig, MuxKind::OMUX, TrainRes.BB, MySource.fs * MySource.oversampling);
 
     mydpd.train(TrainRes.tx_sig, TrainRes.pa_sig, MySource);
     MySource.NumSym = sym;
@@ -483,16 +483,16 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
 
         if(MySource.IMUX_enabled) {
-            MyMux.apply(CurRes.pa_sig, MuxKind::IMUX, CurRes.BB * source.bb_delta, source.fs * source.oversampling);
-            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::IMUX, CurRes.BB * source.bb_delta, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_sig, MuxKind::IMUX, CurRes.BB, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::IMUX, CurRes.BB, source.fs * source.oversampling);
         }
 
         MyPAModels.ApplyPA(CurRes.pa_sig, MySource);
         MyPAModels.ApplyPA(CurRes.pa_plus_dpd_sig, MySource);
 
         if(MySource.OMUX_enabled) {
-            MyMux.apply(CurRes.pa_sig, MuxKind::OMUX, CurRes.BB * source.bb_delta, source.fs * source.oversampling);
-            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::OMUX, CurRes.BB * source.bb_delta, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_sig, MuxKind::OMUX, CurRes.BB, source.fs * source.oversampling);
+            MyMux.apply(CurRes.pa_plus_dpd_sig, MuxKind::OMUX, CurRes.BB, source.fs * source.oversampling);
         }
 
         CurRes.pa_sig_noisy = CurRes.pa_sig;

@@ -585,7 +585,7 @@ void GraphPlotting::InitializeTimeDomainPlotting(std::vector<QWidget*> TimeDomai
         plotsOfTimeDomain[i]->xAxis->setLabel("t, мкс");
         plotsOfTimeDomain[i]->xAxis->setNumberFormat("f");
         plotsOfTimeDomain[i]->xAxis->setNumberPrecision(1);
-        plotsOfTimeDomain[i]->yAxis->setLabel("Magnitude, dBm");
+        plotsOfTimeDomain[i]->yAxis->setLabel("Амплитуда, В");
         plotsOfTimeDomain[i]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
         plotsOfTimeDomain[i]->axisRect()->setRangeZoom(Qt::Horizontal);
         plotsOfTimeDomain[i]->axisRect()->setRangeDrag(Qt::Horizontal);
@@ -629,7 +629,7 @@ void GraphPlotting::InitializePSDPlotting(std::vector<QWidget*> PSDGraphWidgets)
         plotsOfPSD[i]->xAxis->setLabel("f, МГц");
         plotsOfPSD[i]->xAxis->setNumberFormat("f");
         plotsOfPSD[i]->xAxis->setNumberPrecision(1);
-        plotsOfPSD[i]->yAxis->setLabel("Amplitude");
+        plotsOfPSD[i]->yAxis->setLabel("Амплитуда, дБм");
         plotsOfPSD[i]->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
         plotsOfPSD[i]->axisRect()->setRangeZoom(Qt::Horizontal);
         plotsOfPSD[i]->axisRect()->setRangeDrag(Qt::Horizontal);
@@ -656,14 +656,21 @@ void GraphPlotting::InitializeDPDLearnPlotting(std::vector<QWidget *> DPDLearnGr
         if(i == 5) {
             plotsOfDPD[i]->graph(1)->setLineStyle(QCPGraph::lsNone);
             plotsOfDPD[i]->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, Qt::red, 2));
-            plotsOfDPD[i]->graph(0)->setName("Scatter без ЦПИ");
-            plotsOfDPD[i]->graph(1)->setName("Scatter с ЦПИ");
+            plotsOfDPD[i]->graph(0)->setName("без ЦПИ");
+            plotsOfDPD[i]->graph(1)->setName("с ЦПИ");
             plotsOfDPD[i]->legend->setVisible(true);
             plotsOfDPD[i]->axisRect()->insetLayout()->setInsetAlignment(
                 0, Qt::AlignBottom  | Qt::AlignRight);
         }
-        plotsOfDPD[i]->xAxis->setLabel("P_вх, мВт");
-        plotsOfDPD[i]->yAxis->setLabel("P_вых, мВт");
+        else {
+            plotsOfDPD[i]->graph(0)->setName("АХ");
+            plotsOfDPD[i]->graph(1)->setName("АФХ");
+            plotsOfDPD[i]->legend->setVisible(true);
+            plotsOfDPD[i]->axisRect()->insetLayout()->setInsetAlignment(
+                0, Qt::AlignBottom  | Qt::AlignRight);
+        }
+        plotsOfDPD[i]->xAxis->setLabel("Pвх, мВт");
+        plotsOfDPD[i]->yAxis->setLabel("Pвых, мВт");
         plotsOfDPD[i]->yAxis2->setVisible(true);
         plotsOfDPD[i]->yAxis2->setLabel("Фвых, град");
         plotsOfDPD[i]->replot();
