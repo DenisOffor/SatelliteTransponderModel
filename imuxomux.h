@@ -23,7 +23,7 @@ struct MuxFilterConfig
         QCoreApplication::applicationDirPath() + "/filters";
 
     QString imuxCsv = filtersDir + "/imux_digitized_approx.csv";
-    QString omuxCsv = filtersDir + "/omux_digitized_approx.csv";
+    QString omuxCsv = filtersDir + "/omux_digitized_approx2.csv";
 
     // Исходная характеристика оцифрована для 36 МГц.
     double referenceBandwidthHz = 36.0e6;
