@@ -432,6 +432,10 @@ void GraphPlotting::PlotScatterPaCurve(GlobalResults &res)
     plotPaCurve->replot();
 }
 
+bool compareByAbs(const std::complex<double>& x, const std::complex<double>& y) {
+    return std::abs(x) < std::abs(y);
+}
+
 void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
 {
     QVector<double> x, y, z;
@@ -445,6 +449,7 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
         y.append(std::norm(res.tx_sig[i]));
         Phi.append((std::arg(res.tx_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
+    auto max = *(std::max_element(res.tx_sig.begin(), res.tx_sig.end(), compareByAbs));
     plotsOfDPD[0]->graph(0)->setData(x, y);
     plotsOfDPD[0]->graph(1)->setData(x, Phi);
     plotsOfDPD[0]->graph(0)->rescaleAxes();
@@ -468,6 +473,20 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[1]->yAxis->setRange(yRange.lower, yRange.upper + padding);
     plotsOfDPD[1]->replot();
 
+    z.clear(); Phi.clear();
+    for(int i = 0; i < res.tx_sig.size(); i += step) {
+        z.append(std::norm(res.tx_plus_dpd_sig[i]));
+        Phi.append(std::norm(res.pa_plus_dpd_sig[i]));
+    }
+    plotsOfDPD[2]->graph(0)->setData(x, y);
+    plotsOfDPD[2]->graph(1)->setData(z, Phi);
+    plotsOfDPD[2]->graph(0)->rescaleAxes();
+    plotsOfDPD[2]->yAxis2->setRange(-90, 90);
+    yRange = plotsOfDPD[2]->yAxis->range();
+    padding = (yRange.upper - yRange.lower) * 0.05;
+    plotsOfDPD[2]->yAxis->setRange(yRange.lower, yRange.upper + padding);
+    plotsOfDPD[2]->replot();
+
     y.clear(); Phi.clear();
     for(int i = 0; i < res.tx_sig.size(); i += step) {
         y.append(std::norm(res.tx_plus_dpd_sig[i]));
@@ -480,11 +499,13 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     yRange = plotsOfDPD[3]->yAxis->range();
     padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[3]->yAxis->setRange(yRange.lower, yRange.upper + padding);
+    plotsOfDPD[3]->xAxis->setRange(0, std::norm(max));
     plotsOfDPD[3]->replot();
 
 
-    y.clear(); Phi.clear();
+    x.clear(); y.clear(); Phi.clear();
     for(int i = 0; i < res.tx_sig.size(); i += step) {
+        x.append(std::norm(res.tx_plus_dpd_sig[i]));
         y.append(std::norm(res.pa_plus_dpd_sig[i]));
         Phi.append((std::arg(res.pa_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }
@@ -495,9 +516,10 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     yRange = plotsOfDPD[4]->yAxis->range();
     padding = (yRange.upper - yRange.lower) * 0.05;
     plotsOfDPD[4]->yAxis->setRange(yRange.lower, yRange.upper + padding);
+    plotsOfDPD[4]->xAxis->setRange(0, std::norm(max));
     plotsOfDPD[4]->replot();
 
-    y.clear(); Phi.clear();
+    x.clear(); y.clear(); Phi.clear();
     for(int i = 0; i < res.tx_sig.size(); i += step) {
         x.append(std::norm(res.tx_sig[i]));
         y.append(std::norm(res.pa_sig[i]));
@@ -508,9 +530,10 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[5]->graph(0)->rescaleAxes();
     plotsOfDPD[5]->graph(1)->rescaleAxes();
     yRange = plotsOfDPD[5]->yAxis->range();
-    padding = (yRange.upper - yRange.lower) * 0.05;
+    padding = (yRange.upper - yRange.lower) * 0.1;
     plotsOfDPD[5]->yAxis->setRange(yRange.lower, yRange.upper + padding);
     plotsOfDPD[5]->yAxis2->setRange(yRange.lower, yRange.upper + padding);
+    plotsOfDPD[5]->xAxis->setRange(0, std::norm(max));
     plotsOfDPD[5]->replot();
 }
 

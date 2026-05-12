@@ -28,8 +28,8 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
         pa_output_norm = normalizeByGain(pa_output, Grms);
     }
     else if(source.NormalizationType == "Complex linear gain") {
-        Gpeak = computeLinearGainLSAbs(pa_input, pa_output);
-        pa_output_norm = normalizeByGain(pa_output, Gpeak);
+        G = computeLinearGainLS(pa_input, pa_output);
+        pa_output_norm = normalizeByGain(pa_output, G);
     }
 
     QElapsedTimer timer;
@@ -111,6 +111,21 @@ std::vector<std::complex<double>> DPD::normalizeByGain(const std::vector<std::co
 
     if (G == 0.0)
         return y_norm;
+
+    for (size_t i = 0; i < pa_output.size(); ++i)
+        y_norm[i] = pa_output[i] / G;
+
+    return y_norm;
+}
+
+std::vector<std::complex<double>> DPD::normalizeByGain(
+    const std::vector<std::complex<double>>& pa_output,
+    std::complex<double> G)
+{
+    std::vector<std::complex<double>> y_norm(pa_output.size());
+
+    if (std::abs(G) <= 1e-15)
+        return pa_output;
 
     for (size_t i = 0; i < pa_output.size(); ++i)
         y_norm[i] = pa_output[i] / G;
