@@ -73,6 +73,9 @@ public:
     PaCurve& getPaCurve();
     void clear_OFDM_buffs();
     void RecalcDPD(NeedToRecalc& CurrentRecalcNeeds);
+    void ApplyCFR(std::vector<std::complex<double>>& sig,
+                  double clip_dB,
+                  double p = 2.0);
 
 public slots:
     void MainLogicWork(NeedToRecalc CurrentRecalcNeeds);

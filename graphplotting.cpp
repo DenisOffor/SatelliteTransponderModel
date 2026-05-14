@@ -503,9 +503,8 @@ void GraphPlotting::PlotScatterDPDLearn(GlobalResults &res)
     plotsOfDPD[3]->replot();
 
 
-    x.clear(); y.clear(); Phi.clear();
+    y.clear(); Phi.clear();
     for(int i = 0; i < res.tx_sig.size(); i += step) {
-        x.append(std::norm(res.tx_plus_dpd_sig[i]));
         y.append(std::norm(res.pa_plus_dpd_sig[i]));
         Phi.append((std::arg(res.pa_plus_dpd_sig[i]) - std::arg(res.tx_sig[i])) * 180 / 3.14);
     }

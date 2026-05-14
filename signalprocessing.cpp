@@ -921,3 +921,56 @@ void SignalProcessing::clear_OFDM_buffs()
     OFDM_pa_plus_DPD_sig_buff.clear();
 }
 
+void SignalProcessing::ApplyCFR(
+    std::vector<std::complex<double>>& sig,
+    double clip_dB,
+    double p)
+{
+    if(sig.empty())
+        return;
+
+    // RMS
+    double power = 0.0;
+
+    for(const auto& s : sig)
+        power += std::norm(s);
+
+    power /= static_cast<double>(sig.size());
+
+    double rms = std::sqrt(power);
+
+    // clipping threshold
+    double Aclip = rms * std::pow(10.0, clip_dB / 20.0);
+
+    for(auto& s : sig)
+    {
+        double r = std::abs(s);
+
+        if(r < 1e-12)
+            continue;
+
+        // soft clipping
+        double gain =
+            1.0 /
+            std::pow(
+                1.0 + std::pow(r / Aclip, p),
+                1.0 / p
+                );
+
+        s *= gain;
+    }
+
+    double newPower = 0.0;
+
+    for(const auto& s : sig)
+        newPower += std::norm(s);
+
+    newPower /= sig.size();
+
+    double newRms = std::sqrt(newPower);
+
+    double scale = rms / newRms;
+
+    for(auto& s : sig)
+        s *= scale;
+}
