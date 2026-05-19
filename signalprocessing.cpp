@@ -35,8 +35,15 @@ void SignalProcessing::MainLogicWork(NeedToRecalc CurrentRecalcNeeds)
     qDebug() << "Sym time:" << timer.elapsed() << "ms";
 
     timer.restart();
-    if(CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc)
+    if(CurrentRecalcNeeds.RecalcSig || CurrentRecalcNeeds.FullRecalc) {
         TransmitSignalProcessing(MySource, MySymbols, CurrentRecalcNeeds, CurrentRes);
+        double A_lim =
+            mydpd.getAmplitudeLimitFromTargetPAPR(
+                CurrentRes.tx_sig,
+                 9.0);
+
+        mydpd.softClip(CurrentRes.tx_sig, A_lim, 2.0);
+    }
     qDebug() << "Sig time:" << timer.elapsed() << "ms";
 
     timer.restart();
@@ -362,6 +369,14 @@ void SignalProcessing::RecalcDPD(NeedToRecalc& CurrentRecalcNeeds)
     TransmitSignalProcessing(MySource, TrainSymbols, temp, TrainRes);
 
     MyPAModels.ScaleToRMS_forPA(TrainRes.tx_sig, MySource);
+
+    double A_lim =
+        mydpd.getAmplitudeLimitFromTargetPAPR(
+            TrainRes.tx_sig,
+            9.0);
+
+    mydpd.softClip(TrainRes.tx_sig, A_lim, 2.0);
+
     TrainRes.pa_sig = TrainRes.tx_sig;
 
     //if(MySource.IMUX_enabled)
@@ -478,7 +493,15 @@ void SignalProcessing::PAProcessing(Source& source, NeedToRecalc& CurrentRecalcN
         else if(source.PredistorterType == "GMP")
             CurRes.tx_plus_dpd_sig = mydpd.applyGMP(CurRes.tx_plus_dpd_sig, source);
 
+        double A_lim =
+            mydpd.getAmplitudeLimitFromTargetPAPR(
+                CurRes.tx_plus_dpd_sig,
+                9.0);
+
+        mydpd.softClip(CurRes.tx_plus_dpd_sig, A_lim, 2.0);
+
         //MyPAModels.ScaleToRMS_forPA(CurRes.tx_plus_dpd_sig, source);
+
         CurRes.pa_sig = CurRes.tx_sig;
         CurRes.pa_plus_dpd_sig = CurRes.tx_plus_dpd_sig;
 

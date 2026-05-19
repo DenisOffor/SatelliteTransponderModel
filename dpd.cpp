@@ -39,13 +39,13 @@ void DPD::train(const std::vector<std::complex<double>>& pa_input,
     int num_coeffs = 0;
 
     if (source.PredistorterType == "MP") {
-        a = DPDsolve_least_squares_fixed_linear(
+        a = DPDsolve_least_squares(
             make_MP_mat(pa_output_norm, P, M, source.Enable_even_P),
             make_goal(pa_input, source)
             );
     }
     else if (source.PredistorterType == "GMP") {
-        a = DPDsolve_least_squares_fixed_linear(
+        a = DPDsolve_least_squares(
             make_GMP_mat(pa_output_norm, P, M,
                          source.GMP_L_lag, source.GMP_L_lead, source.Enable_even_P),
             make_goal(pa_input, source)
@@ -277,8 +277,24 @@ VectorXcd DPD::DPDsolve_least_squares_fixed_linear(const MatrixXcd &A, const Vec
     MatrixXcd A_rest = A.rightCols(A.cols() - 1);
 
     // Решаем для остальных коэффициентов
+    //VectorXcd a_rest =
+    //    A_rest.colPivHouseholderQr().solve(b_rest); //(A_rest.adjoint() * A_rest).ldlt().solve(A_rest.adjoint() * b_rest);
+
+    double lambda = 1e-4;
+
+    MatrixXcd AtA =
+        A_rest.adjoint() * A_rest;
+
+    AtA += lambda *
+           MatrixXcd::Identity(
+               AtA.rows(),
+               AtA.cols());
+
+    VectorXcd Atb =
+        A_rest.adjoint() * b_rest;
+
     VectorXcd a_rest =
-        A_rest.colPivHouseholderQr().solve(b_rest); //(A_rest.adjoint() * A_rest).ldlt().solve(A_rest.adjoint() * b_rest);
+        AtA.ldlt().solve(Atb);
 
     // Склеиваем полный вектор коэффициентов
     VectorXcd a(A.cols());
@@ -381,12 +397,21 @@ std::vector<std::complex<double>> DPD::applyGMP(
     return x_pre;
 }
 
-void DPD::softClip(std::vector<std::complex<double>>& x, double A_lim)
+void DPD::softClip(std::vector<std::complex<double>>& x,
+                   double A_lim,
+                   double p)
 {
-    for (auto& s : x) {
+    for (auto& s : x)
+    {
         double a = std::abs(s);
-        if (a > 1e-12) {
-            double gain = std::tanh(a / A_lim) / (a / A_lim);
+
+        if (a > 1e-12)
+        {
+            double gain =
+                1.0 / std::pow(
+                    1.0 + std::pow(a / A_lim, 2.0 * p),
+                    1.0 / (2.0 * p));
+
             s *= gain;
         }
     }

@@ -320,8 +320,14 @@ void PAModels::WienerModel(std::vector<std::complex<double>>& sig,
                            Source& source)
 {
     std::vector<std::complex<double>> h = {
-        {1.0, 0.0},
-        {0.5, 0.05}
+        {1.00,  0.00},
+        {0.10 / (source.IBO_dB * 1/6), -0.02 / (source.IBO_dB * 1/6)},
+        {0.05 / (source.IBO_dB * 1/6),  0.01 / (source.IBO_dB * 1/6)},
+        {0.03 / (source.IBO_dB * 1/6), -0.01 / (source.IBO_dB * 1/6) },
+        {0.02 / (source.IBO_dB * 1/6), -0.008 / (source.IBO_dB * 1/6)},
+        {0.02 / (source.IBO_dB * 1/6), -0.008 / (source.IBO_dB * 1/6)},
+        {0.02 / (source.IBO_dB * 1/6), -0.008 / (source.IBO_dB * 1/6)},
+        {0.02 / (source.IBO_dB * 1/6), -0.008 / (source.IBO_dB * 1/6)}
     };
 
     ApplyFIR(sig, h);
@@ -335,8 +341,14 @@ void PAModels::HammersteinModel(std::vector<std::complex<double>>& sig,
                                 Source& source)
 {
     std::vector<std::complex<double>> h = {
-        {1.0, 0.0},
-        {0.5, 0.05}
+        {1.00,  0.00},
+        {0.10, -0.02},
+        {0.05,  0.01},
+        {0.03, -0.01},
+        {0.02, -0.008},
+        {0.02, -0.008},
+        {0.02, -0.008},
+        {0.02, -0.008}
     };
 
     applyStaticModelWithPsat(sig, Static_model, source);
@@ -350,8 +362,14 @@ void PAModels::WHModel(std::vector<std::complex<double>>& sig,
                        Source& source)
 {
     std::vector<std::complex<double>> h = {
-        {1.0, 0.0},
-        {0.5, 0.05}
+        {1.00,  0.00},
+        {0.10, -0.02},
+        {0.05,  0.01},
+        {0.03, -0.01},
+        {0.02, -0.008},
+        {0.02, -0.008},
+        {0.02, -0.008},
+        {0.02, -0.008}
     };
 
     //ApplyFIRWithMemory(sig, FIR_Coeffs[0], 9);
@@ -494,7 +512,7 @@ void PAModels::ApplyFIR(std::vector<std::complex<double>>& signal, std::vector<s
 
     for(size_t n = 0; n < N; ++n)
     {
-        for(int m = 0; m < 2; ++m)
+        for(int m = 0; m < h.size(); ++m)
         {
             if(n >= static_cast<size_t>(m))
                 output[n] += h[m] * signal[n - m];

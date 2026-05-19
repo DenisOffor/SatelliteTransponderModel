@@ -321,7 +321,7 @@
         </size>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="PageModulation">
         <property name="sizePolicy">
@@ -2118,7 +2118,7 @@
                     <number>25</number>
                    </property>
                    <property name="value">
-                    <number>3</number>
+                    <number>6</number>
                    </property>
                   </widget>
                  </item>
@@ -2420,7 +2420,11 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QSpinBox" name="Pin_sat_dBm_spinBox"/>
+                  <widget class="QSpinBox" name="Pin_sat_dBm_spinBox">
+                   <property name="value">
+                    <number>10</number>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -2440,7 +2444,11 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QSpinBox" name="Pout_sat_dBm_spinBox"/>
+                  <widget class="QSpinBox" name="Pout_sat_dBm_spinBox">
+                   <property name="value">
+                    <number>30</number>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -2560,7 +2568,7 @@
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>2</number>
               </property>
               <widget class="QWidget" name="OFDM_page">
                <property name="sizePolicy">
@@ -2996,7 +3004,7 @@
                       <number>500000</number>
                      </property>
                      <property name="value">
-                      <number>1000000</number>
+                      <number>4500000</number>
                      </property>
                     </widget>
                    </item>
@@ -3039,7 +3047,7 @@
                       <number>1</number>
                      </property>
                      <property name="value">
-                      <number>4</number>
+                      <number>8</number>
                      </property>
                     </widget>
                    </item>
@@ -3085,7 +3093,7 @@
                       <number>250000</number>
                      </property>
                      <property name="value">
-                      <number>2500000</number>
+                      <number>7000000</number>
                      </property>
                     </widget>
                    </item>
@@ -3214,7 +3222,7 @@
                      <number>1000000</number>
                     </property>
                     <property name="value">
-                     <number>10000000</number>
+                     <number>50000000</number>
                     </property>
                    </widget>
                   </item>
@@ -3298,6 +3306,9 @@
                     </property>
                     <property name="singleStep">
                      <double>0.100000000000000</double>
+                    </property>
+                    <property name="value">
+                     <double>1.100000000000000</double>
                     </property>
                    </widget>
                   </item>
@@ -3588,7 +3599,7 @@
                          <number>1</number>
                         </property>
                         <property name="value">
-                         <number>3</number>
+                         <number>5</number>
                         </property>
                        </widget>
                       </item>
@@ -4346,7 +4357,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1649</width>
-                 <height>501</height>
+                 <height>147</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_131">
@@ -5006,7 +5017,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1238</width>
-                 <height>517</height>
+                 <height>139</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_58">
@@ -5271,7 +5282,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>1242</width>
-                 <height>501</height>
+                 <height>147</height>
                 </rect>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_113">

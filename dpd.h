@@ -17,6 +17,11 @@ public:
     std::vector<std::complex<double>> coeffs;
     void train(const std::vector<std::complex<double>>& pa_input, const std::vector<std::complex<double>>& pa_output,
                const Source& source);
+    void softClip(std::vector<std::complex<double>>& x,
+                  double A_lim,
+                  double p);
+    double getAmplitudeLimitFromTargetPAPR(const std::vector<std::complex<double>>& x,
+                                           double paprTarget_dB);
 private:
     double Gpeak;
     double Grms;
@@ -36,9 +41,6 @@ private:
     MatrixXcd make_MP_mat(const std::vector<std::complex<double>>& x, const int P, const int M, bool Enable_even_P);
     MatrixXcd make_GMP_mat(const std::vector<std::complex<double>>& x, const int P, const int M, const int L_lag, const int L_lead, bool Enable_even_P);
     VectorXcd make_goal(const  std::vector<std::complex<double>>& y, const Source& source);
-    void softClip(std::vector<std::complex<double>>& x, double A_lim);
-    double getAmplitudeLimitFromTargetPAPR(const std::vector<std::complex<double>>& x,
-                                           double paprTarget_dB);
     std::complex<double> computeLinearGainLS(const std::vector<std::complex<double>>& pa_input, const std::vector<std::complex<double>>& pa_output);
     double computeLinearGainLSAbs(const std::vector<std::complex<double>>& pa_input, const std::vector<std::complex<double>>& pa_output);
 };

@@ -215,19 +215,19 @@ void MainWindow::DataUpdate()
     if(senderObj == ui->PAModel_ComboBox) {UISource.PAModel = ui->PAModel_ComboBox->currentText();
         CurrentRecalcNeeds.PARecalc = true; CurrentRecalcNeeds.PaCurveReplot = true; CurrentRecalcNeeds.TimePlotsRescale = true;}
 
-    if(senderObj == ui->MP_M_spinBox) { UISource.MP_M = ui->MP_M_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->MP_P_spinBox) { UISource.MP_P = ui->MP_P_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->MP_M_spinBox) {  UISource.MP_M = ui->MP_M_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->MP_P_spinBox) {  UISource.MP_P = ui->MP_P_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
 
     if(senderObj == ui->GMP_M_spinBox) { UISource.GMP_M = ui->GMP_M_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->GMP_P_spinBox) { UISource.GMP_P = ui->GMP_P_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->GMP_L_lag_spinBox) { UISource.GMP_L_lag = ui->GMP_L_lag_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->GMP_L_lead_spinBox) { UISource.GMP_L_lead = ui->GMP_L_lead_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->GMP_P_spinBox) {  UISource.GMP_P = ui->GMP_P_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->GMP_L_lag_spinBox) {  UISource.GMP_L_lag = ui->GMP_L_lag_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->GMP_L_lead_spinBox) {  UISource.GMP_L_lead = ui->GMP_L_lead_spinBox->value(); if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
 
-    if(senderObj == ui->NormalizationType_ComboBox) { UISource.NormalizationType = ui->NormalizationType_ComboBox->currentText();
+    if(senderObj == ui->NormalizationType_ComboBox) {  UISource.NormalizationType = ui->NormalizationType_ComboBox->currentText();
         if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->PredistorterType_comboBox) { UISource.PredistorterType = ui->PredistorterType_comboBox->currentText();
+    if(senderObj == ui->PredistorterType_comboBox) {  UISource.PredistorterType = ui->PredistorterType_comboBox->currentText();
         if(UISource.DPDAutoRecalc) CurrentRecalcNeeds.DPDRecalc = true; }
-    if(senderObj == ui->EvenP_checkBox) { UISource.Enable_even_P = ui->EvenP_checkBox->isChecked(); CurrentRecalcNeeds.DPDRecalc = true; }
+    if(senderObj == ui->EvenP_checkBox) {  UISource.Enable_even_P = ui->EvenP_checkBox->isChecked(); CurrentRecalcNeeds.DPDRecalc = true; }
 
     if(senderObj == ui->LogRes_checkBox) { UISource.LogRes = ui->LogRes_checkBox->isChecked(); };
 
